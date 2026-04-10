@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabaseAdmin } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import { sendWeeklyDigest } from '@/lib/sendDigest'
 
 export async function GET(req: NextRequest) {
@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: restaurants, error } = await supabaseAdmin
+  const { data: restaurants, error } = await getSupabaseAdmin()
     .from('restaurants')
     .select('id, name, place_id, owner_email')
     .eq('active', true)

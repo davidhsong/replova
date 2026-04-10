@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getPlaceReviews } from '@/lib/places'
 import { generateReplies } from '@/lib/generateReplies'
-import { supabaseAdmin } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase'
 
 export async function POST(req: NextRequest) {
   const { placeId, restaurantId } = await req.json()
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     status: 'pending',
   }))
 
-  const { data, error } = await supabaseAdmin
+  const { data, error } = await getSupabaseAdmin()
     .from('reviews')
     .upsert(rows, { onConflict: 'restaurant_id,review_timestamp', ignoreDuplicates: true })
     .select('id, author, rating, review_text')
@@ -43,7 +43,7 @@ export async function POST(req: NextRequest) {
           reviewText: row.review_text ?? '',
         })
 
-        const { error: updateError } = await supabaseAdmin
+        const { error: updateError } = await getSupabaseAdmin()
           .from('reviews')
           .update({
             reply_draft_1: replies.professional,

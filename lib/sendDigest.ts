@@ -1,5 +1,5 @@
 import { Resend } from 'resend'
-import { supabaseAdmin } from '@/lib/supabase'
+import { getSupabaseAdmin } from '@/lib/supabase'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
 
@@ -104,7 +104,7 @@ function buildHtml(restaurantName: string, reviews: ReviewRow[]): string {
 }
 
 export async function sendWeeklyDigest(restaurant: Restaurant): Promise<void> {
-  const { data: reviews, error } = await supabaseAdmin
+  const { data: reviews, error } = await getSupabaseAdmin()
     .from('reviews')
     .select('id, author, rating, review_text, reply_draft_1, reply_draft_2, reply_draft_3')
     .eq('restaurant_id', restaurant.id)
@@ -130,7 +130,7 @@ export async function sendWeeklyDigest(restaurant: Restaurant): Promise<void> {
   if (sendError) throw new Error(`Failed to send email: ${sendError.message}`)
 
   const ids = reviews.map((r) => r.id)
-  const { error: updateError } = await supabaseAdmin
+  const { error: updateError } = await getSupabaseAdmin()
     .from('reviews')
     .update({ status: 'emailed' })
     .in('id', ids)
