@@ -2,7 +2,7 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
-import CopyButton from './CopyButton'
+import ReviewList from './ReviewList'
 
 type Restaurant = {
   id: string
@@ -26,35 +26,6 @@ type Review = {
   status: string | null
   created_at: string
 }
-
-function StarRating({ rating }: { rating: number }) {
-  return (
-    <span className="text-amber-400 text-base tracking-tight">
-      {Array.from({ length: 5 }, (_, i) => (
-        <span key={i}>{i < rating ? '★' : '☆'}</span>
-      ))}
-    </span>
-  )
-}
-
-function StatusBadge({ status }: { status: string | null }) {
-  const emailed = status === 'emailed'
-  return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-      emailed
-        ? 'bg-emerald-950 text-emerald-400 border border-emerald-900'
-        : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
-    }`}>
-      {emailed ? 'Emailed' : 'Drafted'}
-    </span>
-  )
-}
-
-const REPLY_LABELS = [
-  { label: 'Professional', field: 'reply_draft_1' },
-  { label: 'Warm', field: 'reply_draft_2' },
-  { label: 'Brief', field: 'reply_draft_3' },
-] as const
 
 export default async function DashboardPage({
   searchParams,
@@ -119,13 +90,13 @@ export default async function DashboardPage({
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
           </svg>
           <p className="text-sm text-emerald-300">
-            You're all set. Your first digest arrives next Monday morning.
+            You&apos;re all set. Your first digest arrives next Monday morning.
           </p>
         </div>
       )}
 
       {/* Page header */}
-      <div className="mb-8">
+      <div className="mb-6">
         <h1 className="text-xl font-semibold text-zinc-100">{restaurant.name}</h1>
         <p className="text-zinc-500 text-sm mt-0.5">Review reply drafts</p>
       </div>
@@ -144,51 +115,7 @@ export default async function DashboardPage({
           </p>
         </div>
       ) : (
-        <div className="space-y-5">
-          {reviews.map((review) => (
-            <div
-              key={review.id}
-              className="border border-zinc-800 rounded-xl p-5 bg-zinc-900/40"
-            >
-              {/* Review header */}
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <p className="text-sm font-semibold text-zinc-100">
-                    {review.author ?? 'Anonymous'}
-                  </p>
-                  {review.rating != null && <StarRating rating={review.rating} />}
-                </div>
-                <StatusBadge status={review.status} />
-              </div>
-
-              {/* Review text */}
-              {review.review_text && (
-                <p className="text-zinc-400 text-sm leading-relaxed mb-5 pb-5 border-b border-zinc-800">
-                  &ldquo;{review.review_text}&rdquo;
-                </p>
-              )}
-
-              {/* Reply options */}
-              <div className="space-y-3">
-                {REPLY_LABELS.map(({ label, field }) => {
-                  const text = review[field]
-                  if (!text) return null
-                  return (
-                    <div key={field} className="rounded-lg bg-zinc-900 border border-zinc-800 p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">
-                          {label}
-                        </span>
-                        <CopyButton text={text} />
-                      </div>
-                      <p className="text-zinc-300 text-sm leading-relaxed">{text}</p>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          ))}
-        </div>
+        <ReviewList reviews={reviews} />
       )}
     </div>
   )

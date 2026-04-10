@@ -25,6 +25,9 @@ export default function NavLinks() {
       <a href="/dashboard" onClick={handleReviews} className={linkClass('/dashboard')}>
         Reviews
       </a>
+      <Link href="/dashboard/billing" className={linkClass('/dashboard/billing')}>
+        Billing
+      </Link>
       <Link href="/dashboard/settings" className={linkClass('/dashboard/settings')}>
         Settings
       </Link>

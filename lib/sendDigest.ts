@@ -25,7 +25,7 @@ function stars(rating: number): string {
   return filled + empty
 }
 
-function buildHtml(restaurantName: string, reviews: ReviewRow[]): string {
+function buildHtml(restaurantName: string, reviews: ReviewRow[], dashboardUrl: string): string {
   const reviewBlocks = reviews
     .map(
       (r, i) => `
@@ -90,6 +90,11 @@ function buildHtml(restaurantName: string, reviews: ReviewRow[]): string {
           </tr>
           <tr>
             <td style="padding:40px 0 0 0;border-top:1px solid #e5e7eb;margin-top:32px;">
+              <p style="margin:0 0 8px 0;font-size:14px;text-align:center;">
+                <a href="${dashboardUrl}" style="color:#4f46e5;text-decoration:none;font-weight:600;">
+                  View all reviews in your dashboard →
+                </a>
+              </p>
               <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">
                 Sent by Replova · AI-powered review replies for restaurants
               </p>
@@ -118,7 +123,8 @@ export async function sendWeeklyDigest(restaurant: Restaurant): Promise<void> {
     return
   }
 
-  const html = buildHtml(restaurant.name, reviews)
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://replova.vercel.app')
+  const html = buildHtml(restaurant.name, reviews, `${baseUrl}/dashboard`)
 
   const { error: sendError } = await resend.emails.send({
     from: 'Replova <onboarding@resend.dev>',

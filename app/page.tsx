@@ -167,11 +167,14 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="bg-zinc-50 border-t border-zinc-200">
-        <div className="max-w-5xl mx-auto px-6 py-6 flex items-center justify-between">
+        <div className="max-w-5xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3">
           <span className="text-sm font-semibold text-zinc-900">Replova</span>
-          <span className="text-sm text-zinc-500">
-            © {year} Replova. All rights reserved.
-          </span>
+          <div className="flex items-center gap-5">
+            <a href="/terms" className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors">Terms</a>
+            <a href="/privacy" className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors">Privacy</a>
+            <a href="mailto:support@replova.app" className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors">Support</a>
+            <span className="text-xs text-zinc-400">© {year} Replova</span>
+          </div>
         </div>
       </footer>
 
