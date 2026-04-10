@@ -6,8 +6,8 @@ export async function GET() {
   // that has reviews with status = 'drafted'
   // Replace owner_email with your own email to receive the test
   await sendWeeklyDigest({
-    id: 'Taco Bell',
-    name: 'David Song',
+    id: '45ab2772-87c4-4672-b386-5dba93db064a',
+    name: 'Bella Napoli',
     owner_email: 'davidhsongg@gmail.com',
   })
 
