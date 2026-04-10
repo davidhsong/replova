@@ -1,3 +1,9 @@
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: { absolute: 'Replova — AI Review Replies for Restaurants' },
+}
+
 export default function Home() {
   const year = new Date().getFullYear()
 
@@ -10,12 +16,20 @@ export default function Home() {
           <span className="text-lg font-semibold tracking-tight text-zinc-900">
             Replova
           </span>
-          <a
-            href="/onboard"
-            className="rounded-full bg-zinc-900 text-white text-sm font-medium px-5 py-2 hover:bg-zinc-700 transition-colors"
-          >
-            Start free trial
-          </a>
+          <div className="flex items-center gap-3">
+            <a
+              href="/signin"
+              className="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
+            >
+              Sign in
+            </a>
+            <a
+              href="/onboard"
+              className="rounded-full bg-zinc-900 text-white text-sm font-medium px-5 py-2 hover:bg-zinc-700 transition-colors"
+            >
+              Start free trial
+            </a>
+          </div>
         </div>
       </header>
 
