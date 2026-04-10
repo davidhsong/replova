@@ -30,16 +30,16 @@ export default function SignInPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-6">
+      <div className="min-h-screen bg-white flex items-center justify-center px-6">
         <div className="max-w-sm w-full text-center">
-          <div className="w-14 h-14 rounded-full bg-zinc-800 flex items-center justify-center mx-auto mb-6">
-            <svg className="w-6 h-6 text-zinc-100" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <div className="w-14 h-14 rounded-full bg-zinc-100 flex items-center justify-center mx-auto mb-6">
+            <svg className="w-6 h-6 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
-          <h1 className="text-xl font-semibold text-zinc-100 mb-2">Check your inbox</h1>
-          <p className="text-zinc-400 text-sm leading-relaxed">
-            We sent a sign-in link to <span className="text-zinc-200">{email}</span>.<br />
+          <h1 className="text-xl font-semibold text-zinc-900 mb-2">Check your inbox</h1>
+          <p className="text-zinc-500 text-sm leading-relaxed">
+            We sent a sign-in link to <span className="text-zinc-900 font-medium">{email}</span>.<br />
             Click it to access your dashboard.
           </p>
         </div>
@@ -48,50 +48,85 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md">
-        <a href="/" className="inline-block text-base font-semibold text-zinc-100 mb-10">
-          Replova
-        </a>
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-zinc-100 mb-1.5">Sign in</h1>
-          <p className="text-zinc-400 text-sm">We'll send you a magic link to sign in instantly.</p>
-        </div>
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-zinc-400 uppercase tracking-wide" htmlFor="email">
-              Email address
-            </label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
-              placeholder="you@restaurant.com"
-            />
-          </div>
-          {error && (
-            <p className="text-sm text-red-400 bg-red-950/50 border border-red-900 rounded-lg px-4 py-3">
-              {error}
-            </p>
-          )}
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-2 bg-zinc-100 text-zinc-900 text-sm font-semibold py-3 rounded-lg hover:bg-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-          >
-            {loading ? 'Sending…' : 'Send sign-in link'}
-          </button>
-        </form>
-        <p className="mt-6 text-center text-xs text-zinc-600">
-          New to Replova?{' '}
-          <a href="/onboard" className="text-zinc-400 underline underline-offset-2 hover:text-zinc-300 transition-colors">
-            Start your free trial
+    <div className="min-h-screen bg-white flex flex-col">
+      {/* Nav */}
+      <header className="border-b border-zinc-200">
+        <div className="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
+          <a href="/" className="text-lg font-semibold tracking-tight text-zinc-900">
+            Replova
           </a>
-        </p>
+          <a
+            href="/onboard"
+            className="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
+          >
+            Start free trial
+          </a>
+        </div>
+      </header>
+
+      {/* Form */}
+      <div className="flex-1 flex items-center justify-center px-6 py-16">
+        <div className="w-full max-w-sm">
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-zinc-900 mb-1.5">Sign in to Replova</h1>
+            <p className="text-zinc-500 text-sm">
+              We&apos;ll send a magic link to your email — no password needed.
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="email"
+                className="text-xs font-medium text-zinc-500 uppercase tracking-wide"
+              >
+                Email address
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="border border-zinc-200 rounded-lg px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-shadow"
+                placeholder="you@restaurant.com"
+                autoFocus
+              />
+            </div>
+
+            {error && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
+                {error}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="mt-1 rounded-full bg-zinc-900 text-white text-sm font-medium py-3 hover:bg-zinc-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? 'Sending…' : 'Send sign-in link'}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-zinc-400">
+            New to Replova?{' '}
+            <a
+              href="/onboard"
+              className="text-zinc-900 font-medium hover:underline"
+            >
+              Start your free trial
+            </a>
+          </p>
+        </div>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t border-zinc-200 py-5 px-6">
+        <p className="text-center text-sm text-zinc-400">
+          © {new Date().getFullYear()} Replova. All rights reserved.
+        </p>
+      </footer>
     </div>
   )
 }

@@ -1,9 +1,11 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabaseBrowser } from '@/lib/supabase'
 
 export default function SettingsPage() {
+  const router = useRouter()
   const [displayName, setDisplayName] = useState('')
   const [phoneNumber, setPhoneNumber] = useState('')
   const [email, setEmail] = useState('')
@@ -42,6 +44,7 @@ export default function SettingsPage() {
         throw new Error(data.error ?? 'Failed to save')
       }
       setSaved(true)
+      router.refresh()
       setTimeout(() => setSaved(false), 3000)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
@@ -73,6 +76,7 @@ export default function SettingsPage() {
 
       const { url } = await res.json()
       setAvatarUrl(url)
+      router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed.')
     } finally {

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import SignOutButton from './SignOutButton'
+import NavLinks from './NavLinks'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -43,20 +44,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <Link href="/dashboard" className="text-sm font-semibold text-zinc-100">
               Replova
             </Link>
-            <nav className="flex items-center gap-1">
-              <Link
-                href="/dashboard"
-                className="px-3 py-1.5 text-sm text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-md transition-colors"
-              >
-                Reviews
-              </Link>
-              <Link
-                href="/dashboard/settings"
-                className="px-3 py-1.5 text-sm text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-md transition-colors"
-              >
-                Settings
-              </Link>
-            </nav>
+            <NavLinks />
           </div>
           <div className="flex items-center gap-3">
             <Link href="/dashboard/settings" className="flex items-center gap-2 group">
