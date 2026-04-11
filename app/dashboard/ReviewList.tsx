@@ -55,7 +55,7 @@ function StatusBadge({ status }: { status: string | null }) {
   )
 }
 
-function ReviewRow({ review }: { review: Review }) {
+function ReviewRow({ review, restaurantName }: { review: Review; restaurantName: string }) {
   const [open, setOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'reply_draft_1' | 'reply_draft_2' | 'reply_draft_3'>('reply_draft_1')
 
@@ -140,7 +140,7 @@ function ReviewRow({ review }: { review: Review }) {
               <p className="text-sm text-zinc-300 leading-relaxed mb-3">{activeText}</p>
               <div className="flex items-center gap-2 justify-end">
                 <CopyButton text={activeText} />
-                <PostReplyButton replyText={activeText} />
+                <PostReplyButton replyText={activeText} restaurantName={restaurantName} />
               </div>
             </div>
           )}
@@ -152,7 +152,7 @@ function ReviewRow({ review }: { review: Review }) {
 
 type FilterValue = 'all' | 'drafted' | 'emailed' | 'replied' | '5' | '4' | '3' | '1-2'
 
-export default function ReviewList({ reviews }: { reviews: Review[] }) {
+export default function ReviewList({ reviews, restaurantName }: { reviews: Review[]; restaurantName: string }) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterValue>('all')
 
@@ -243,7 +243,7 @@ export default function ReviewList({ reviews }: { reviews: Review[] }) {
       ) : (
         <div className="space-y-1.5">
           {filtered.map(review => (
-            <ReviewRow key={review.id} review={review} />
+            <ReviewRow key={review.id} review={review} restaurantName={restaurantName} />
           ))}
         </div>
       )}

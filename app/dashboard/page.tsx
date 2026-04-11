@@ -115,7 +115,7 @@ export default async function DashboardPage({
           </p>
         </div>
       ) : (
-        <ReviewList reviews={reviews} />
+        <ReviewList reviews={reviews} restaurantName={restaurant.name} />
       )}
     </div>
   )

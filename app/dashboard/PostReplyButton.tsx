@@ -4,7 +4,13 @@ import { useState } from 'react'
 
 type State = 'idle' | 'working' | 'done'
 
-export default function PostReplyButton({ replyText }: { replyText: string }) {
+export default function PostReplyButton({
+  replyText,
+  restaurantName,
+}: {
+  replyText: string
+  restaurantName: string
+}) {
   const [state, setState] = useState<State>('idle')
 
   async function handleClick() {
@@ -14,11 +20,13 @@ export default function PostReplyButton({ replyText }: { replyText: string }) {
     try {
       await navigator.clipboard.writeText(replyText)
     } catch {
-      // Clipboard API blocked (e.g. browser permission) — still open the tab
+      // Clipboard API blocked — still open the tab
     }
 
-    // Open Google Business reviews page in a new tab
-    window.open('https://business.google.com/reviews', '_blank', 'noopener,noreferrer')
+    // Open the Google Business Profile reviews page — works for both regular
+    // accounts and location groups (search panel doesn't show reviews for groups)
+    const searchUrl = `https://business.google.com/reviews`
+    window.open(searchUrl, '_blank', 'noopener,noreferrer')
 
     setState('done')
     setTimeout(() => setState('idle'), 3000)
