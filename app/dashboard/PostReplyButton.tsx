@@ -1,12 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { copyToClipboard } from './CopyButton'
 
 type State = 'idle' | 'working' | 'done'
 
 export default function PostReplyButton({
   replyText,
-  restaurantName,
 }: {
   replyText: string
   restaurantName: string
@@ -15,19 +15,8 @@ export default function PostReplyButton({
 
   async function handleClick() {
     setState('working')
-
-    // Copy reply text to clipboard
-    try {
-      await navigator.clipboard.writeText(replyText)
-    } catch {
-      // Clipboard API blocked — still open the tab
-    }
-
-    // Open the Google Business Profile reviews page — works for both regular
-    // accounts and location groups (search panel doesn't show reviews for groups)
-    const searchUrl = `https://business.google.com/reviews`
-    window.open(searchUrl, '_blank', 'noopener,noreferrer')
-
+    await copyToClipboard(replyText)
+    window.open('https://business.google.com/reviews', '_blank', 'noopener,noreferrer')
     setState('done')
     setTimeout(() => setState('idle'), 3000)
   }
