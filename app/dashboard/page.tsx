@@ -24,6 +24,8 @@ type Review = {
   reply_draft_2: string | null
   reply_draft_3: string | null
   status: string | null
+  review_timestamp: number | null
+  replied_at: string | null
   created_at: string
 }
 

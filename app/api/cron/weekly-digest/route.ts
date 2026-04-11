@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
       const res = await fetch(`${baseUrl}/api/fetch-reviews`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ placeId: restaurant.place_id, restaurantId: restaurant.id }),
+        body: JSON.stringify({ restaurantId: restaurant.id }),
       })
 
       if (!res.ok) {

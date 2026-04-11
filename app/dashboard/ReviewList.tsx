@@ -15,6 +15,8 @@ type Review = {
   reply_draft_2: string | null
   reply_draft_3: string | null
   status: string | null
+  review_timestamp: number | null
+  replied_at: string | null
   created_at: string
 }
 
@@ -26,6 +28,15 @@ const REPLY_LABELS = [
 
 type SectionTab = 'needs-reply' | 'completed' | 'all'
 type RatingFilter = 'all' | '5' | '4' | '3' | '1-2'
+
+function formatReviewDate(timestamp: number | null): string {
+  if (!timestamp) return '—'
+  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+}
 
 function Stars({ rating }: { rating: number }) {
   return (
@@ -53,14 +64,15 @@ function ReviewRow({
   const [toggling, setToggling] = useState(false)
 
   const preview = review.review_text
-    ? review.review_text.length > 80
-      ? review.review_text.slice(0, 80) + '…'
+    ? review.review_text.length > 90
+      ? review.review_text.slice(0, 90) + '…'
       : review.review_text
     : null
 
   const activeText = review[activeTab]
-  const date = new Date(review.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const reviewDate = formatReviewDate(review.review_timestamp)
   const isReplied = effectiveStatus === 'replied'
+  const isLowRating = review.rating != null && review.rating <= 2
 
   async function handleToggle(e: React.MouseEvent) {
     e.stopPropagation()
@@ -77,24 +89,35 @@ function ReviewRow({
   return (
     <div className={`border rounded-lg transition-colors ${
       open ? 'border-zinc-700 bg-zinc-900/60' : 'border-zinc-800 bg-zinc-900/20 hover:border-zinc-700'
-    } ${isReplied ? 'opacity-60' : ''}`}>
-      {/* Row — always visible */}
+    } ${isReplied ? 'opacity-55' : ''}`}>
       <div className="flex items-center gap-1">
         <button
           onClick={() => setOpen(o => !o)}
           className="flex-1 text-left px-4 py-3 flex items-center gap-3 min-w-0"
         >
           {/* Rating */}
-          <div className="shrink-0 w-16">
-            {review.rating != null ? <Stars rating={review.rating} /> : <span className="text-zinc-600 text-xs">—</span>}
+          <div className="shrink-0 w-16 flex flex-col gap-0.5">
+            {review.rating != null ? (
+              <>
+                <Stars rating={review.rating} />
+                <span className="text-zinc-600 text-xs">{review.rating}/5</span>
+              </>
+            ) : (
+              <span className="text-zinc-600 text-xs">—</span>
+            )}
           </div>
 
           {/* Author + preview */}
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              <span className={`text-sm font-medium truncate ${isReplied ? 'text-zinc-400 line-through' : 'text-zinc-100'}`}>
+            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+              <span className={`text-sm font-medium truncate ${isReplied ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}>
                 {review.author ?? 'Anonymous'}
               </span>
+              {isLowRating && !isReplied && (
+                <span className="shrink-0 text-xs px-1.5 py-0.5 rounded bg-red-950 text-red-400 border border-red-900">
+                  Needs attention
+                </span>
+              )}
             </div>
             {preview && (
               <p className="text-xs text-zinc-500 truncate">{preview}</p>
@@ -102,8 +125,8 @@ function ReviewRow({
           </div>
 
           {/* Date + chevron */}
-          <div className="shrink-0 flex items-center gap-2 text-zinc-600">
-            <span className="text-xs">{date}</span>
+          <div className="shrink-0 flex flex-col items-end gap-0.5 text-zinc-600">
+            <span className="text-xs">{reviewDate}</span>
             <svg
               className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`}
               fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
@@ -133,51 +156,98 @@ function ReviewRow({
       {/* Expanded panel */}
       {open && (
         <div className="px-4 pb-4 border-t border-zinc-800 pt-3">
+          {/* Metadata row */}
+          <div className="flex flex-wrap gap-4 mb-4 text-xs text-zinc-500">
+            <span>
+              <span className="text-zinc-600">Posted</span>{' '}
+              <span className="text-zinc-400">{reviewDate}</span>
+            </span>
+            {review.rating != null && (
+              <span>
+                <span className="text-zinc-600">Rating</span>{' '}
+                <span className="text-amber-400">{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>{' '}
+                <span className="text-zinc-400">{review.rating} / 5</span>
+              </span>
+            )}
+            {isReplied && (
+              <span className="text-emerald-500">
+                ✓ Already replied on Google
+              </span>
+            )}
+            {isLowRating && !isReplied && (
+              <span className="text-red-400">
+                ⚠ Low rating — prioritize this response
+              </span>
+            )}
+          </div>
+
           {/* Full review text */}
-          {review.review_text && (
+          {review.review_text ? (
             <p className="text-sm text-zinc-400 leading-relaxed mb-4 italic">
               &ldquo;{review.review_text}&rdquo;
             </p>
+          ) : (
+            <p className="text-sm text-zinc-600 mb-4 italic">No review text — rating only.</p>
           )}
 
-          {/* Tab switcher */}
-          <div className="flex gap-1 mb-3">
-            {REPLY_LABELS.map(({ label, field }) => (
-              <button
-                key={field}
-                onClick={() => setActiveTab(field)}
-                className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
-                  activeTab === field
-                    ? 'bg-zinc-700 text-zinc-100'
-                    : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'
-                }`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          {/* Active reply */}
-          {activeText && (
-            <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
-              <p className="text-sm text-zinc-300 leading-relaxed mb-3">{activeText}</p>
-              <div className="flex items-center gap-2 justify-between">
-                <button
-                  onClick={handleToggle}
-                  disabled={toggling}
-                  className={`px-3 py-1 text-xs font-medium rounded transition-colors border ${
-                    isReplied
-                      ? 'border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300'
-                      : 'border-emerald-800 text-emerald-400 hover:bg-emerald-950'
-                  } disabled:opacity-40`}
-                >
-                  {isReplied ? 'Undo completed' : 'Mark as replied'}
-                </button>
-                <div className="flex items-center gap-2">
-                  <CopyButton text={activeText} />
-                  <PostReplyButton replyText={activeText} restaurantName={restaurantName} />
-                </div>
+          {/* Tab switcher + reply */}
+          {(review.reply_draft_1 || review.reply_draft_2 || review.reply_draft_3) ? (
+            <>
+              <div className="flex gap-1 mb-3">
+                {REPLY_LABELS.map(({ label, field }) => (
+                  <button
+                    key={field}
+                    onClick={() => setActiveTab(field)}
+                    className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                      activeTab === field
+                        ? 'bg-zinc-700 text-zinc-100'
+                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
+
+              {activeText && (
+                <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
+                  <p className="text-sm text-zinc-300 leading-relaxed mb-3">{activeText}</p>
+                  <div className="flex items-center gap-2 justify-between">
+                    <button
+                      onClick={handleToggle}
+                      disabled={toggling}
+                      className={`px-3 py-1 text-xs font-medium rounded transition-colors border ${
+                        isReplied
+                          ? 'border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300'
+                          : 'border-emerald-800 text-emerald-400 hover:bg-emerald-950'
+                      } disabled:opacity-40`}
+                    >
+                      {isReplied ? 'Undo completed' : 'Mark as replied'}
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <CopyButton text={activeText} />
+                      <PostReplyButton replyText={activeText} restaurantName={restaurantName} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-zinc-600 italic">
+                {isReplied ? 'This review was already replied to on Google.' : 'Draft not yet generated.'}
+              </p>
+              <button
+                onClick={handleToggle}
+                disabled={toggling}
+                className={`px-3 py-1 text-xs font-medium rounded transition-colors border ${
+                  isReplied
+                    ? 'border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300'
+                    : 'border-emerald-800 text-emerald-400 hover:bg-emerald-950'
+                } disabled:opacity-40`}
+              >
+                {isReplied ? 'Undo completed' : 'Mark as replied'}
+              </button>
             </div>
           )}
         </div>
@@ -209,12 +279,22 @@ export default function ReviewList({ reviews, restaurantName }: { reviews: Revie
     const current = getStatus(review)
     const next = current === 'replied' ? 'drafted' : 'replied'
     setLocalStatus(prev => ({ ...prev, [review.id]: next }))
-    // Background refresh to sync server state
     router.refresh()
   }
 
+  // Stats (always computed from full list)
+  const totalReviews = reviews.length
+  const avgRating = totalReviews > 0
+    ? (reviews.reduce((s, r) => s + (r.rating ?? 0), 0) / totalReviews).toFixed(1)
+    : null
   const needsReplyCount = reviews.filter(r => getStatus(r) !== 'replied').length
   const completedCount = reviews.filter(r => getStatus(r) === 'replied').length
+  const responseRate = totalReviews > 0
+    ? Math.round((completedCount / totalReviews) * 100)
+    : 0
+  const lowRatingPending = reviews.filter(
+    r => getStatus(r) !== 'replied' && r.rating != null && r.rating <= 2
+  ).length
 
   const filtered = useMemo(() => {
     return reviews.filter(r => {
@@ -241,11 +321,37 @@ export default function ReviewList({ reviews, restaurantName }: { reviews: Revie
   const tabs: { value: SectionTab; label: string; count: number }[] = [
     { value: 'needs-reply', label: 'Needs Reply', count: needsReplyCount },
     { value: 'completed', label: 'Completed', count: completedCount },
-    { value: 'all', label: 'All', count: reviews.length },
+    { value: 'all', label: 'All', count: totalReviews },
   ]
 
   return (
     <div>
+      {/* Stats bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg px-3 py-2.5">
+          <p className="text-xs text-zinc-600 mb-0.5">Total reviews</p>
+          <p className="text-lg font-semibold text-zinc-100">{totalReviews}</p>
+        </div>
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg px-3 py-2.5">
+          <p className="text-xs text-zinc-600 mb-0.5">Avg rating</p>
+          <p className="text-lg font-semibold text-amber-400">{avgRating ? `★ ${avgRating}` : '—'}</p>
+        </div>
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg px-3 py-2.5">
+          <p className="text-xs text-zinc-600 mb-0.5">Response rate</p>
+          <p className="text-lg font-semibold text-zinc-100">{responseRate}%</p>
+        </div>
+        <div className={`border rounded-lg px-3 py-2.5 ${
+          lowRatingPending > 0
+            ? 'bg-red-950/30 border-red-900/60'
+            : 'bg-zinc-900/50 border-zinc-800'
+        }`}>
+          <p className="text-xs text-zinc-600 mb-0.5">Low ratings pending</p>
+          <p className={`text-lg font-semibold ${lowRatingPending > 0 ? 'text-red-400' : 'text-zinc-500'}`}>
+            {lowRatingPending}
+          </p>
+        </div>
+      </div>
+
       {/* Section tabs */}
       <div className="flex border-b border-zinc-800 mb-4">
         {tabs.map(t => (
@@ -281,7 +387,7 @@ export default function ReviewList({ reviews, restaurantName }: { reviews: Revie
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search reviews…"
+            placeholder="Search by author or review text…"
             className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-9 pr-4 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
           />
         </div>
@@ -308,7 +414,9 @@ export default function ReviewList({ reviews, restaurantName }: { reviews: Revie
       {filtered.length === 0 ? (
         <div className="border border-zinc-800 rounded-lg px-4 py-10 text-center">
           <p className="text-zinc-500 text-sm">
-            {tab === 'completed' ? 'No completed reviews yet.' : 'No reviews match your filters.'}
+            {tab === 'completed'
+              ? 'No completed reviews yet. Mark a review as replied to move it here.'
+              : 'No reviews match your filters.'}
           </p>
         </div>
       ) : (
