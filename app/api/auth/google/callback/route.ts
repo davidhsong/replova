@@ -125,18 +125,19 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * Lists all accounts and locations via Google My Business API v4,
- * finds the location whose placeId matches the restaurant's Google Place ID.
- * Returns the location resource name (e.g. "accounts/123/locations/456") or null.
+ * Uses the Google Business Profile APIs (v1) to find the location
+ * whose placeId matches the restaurant's Google Place ID.
+ * Account Management API: mybusinessaccountmanagement.googleapis.com/v1
+ * Business Information API: mybusinessbusinessinformation.googleapis.com/v1
  */
 async function findLocationByPlaceId(
   accessToken: string,
   placeId: string
 ): Promise<string | null> {
   try {
-    // Step 1: list all accounts
+    // Step 1: list all accounts via Account Management API v1
     const accountsRes = await fetch(
-      'https://mybusiness.googleapis.com/v4/accounts',
+      'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
       { headers: { Authorization: `Bearer ${accessToken}` } }
     )
     if (!accountsRes.ok) {
@@ -149,28 +150,30 @@ async function findLocationByPlaceId(
     }
     if (!accounts?.length) return null
 
-    // Step 2: for each account, list locations and match by placeId
+    // Step 2: for each account, list locations via Business Information API v1
     for (const account of accounts) {
-      const accountId = account.name.split('/')[1]
       let pageToken: string | undefined
 
       do {
-        const params = new URLSearchParams({ pageSize: '100' })
+        const params = new URLSearchParams({
+          readMask: 'name,metadata',
+          pageSize: '100',
+        })
         if (pageToken) params.set('pageToken', pageToken)
 
         const locRes = await fetch(
-          `https://mybusiness.googleapis.com/v4/${account.name}/locations?${params.toString()}`,
+          `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?${params.toString()}`,
           { headers: { Authorization: `Bearer ${accessToken}` } }
         )
         if (!locRes.ok) break
 
         const locData = (await locRes.json()) as {
-          locations?: { name: string; locationKey?: { placeId?: string } }[]
+          locations?: { name: string; metadata?: { placeId?: string } }[]
           nextPageToken?: string
         }
 
         const match = locData.locations?.find(
-          loc => loc.locationKey?.placeId === placeId
+          loc => loc.metadata?.placeId === placeId
         )
         if (match) return match.name
 

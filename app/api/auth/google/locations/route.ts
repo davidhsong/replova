@@ -12,7 +12,7 @@ export async function GET() {
 
   const { data: restaurant } = await getSupabaseAdmin()
     .from('restaurants')
-    .select('id, place_id, google_access_token, google_refresh_token, google_token_expires_at, google_location_name')
+    .select('id, place_id, google_access_token, google_location_name')
     .eq('owner_email', user.email)
     .single()
 
@@ -21,10 +21,11 @@ export async function GET() {
 
   const accessToken = restaurant.google_access_token
 
-  // Step 1: list accounts
-  const accountsRes = await fetch('https://mybusiness.googleapis.com/v4/accounts', {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  })
+  // Step 1: list accounts via Account Management API v1
+  const accountsRes = await fetch(
+    'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
+    { headers: { Authorization: `Bearer ${accessToken}` } }
+  )
 
   const accountsRaw = await accountsRes.text()
 
@@ -38,23 +39,23 @@ export async function GET() {
   }
 
   const accountsData = JSON.parse(accountsRaw)
-  const accounts = accountsData.accounts ?? []
+  const accounts: { name: string }[] = accountsData.accounts ?? []
 
   if (accounts.length === 0) {
     return NextResponse.json({
       step: 'accounts',
-      message: 'No accounts returned — API may not be enabled or this Google account has no Business Profile',
+      message: 'No accounts returned — this Google account may have no Business Profile',
       raw: accountsData,
       place_id_we_have: restaurant.place_id,
     })
   }
 
-  // Step 2: list locations for each account
+  // Step 2: list locations for each account via Business Information API v1
   const results: object[] = []
 
   for (const account of accounts) {
     const locRes = await fetch(
-      `https://mybusiness.googleapis.com/v4/${account.name}/locations?pageSize=100`,
+      `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,metadata&pageSize=100`,
       { headers: { Authorization: `Bearer ${accessToken}` } }
     )
     const locRaw = await locRes.text()
@@ -64,17 +65,18 @@ export async function GET() {
       continue
     }
 
-    const locData = JSON.parse(locRaw)
+    const locData = JSON.parse(locRaw) as {
+      locations?: { name: string; metadata?: { placeId?: string } }[]
+    }
+
     results.push({
       account: account.name,
       locations: locData.locations ?? [],
-      raw: locData,
     })
 
-    // Try to auto-match and save
+    // Try to auto-match by placeId and save if found
     const match = (locData.locations ?? []).find(
-      (loc: { locationKey?: { placeId?: string } }) =>
-        loc.locationKey?.placeId === restaurant.place_id
+      loc => loc.metadata?.placeId === restaurant.place_id
     )
 
     if (match) {
@@ -85,16 +87,16 @@ export async function GET() {
 
       return NextResponse.json({
         success: true,
-        matched: match.name,
+        message: 'Location matched and saved!',
+        matched_location: match.name,
         place_id_we_have: restaurant.place_id,
-        all_results: results,
       })
     }
   }
 
   return NextResponse.json({
-    step: 'locations',
-    message: 'No location matched your place_id — see all_results to find the right one manually',
+    success: false,
+    message: 'No location matched your place_id. See all_results for the locations Google returned.',
     place_id_we_have: restaurant.place_id,
     all_results: results,
   })
