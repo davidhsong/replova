@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import CopyButton from './CopyButton'
+import PostReplyButton from './PostReplyButton'
 
 type Review = {
   id: string
@@ -13,6 +14,8 @@ type Review = {
   reply_draft_2: string | null
   reply_draft_3: string | null
   status: string | null
+  google_review_name: string | null
+  replied_at: string | null
   created_at: string
 }
 
@@ -33,19 +36,34 @@ function Stars({ rating }: { rating: number }) {
 }
 
 function StatusBadge({ status }: { status: string | null }) {
-  const emailed = status === 'emailed'
+  if (status === 'replied') {
+    return (
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-950 text-indigo-400 border border-indigo-900">
+        Replied
+      </span>
+    )
+  }
+  if (status === 'emailed') {
+    return (
+      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-emerald-950 text-emerald-400 border border-emerald-900">
+        Emailed
+      </span>
+    )
+  }
   return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
-      emailed
-        ? 'bg-emerald-950 text-emerald-400 border border-emerald-900'
-        : 'bg-zinc-800 text-zinc-400 border border-zinc-700'
-    }`}>
-      {emailed ? 'Emailed' : 'Drafted'}
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
+      Drafted
     </span>
   )
 }
 
-function ReviewRow({ review }: { review: Review }) {
+function ReviewRow({
+  review,
+  googleConnected,
+}: {
+  review: Review
+  googleConnected: boolean
+}) {
   const [open, setOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'reply_draft_1' | 'reply_draft_2' | 'reply_draft_3'>('reply_draft_1')
 
@@ -57,6 +75,7 @@ function ReviewRow({ review }: { review: Review }) {
 
   const activeText = review[activeTab]
   const date = new Date(review.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  const alreadyReplied = review.status === 'replied'
 
   return (
     <div className={`border rounded-lg transition-colors ${
@@ -127,11 +146,15 @@ function ReviewRow({ review }: { review: Review }) {
           {/* Active reply */}
           {activeText && (
             <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-sm text-zinc-300 leading-relaxed flex-1">{activeText}</p>
-                <div className="shrink-0 mt-0.5">
-                  <CopyButton text={activeText} />
-                </div>
+              <p className="text-sm text-zinc-300 leading-relaxed mb-3">{activeText}</p>
+              <div className="flex items-center gap-2 justify-end">
+                <CopyButton text={activeText} />
+                <PostReplyButton
+                  reviewId={review.id}
+                  replyText={activeText}
+                  googleConnected={googleConnected}
+                  alreadyReplied={alreadyReplied}
+                />
               </div>
             </div>
           )}
@@ -141,9 +164,15 @@ function ReviewRow({ review }: { review: Review }) {
   )
 }
 
-type FilterValue = 'all' | 'drafted' | 'emailed' | '5' | '4' | '3' | '1-2'
+type FilterValue = 'all' | 'drafted' | 'emailed' | 'replied' | '5' | '4' | '3' | '1-2'
 
-export default function ReviewList({ reviews }: { reviews: Review[] }) {
+export default function ReviewList({
+  reviews,
+  googleConnected,
+}: {
+  reviews: Review[]
+  googleConnected: boolean
+}) {
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterValue>('all')
 
@@ -158,8 +187,9 @@ export default function ReviewList({ reviews }: { reviews: Review[] }) {
       }
 
       // Filter
-      if (filter === 'drafted') return r.status !== 'emailed'
+      if (filter === 'drafted') return r.status !== 'emailed' && r.status !== 'replied'
       if (filter === 'emailed') return r.status === 'emailed'
+      if (filter === 'replied') return r.status === 'replied'
       if (filter === '5') return r.rating === 5
       if (filter === '4') return r.rating === 4
       if (filter === '3') return r.rating === 3
@@ -173,6 +203,7 @@ export default function ReviewList({ reviews }: { reviews: Review[] }) {
     { value: 'all', label: 'All' },
     { value: 'drafted', label: 'Drafted' },
     { value: 'emailed', label: 'Emailed' },
+    { value: 'replied', label: 'Replied' },
     { value: '5', label: '★★★★★' },
     { value: '4', label: '★★★★' },
     { value: '3', label: '★★★' },
@@ -181,6 +212,21 @@ export default function ReviewList({ reviews }: { reviews: Review[] }) {
 
   return (
     <div>
+      {/* Google not connected banner */}
+      {!googleConnected && (
+        <div className="mb-4 flex items-center justify-between gap-3 bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-3">
+          <p className="text-sm text-zinc-400">
+            Connect Google Business to post replies directly — no copy-paste needed.
+          </p>
+          <a
+            href="/api/auth/google"
+            className="shrink-0 px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-100 text-zinc-900 hover:bg-white transition-colors"
+          >
+            Connect
+          </a>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-2 mb-4">
         {/* Search */}
@@ -232,7 +278,11 @@ export default function ReviewList({ reviews }: { reviews: Review[] }) {
       ) : (
         <div className="space-y-1.5">
           {filtered.map(review => (
-            <ReviewRow key={review.id} review={review} />
+            <ReviewRow
+              key={review.id}
+              review={review}
+              googleConnected={googleConnected}
+            />
           ))}
         </div>
       )}

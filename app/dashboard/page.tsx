@@ -11,6 +11,8 @@ type Restaurant = {
   owner_email: string
   place_id: string
   stripe_customer_id: string | null
+  google_refresh_token: string | null
+  google_location_name: string | null
   created_at: string
 }
 
@@ -24,6 +26,8 @@ type Review = {
   reply_draft_2: string | null
   reply_draft_3: string | null
   status: string | null
+  google_review_name: string | null
+  replied_at: string | null
   created_at: string
 }
 
@@ -115,7 +119,10 @@ export default async function DashboardPage({
           </p>
         </div>
       ) : (
-        <ReviewList reviews={reviews} />
+        <ReviewList
+          reviews={reviews}
+          googleConnected={!!(restaurant.google_refresh_token && restaurant.google_location_name)}
+        />
       )}
     </div>
   )

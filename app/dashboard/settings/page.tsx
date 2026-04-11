@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabaseBrowser } from '@/lib/supabase'
 
+type GoogleStatus = 'loading' | 'not_connected' | 'token_only' | 'connected'
+
 export default function SettingsPage() {
   const router = useRouter()
   const [displayName, setDisplayName] = useState('')
@@ -16,6 +18,9 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const [googleStatus, setGoogleStatus] = useState<GoogleStatus>('loading')
+  const [googleNotice, setGoogleNotice] = useState<string | null>(null)
+
   useEffect(() => {
     supabaseBrowser.auth.getUser().then(({ data: { user } }) => {
       if (user) {
@@ -25,6 +30,48 @@ export default function SettingsPage() {
         setAvatarUrl((user.user_metadata?.avatar_url as string | undefined) ?? null)
       }
     })
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/restaurant')
+      .then(r => r.json())
+      .then(data => {
+        if (data.googleConnected) setGoogleStatus('connected')
+        else if (data.googleTokenOnly) setGoogleStatus('token_only')
+        else setGoogleStatus('not_connected')
+      })
+      .catch(() => setGoogleStatus('not_connected'))
+  }, [])
+
+  // Handle redirect-back notices from OAuth flow
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const success = params.get('google_success')
+    const warning = params.get('google_warning')
+    const oauthError = params.get('google_error')
+
+    if (success) {
+      if (warning === 'location_not_found') {
+        setGoogleNotice(
+          'Google account connected, but your restaurant location could not be matched automatically. ' +
+          'Make sure you signed in with the Google account that manages this business on Google Maps.'
+        )
+        setGoogleStatus('token_only')
+      } else {
+        setGoogleNotice('Google Business connected successfully!')
+        setGoogleStatus('connected')
+      }
+    } else if (oauthError) {
+      const messages: Record<string, string> = {
+        access_denied: 'You cancelled the Google connection.',
+        token_exchange_failed: 'Failed to connect Google. Please try again.',
+        missing_tokens: 'Google did not return the required permissions. Make sure to grant all requested access.',
+        state_mismatch: 'Connection failed due to a security check. Please try again.',
+        restaurant_not_found: 'Could not find your restaurant. Please try again.',
+        invalid_callback: 'Invalid callback. Please try again.',
+      }
+      setGoogleNotice(messages[oauthError] ?? 'Google connection failed. Please try again.')
+    }
   }, [])
 
   async function handleSave(e: React.FormEvent) {
@@ -148,6 +195,67 @@ export default function SettingsPage() {
               onChange={handleAvatarChange}
             />
           </div>
+        </div>
+
+        {/* Google Business connection */}
+        <div className="border border-zinc-800 rounded-xl p-5 bg-zinc-900/40">
+          <h2 className="text-sm font-medium text-zinc-300 mb-1">Google Business</h2>
+          <p className="text-xs text-zinc-500 mb-4">
+            Connect your Google Business account to post review replies directly — no copy-paste.
+          </p>
+
+          {googleNotice && (
+            <div className={`mb-4 text-sm rounded-lg px-4 py-3 border ${
+              googleStatus === 'connected'
+                ? 'bg-emerald-950/60 border-emerald-900 text-emerald-300'
+                : 'bg-amber-950/60 border-amber-900 text-amber-300'
+            }`}>
+              {googleNotice}
+            </div>
+          )}
+
+          {googleStatus === 'loading' && (
+            <p className="text-sm text-zinc-600">Checking connection…</p>
+          )}
+
+          {googleStatus === 'connected' && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+                <span className="text-sm text-zinc-300">Connected</span>
+              </div>
+              <a
+                href="/api/auth/google"
+                className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+              >
+                Reconnect
+              </a>
+            </div>
+          )}
+
+          {googleStatus === 'token_only' && (
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                <span className="text-sm text-zinc-300">Location not linked</span>
+              </div>
+              <a
+                href="/api/auth/google"
+                className="text-xs font-medium text-zinc-300 hover:text-zinc-100 transition-colors"
+              >
+                Reconnect
+              </a>
+            </div>
+          )}
+
+          {googleStatus === 'not_connected' && (
+            <a
+              href="/api/auth/google"
+              className="inline-block bg-zinc-100 text-zinc-900 text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-white transition-colors"
+            >
+              Connect Google Business
+            </a>
+          )}
         </div>
 
         {/* Personal info */}
