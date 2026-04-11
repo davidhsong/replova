@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabaseBrowser } from '@/lib/supabase'
 
 type GoogleStatus = 'loading' | 'not_connected' | 'token_only' | 'connected'
+type GmbLocation = { name: string; title: string; placeId: string | null }
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -20,6 +21,9 @@ export default function SettingsPage() {
 
   const [googleStatus, setGoogleStatus] = useState<GoogleStatus>('loading')
   const [googleNotice, setGoogleNotice] = useState<string | null>(null)
+  const [locations, setLocations] = useState<GmbLocation[] | null>(null)
+  const [locationsLoading, setLocationsLoading] = useState(false)
+  const [savingLocation, setSavingLocation] = useState(false)
 
   useEffect(() => {
     supabaseBrowser.auth.getUser().then(({ data: { user } }) => {
@@ -37,11 +41,50 @@ export default function SettingsPage() {
       .then(r => r.json())
       .then(data => {
         if (data.googleConnected) setGoogleStatus('connected')
-        else if (data.googleTokenOnly) setGoogleStatus('token_only')
+        else if (data.googleTokenOnly) {
+          setGoogleStatus('token_only')
+          loadLocations()
+        }
         else setGoogleStatus('not_connected')
       })
       .catch(() => setGoogleStatus('not_connected'))
   }, [])
+
+  async function loadLocations() {
+    setLocationsLoading(true)
+    try {
+      const res = await fetch('/api/auth/google/locations')
+      const data = await res.json()
+      setLocations(data.locations ?? [])
+    } catch {
+      setLocations([])
+    } finally {
+      setLocationsLoading(false)
+    }
+  }
+
+  async function handleSelectLocation(locationName: string) {
+    setSavingLocation(true)
+    try {
+      const res = await fetch('/api/auth/google/set-location', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ locationName }),
+      })
+      if (res.ok) {
+        setGoogleStatus('connected')
+        setGoogleNotice('Google Business location linked successfully!')
+        setLocations(null)
+      } else {
+        const data = await res.json()
+        setGoogleNotice(data.error ?? 'Failed to save location.')
+      }
+    } catch {
+      setGoogleNotice('Something went wrong. Please try again.')
+    } finally {
+      setSavingLocation(false)
+    }
+  }
 
   // Handle redirect-back notices from OAuth flow
   useEffect(() => {
@@ -52,11 +95,10 @@ export default function SettingsPage() {
 
     if (success) {
       if (warning === 'location_not_found') {
-        setGoogleNotice(
-          'Google account connected, but your restaurant location could not be matched automatically. ' +
-          'Make sure you signed in with the Google account that manages this business on Google Maps.'
-        )
+        // Don't show a scary warning — just silently enter token_only state
+        // so the location picker loads below
         setGoogleStatus('token_only')
+        loadLocations()
       } else {
         setGoogleNotice('Google Business connected successfully!')
         setGoogleStatus('connected')
@@ -234,17 +276,53 @@ export default function SettingsPage() {
           )}
 
           {googleStatus === 'token_only' && (
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
-                <span className="text-sm text-zinc-300">Location not linked</span>
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 shrink-0" />
+                  <span className="text-sm text-zinc-300">Select your restaurant location</span>
+                </div>
+                <a
+                  href="/api/auth/google"
+                  className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+                >
+                  Reconnect
+                </a>
               </div>
-              <a
-                href="/api/auth/google"
-                className="text-xs font-medium text-zinc-300 hover:text-zinc-100 transition-colors"
-              >
-                Reconnect
-              </a>
+              <p className="text-xs text-zinc-500 mb-3">
+                We couldn&apos;t automatically identify your restaurant from the connected Google account.
+                Pick it from the list below to finish linking.
+              </p>
+
+              {locationsLoading && (
+                <p className="text-sm text-zinc-600">Loading your locations…</p>
+              )}
+
+              {!locationsLoading && locations !== null && locations.length === 0 && (
+                <div className="text-sm text-zinc-500 bg-zinc-900 border border-zinc-800 rounded-lg px-4 py-3">
+                  No Google Business locations found on this account.
+                  Make sure you signed in with the Google account that manages this restaurant on Google Maps, then{' '}
+                  <a href="/api/auth/google" className="text-zinc-300 underline underline-offset-2">reconnect</a>.
+                </div>
+              )}
+
+              {!locationsLoading && locations && locations.length > 0 && (
+                <div className="space-y-1.5">
+                  {locations.map(loc => (
+                    <button
+                      key={loc.name}
+                      onClick={() => handleSelectLocation(loc.name)}
+                      disabled={savingLocation}
+                      className="w-full text-left px-4 py-3 rounded-lg border border-zinc-800 bg-zinc-900 hover:border-zinc-600 hover:bg-zinc-800 transition-colors disabled:opacity-50"
+                    >
+                      <p className="text-sm font-medium text-zinc-100">{loc.title}</p>
+                      {loc.placeId && (
+                        <p className="text-xs text-zinc-600 mt-0.5">Place ID: {loc.placeId}</p>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

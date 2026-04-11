@@ -3,6 +3,12 @@ import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 
+export type GmbLocation = {
+  name: string    // "accounts/xxx/locations/yyy"
+  title: string   // business display name
+  placeId: string | null
+}
+
 export async function GET() {
   const cookieStore = await cookies()
   const supabase = createClient(cookieStore)
@@ -12,7 +18,7 @@ export async function GET() {
 
   const { data: restaurant } = await getSupabaseAdmin()
     .from('restaurants')
-    .select('id, place_id, google_access_token, google_location_name')
+    .select('id, google_access_token')
     .eq('owner_email', user.email)
     .single()
 
@@ -21,83 +27,59 @@ export async function GET() {
 
   const accessToken = restaurant.google_access_token
 
-  // Step 1: list accounts via Account Management API v1
   const accountsRes = await fetch(
     'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
     { headers: { Authorization: `Bearer ${accessToken}` } }
   )
 
-  const accountsRaw = await accountsRes.text()
-
   if (!accountsRes.ok) {
+    const text = await accountsRes.text()
+    return NextResponse.json({ error: `Failed to list accounts: ${text}` }, { status: 502 })
+  }
+
+  const { accounts } = (await accountsRes.json()) as { accounts?: { name: string }[] }
+
+  if (!accounts?.length) {
     return NextResponse.json({
-      step: 'accounts',
-      status: accountsRes.status,
-      error: accountsRaw,
-      place_id_we_have: restaurant.place_id,
+      locations: [],
+      message: 'This Google account has no Business Profile.',
     })
   }
 
-  const accountsData = JSON.parse(accountsRaw)
-  const accounts: { name: string }[] = accountsData.accounts ?? []
-
-  if (accounts.length === 0) {
-    return NextResponse.json({
-      step: 'accounts',
-      message: 'No accounts returned — this Google account may have no Business Profile',
-      raw: accountsData,
-      place_id_we_have: restaurant.place_id,
-    })
-  }
-
-  // Step 2: list locations for each account via Business Information API v1
-  const results: object[] = []
+  const locations: GmbLocation[] = []
 
   for (const account of accounts) {
-    const locRes = await fetch(
-      `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?readMask=name,metadata&pageSize=100`,
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    )
-    const locRaw = await locRes.text()
+    let pageToken: string | undefined
 
-    if (!locRes.ok) {
-      results.push({ account: account.name, status: locRes.status, error: locRaw })
-      continue
-    }
-
-    const locData = JSON.parse(locRaw) as {
-      locations?: { name: string; metadata?: { placeId?: string } }[]
-    }
-
-    results.push({
-      account: account.name,
-      locations: locData.locations ?? [],
-    })
-
-    // Try to auto-match by placeId and save if found
-    const match = (locData.locations ?? []).find(
-      loc => loc.metadata?.placeId === restaurant.place_id
-    )
-
-    if (match) {
-      await getSupabaseAdmin()
-        .from('restaurants')
-        .update({ google_location_name: match.name })
-        .eq('id', restaurant.id)
-
-      return NextResponse.json({
-        success: true,
-        message: 'Location matched and saved!',
-        matched_location: match.name,
-        place_id_we_have: restaurant.place_id,
+    do {
+      const params = new URLSearchParams({
+        readMask: 'name,title,metadata',
+        pageSize: '100',
       })
-    }
+      if (pageToken) params.set('pageToken', pageToken)
+
+      const locRes = await fetch(
+        `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?${params.toString()}`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      )
+      if (!locRes.ok) break
+
+      const locData = (await locRes.json()) as {
+        locations?: { name: string; title?: string; metadata?: { placeId?: string } }[]
+        nextPageToken?: string
+      }
+
+      for (const loc of locData.locations ?? []) {
+        locations.push({
+          name: loc.name,
+          title: loc.title ?? loc.name,
+          placeId: loc.metadata?.placeId ?? null,
+        })
+      }
+
+      pageToken = locData.nextPageToken
+    } while (pageToken)
   }
 
-  return NextResponse.json({
-    success: false,
-    message: 'No location matched your place_id. See all_results for the locations Google returned.',
-    place_id_we_have: restaurant.place_id,
-    all_results: results,
-  })
+  return NextResponse.json({ locations })
 }

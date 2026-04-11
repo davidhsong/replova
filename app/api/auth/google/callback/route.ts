@@ -127,15 +127,13 @@ export async function GET(req: NextRequest) {
 /**
  * Uses the Google Business Profile APIs (v1) to find the location
  * whose placeId matches the restaurant's Google Place ID.
- * Account Management API: mybusinessaccountmanagement.googleapis.com/v1
- * Business Information API: mybusinessbusinessinformation.googleapis.com/v1
+ * Falls back to the single location if only one exists across all accounts.
  */
 async function findLocationByPlaceId(
   accessToken: string,
   placeId: string
 ): Promise<string | null> {
   try {
-    // Step 1: list all accounts via Account Management API v1
     const accountsRes = await fetch(
       'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
       { headers: { Authorization: `Bearer ${accessToken}` } }
@@ -150,13 +148,14 @@ async function findLocationByPlaceId(
     }
     if (!accounts?.length) return null
 
-    // Step 2: for each account, list locations via Business Information API v1
+    const allLocations: { name: string; metadata?: { placeId?: string } }[] = []
+
     for (const account of accounts) {
       let pageToken: string | undefined
 
       do {
         const params = new URLSearchParams({
-          readMask: 'name,metadata',
+          readMask: 'name,title,metadata',
           pageSize: '100',
         })
         if (pageToken) params.set('pageToken', pageToken)
@@ -172,14 +171,17 @@ async function findLocationByPlaceId(
           nextPageToken?: string
         }
 
-        const match = locData.locations?.find(
-          loc => loc.metadata?.placeId === placeId
-        )
-        if (match) return match.name
-
+        allLocations.push(...(locData.locations ?? []))
         pageToken = locData.nextPageToken
       } while (pageToken)
     }
+
+    // First: exact placeId match
+    const exact = allLocations.find(loc => loc.metadata?.placeId === placeId)
+    if (exact) return exact.name
+
+    // Fallback: if the account has exactly one location, use it automatically
+    if (allLocations.length === 1) return allLocations[0].name
 
     return null
   } catch (err) {
