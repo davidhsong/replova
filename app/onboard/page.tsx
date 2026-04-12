@@ -102,11 +102,23 @@ export default function OnboardPage() {
       const res = await fetch('/api/restaurants/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: result.name, email, placeId: result.placeId }),
+        body: JSON.stringify({
+          name: result.name,
+          email,
+          placeId: result.placeId,
+          redirectTo: `${window.location.origin}/dashboard?success=1`,
+        }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Failed to create restaurant.')
+      if (!res.ok) throw new Error(data.error ?? 'Failed to create account.')
 
+      if (data.magicLink) {
+        // Sign the user in directly — no email needed
+        window.location.href = data.magicLink
+        return
+      }
+
+      // Fallback: magic link generation failed, send OTP email the normal way
       const { error: otpError } = await supabaseBrowser.auth.signInWithOtp({
         email,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
