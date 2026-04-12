@@ -26,44 +26,57 @@ function stars(rating: number): string {
 }
 
 function buildHtml(restaurantName: string, reviews: ReviewRow[], dashboardUrl: string): string {
+  const urgentCount = reviews.filter(r => r.rating != null && r.rating <= 2).length
+
   const reviewBlocks = reviews
     .map(
-      (r, i) => `
+      (r, i) => {
+        const isUrgent = r.rating != null && r.rating <= 2
+        return `
       ${i > 0 ? '<hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">' : ''}
       <div>
-        <p style="margin:0 0 4px 0;font-weight:600;font-size:16px;color:#111827;">
-          ${r.author ?? 'Anonymous'}
-        </p>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+          <p style="margin:0;font-weight:600;font-size:16px;color:#111827;">
+            ${r.author ?? 'Anonymous'}
+          </p>
+          ${isUrgent ? '<span style="display:inline-block;padding:2px 8px;background:#fee2e2;color:#dc2626;border-radius:4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Urgent</span>' : ''}
+        </div>
         <p style="margin:0 0 12px 0;font-size:20px;color:#f59e0b;letter-spacing:2px;">
           ${stars(r.rating ?? 0)}
         </p>
+        ${isUrgent ? '<p style="margin:0 0 12px 0;font-size:13px;color:#dc2626;font-weight:600;">⚠️ This low-rating review needs a prompt, thoughtful response to protect your reputation.</p>' : ''}
         <p style="margin:0 0 20px 0;font-size:15px;color:#374151;line-height:1.6;font-style:italic;">
           "${r.review_text ?? ''}"
         </p>
 
         <div style="margin-bottom:12px;padding:16px;background:#f9fafb;border-left:4px solid #6366f1;border-radius:4px;">
           <p style="margin:0 0 6px 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6366f1;">
-            Reply Option 1 — Professional
+            Suggested Reply — Professional
           </p>
           <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.6;">${r.reply_draft_1 ?? ''}</p>
         </div>
 
         <div style="margin-bottom:12px;padding:16px;background:#f9fafb;border-left:4px solid #10b981;border-radius:4px;">
           <p style="margin:0 0 6px 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#10b981;">
-            Reply Option 2 — Warm
+            Suggested Reply — Warm
           </p>
           <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.6;">${r.reply_draft_2 ?? ''}</p>
         </div>
 
         <div style="margin-bottom:0;padding:16px;background:#f9fafb;border-left:4px solid #f59e0b;border-radius:4px;">
           <p style="margin:0 0 6px 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#f59e0b;">
-            Reply Option 3 — Brief
+            Suggested Reply — Brief
           </p>
           <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.6;">${r.reply_draft_3 ?? ''}</p>
         </div>
       </div>`
+      }
     )
     .join('')
+
+  const headerMessage = urgentCount > 0
+    ? `<strong>${urgentCount} urgent review${urgentCount > 1 ? 's' : ''}</strong> need${urgentCount === 1 ? 's' : ''} immediate attention — low ratings left unanswered hurt your reputation.`
+    : `You have <strong>${reviews.length} customer review${reviews.length > 1 ? 's' : ''}</strong> waiting for a reply. Copy a suggested reply and paste it into Google to stay on top of your reputation.`
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -75,16 +88,17 @@ function buildHtml(restaurantName: string, reviews: ReviewRow[], dashboardUrl: s
         <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
           <tr>
             <td style="padding:0 0 24px 0;">
-              <h1 style="margin:0 0 4px 0;font-size:24px;font-weight:700;color:#111827;">
+              <p style="margin:0 0 6px 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6366f1;">Replova</p>
+              <h1 style="margin:0 0 8px 0;font-size:24px;font-weight:700;color:#111827;">
                 ${restaurantName}
               </h1>
-              <p style="margin:0;font-size:14px;color:#6b7280;">
-                Copy your preferred reply and paste it into Google Maps.
+              <p style="margin:0;font-size:15px;color:#374151;line-height:1.6;">
+                ${headerMessage}
               </p>
             </td>
           </tr>
           <tr>
-            <td>
+            <td style="padding:24px 0 0 0;border-top:1px solid #e5e7eb;">
               ${reviewBlocks}
             </td>
           </tr>
@@ -92,11 +106,11 @@ function buildHtml(restaurantName: string, reviews: ReviewRow[], dashboardUrl: s
             <td style="padding:40px 0 0 0;border-top:1px solid #e5e7eb;margin-top:32px;">
               <p style="margin:0 0 8px 0;font-size:14px;text-align:center;">
                 <a href="${dashboardUrl}" style="color:#4f46e5;text-decoration:none;font-weight:600;">
-                  View all reviews in your dashboard →
+                  Open your Review Action Center →
                 </a>
               </p>
               <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">
-                Sent by Replova · AI-powered review replies for restaurants
+                Sent by Replova · Reputation management for businesses
               </p>
             </td>
           </tr>
@@ -127,9 +141,9 @@ export async function sendWeeklyDigest(restaurant: Restaurant): Promise<void> {
   const html = buildHtml(restaurant.name, reviews, `${baseUrl}/dashboard`)
 
   const { error: sendError } = await resend.emails.send({
-    from: 'Replova <onboarding@resend.dev>',
+    from: process.env.RESEND_FROM_EMAIL ?? 'Replova <onboarding@resend.dev>',
     to: restaurant.owner_email,
-    subject: `Your weekly review replies — ${restaurant.name}`,
+    subject: `You have ${reviews.length} customer review${reviews.length > 1 ? 's' : ''} that need${reviews.length === 1 ? 's' : ''} attention — ${restaurant.name}`,
     html,
   })
 

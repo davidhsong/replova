@@ -29,6 +29,8 @@ const REPLY_LABELS = [
 type SectionTab = 'needs-reply' | 'completed' | 'all'
 type RatingFilter = 'all' | '5' | '4' | '3' | '1-2'
 
+const OVERDUE_DAYS = 3
+
 function formatReviewDate(timestamp: number | null): string {
   if (!timestamp) return '—'
   return new Date(timestamp * 1000).toLocaleDateString('en-US', {
@@ -38,9 +40,15 @@ function formatReviewDate(timestamp: number | null): string {
   })
 }
 
-function Stars({ rating }: { rating: number }) {
+function isOverdue(createdAt: string): boolean {
+  const created = new Date(createdAt).getTime()
+  const now = Date.now()
+  return now - created > OVERDUE_DAYS * 24 * 60 * 60 * 1000
+}
+
+function Stars({ rating, size = 'sm' }: { rating: number; size?: 'sm' | 'xs' }) {
   return (
-    <span className="text-amber-400 text-xs tracking-tight">
+    <span className={`text-amber-400 tracking-tight ${size === 'xs' ? 'text-xs' : 'text-xs'}`}>
       {Array.from({ length: 5 }, (_, i) => (
         <span key={i}>{i < rating ? '★' : '☆'}</span>
       ))}
@@ -53,19 +61,21 @@ function ReviewRow({
   restaurantName,
   effectiveStatus,
   onToggle,
+  index,
 }: {
   review: Review
   restaurantName: string
   effectiveStatus: string | null
   onToggle: () => void
+  index: number
 }) {
   const [open, setOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'reply_draft_1' | 'reply_draft_2' | 'reply_draft_3'>('reply_draft_1')
   const [toggling, setToggling] = useState(false)
 
   const preview = review.review_text
-    ? review.review_text.length > 90
-      ? review.review_text.slice(0, 90) + '…'
+    ? review.review_text.length > 80
+      ? review.review_text.slice(0, 80) + '…'
       : review.review_text
     : null
 
@@ -73,6 +83,7 @@ function ReviewRow({
   const reviewDate = formatReviewDate(review.review_timestamp)
   const isReplied = effectiveStatus === 'replied'
   const isLowRating = review.rating != null && review.rating <= 2
+  const isOverdueReview = !isReplied && isOverdue(review.created_at)
 
   async function handleToggle(e: React.MouseEvent) {
     e.stopPropagation()
@@ -87,48 +98,66 @@ function ReviewRow({
   }
 
   return (
-    <div className={`border rounded-lg transition-colors ${
-      open ? 'border-zinc-700 bg-zinc-900/60' : 'border-zinc-800 bg-zinc-900/20 hover:border-zinc-700'
-    } ${isReplied ? 'opacity-55' : ''}`}>
+    <div
+      className={`rounded-xl border transition-all fade-up ${
+        open
+          ? 'border-zinc-700 bg-zinc-900/80'
+          : 'border-zinc-800/80 bg-zinc-900/30 hover:border-zinc-700/80 hover:bg-zinc-900/50'
+      } ${isReplied ? 'opacity-50' : ''}`}
+      style={{ animationDelay: `${index * 40}ms` }}
+    >
+      {/* Row header */}
       <div className="flex items-center gap-1">
         <button
           onClick={() => setOpen(o => !o)}
-          className="flex-1 text-left px-4 py-3 flex items-center gap-3 min-w-0"
+          className="flex-1 text-left px-4 py-3.5 flex items-center gap-3 min-w-0"
         >
-          {/* Rating */}
-          <div className="shrink-0 w-16 flex flex-col gap-0.5">
+          {/* Rating column */}
+          <div className="shrink-0 w-14">
             {review.rating != null ? (
-              <>
+              <div className="flex flex-col gap-0.5">
                 <Stars rating={review.rating} />
-                <span className="text-zinc-600 text-xs">{review.rating}/5</span>
-              </>
+                <span className="text-zinc-700 text-xs">{review.rating}/5</span>
+              </div>
             ) : (
-              <span className="text-zinc-600 text-xs">—</span>
+              <span className="text-zinc-700 text-xs">—</span>
             )}
           </div>
 
           {/* Author + preview */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-              <span className={`text-sm font-medium truncate ${isReplied ? 'text-zinc-500 line-through' : 'text-zinc-100'}`}>
+              <span className={`text-sm font-medium truncate ${
+                isReplied ? 'text-zinc-600 line-through decoration-zinc-700' : 'text-zinc-100'
+              }`}>
                 {review.author ?? 'Anonymous'}
               </span>
               {isLowRating && !isReplied && (
-                <span className="shrink-0 text-xs px-1.5 py-0.5 rounded bg-red-950 text-red-400 border border-red-900">
-                  Needs attention
+                <span className="shrink-0 text-xs px-1.5 py-0.5 rounded-md bg-red-950 text-red-400 border border-red-900/60 font-medium">
+                  Urgent
+                </span>
+              )}
+              {!isLowRating && isOverdueReview && (
+                <span className="shrink-0 text-xs px-1.5 py-0.5 rounded-md bg-amber-950/60 text-amber-400 border border-amber-900/40 font-medium">
+                  Overdue
+                </span>
+              )}
+              {isReplied && (
+                <span className="shrink-0 text-xs px-1.5 py-0.5 rounded-md bg-emerald-950/60 text-emerald-500 border border-emerald-900/40">
+                  Replied
                 </span>
               )}
             </div>
             {preview && (
-              <p className="text-xs text-zinc-500 truncate">{preview}</p>
+              <p className="text-xs text-zinc-600 truncate leading-relaxed">{preview}</p>
             )}
           </div>
 
           {/* Date + chevron */}
-          <div className="shrink-0 flex flex-col items-end gap-0.5 text-zinc-600">
-            <span className="text-xs">{reviewDate}</span>
+          <div className="shrink-0 flex flex-col items-end gap-1">
+            <span className="text-xs text-zinc-700">{reviewDate}</span>
             <svg
-              className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`}
+              className={`w-3.5 h-3.5 text-zinc-600 transition-transform ${open ? 'rotate-180' : ''}`}
               fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
             >
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -136,15 +165,15 @@ function ReviewRow({
           </div>
         </button>
 
-        {/* Mark as replied toggle */}
+        {/* Mark-replied toggle */}
         <button
           onClick={handleToggle}
           disabled={toggling}
           title={isReplied ? 'Mark as needs reply' : 'Mark as replied'}
-          className={`shrink-0 mr-3 w-7 h-7 flex items-center justify-center rounded-full border transition-colors ${
+          className={`shrink-0 mr-3 w-7 h-7 flex items-center justify-center rounded-full border transition-all btn-press ${
             isReplied
-              ? 'border-emerald-700 bg-emerald-950 text-emerald-400 hover:bg-emerald-900'
-              : 'border-zinc-700 bg-transparent text-zinc-600 hover:border-zinc-500 hover:text-zinc-400'
+              ? 'border-emerald-700/80 bg-emerald-950/60 text-emerald-400 hover:bg-emerald-900/60'
+              : 'border-zinc-700/80 bg-transparent text-zinc-700 hover:border-zinc-500 hover:text-zinc-400'
           } disabled:opacity-40`}
         >
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -155,53 +184,51 @@ function ReviewRow({
 
       {/* Expanded panel */}
       {open && (
-        <div className="px-4 pb-4 border-t border-zinc-800 pt-3">
+        <div className="px-4 pb-4 border-t border-zinc-800/60 pt-4">
           {/* Metadata row */}
-          <div className="flex flex-wrap gap-4 mb-4 text-xs text-zinc-500">
-            <span>
-              <span className="text-zinc-600">Posted</span>{' '}
-              <span className="text-zinc-400">{reviewDate}</span>
+          <div className="flex flex-wrap gap-4 mb-4 text-xs">
+            <span className="text-zinc-600">
+              Posted <span className="text-zinc-400">{reviewDate}</span>
             </span>
             {review.rating != null && (
-              <span>
-                <span className="text-zinc-600">Rating</span>{' '}
+              <span className="text-zinc-600">
+                Rating{' '}
                 <span className="text-amber-400">{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>{' '}
-                <span className="text-zinc-400">{review.rating} / 5</span>
+                <span className="text-zinc-500">{review.rating}/5</span>
               </span>
             )}
             {isReplied && (
-              <span className="text-emerald-500">
-                ✓ Already replied on Google
-              </span>
+              <span className="text-emerald-500 font-medium">Already replied on Google</span>
             )}
             {isLowRating && !isReplied && (
-              <span className="text-red-400">
-                ⚠ Low rating — prioritize this response
-              </span>
+              <span className="text-red-400 font-medium">Urgent — prioritize this response</span>
+            )}
+            {!isLowRating && isOverdueReview && (
+              <span className="text-amber-400 font-medium">Overdue — waiting {OVERDUE_DAYS}+ days for a reply</span>
             )}
           </div>
 
           {/* Full review text */}
           {review.review_text ? (
-            <p className="text-sm text-zinc-400 leading-relaxed mb-4 italic">
+            <p className="text-sm text-zinc-400 leading-relaxed mb-4 italic border-l-2 border-zinc-800 pl-3">
               &ldquo;{review.review_text}&rdquo;
             </p>
           ) : (
-            <p className="text-sm text-zinc-600 mb-4 italic">No review text — rating only.</p>
+            <p className="text-sm text-zinc-700 mb-4 italic">No review text — rating only.</p>
           )}
 
-          {/* Tab switcher + reply */}
+          {/* Reply drafts */}
           {(review.reply_draft_1 || review.reply_draft_2 || review.reply_draft_3) ? (
             <>
-              <div className="flex gap-1 mb-3">
+              <div className="flex gap-1 mb-3 p-1 bg-zinc-950/60 rounded-xl w-fit border border-zinc-800/60">
                 {REPLY_LABELS.map(({ label, field }) => (
                   <button
                     key={field}
                     onClick={() => setActiveTab(field)}
-                    className={`px-3 py-1 text-xs font-medium rounded transition-colors ${
+                    className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                       activeTab === field
-                        ? 'bg-zinc-700 text-zinc-100'
-                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800'
+                        ? 'bg-zinc-700 text-zinc-100 shadow-sm'
+                        : 'text-zinc-500 hover:text-zinc-300'
                     }`}
                   >
                     {label}
@@ -210,23 +237,23 @@ function ReviewRow({
               </div>
 
               {activeText && (
-                <div className="bg-zinc-950 border border-zinc-800 rounded-lg p-3">
-                  <p className="text-sm text-zinc-300 leading-relaxed mb-3">{activeText}</p>
-                  <div className="flex items-center gap-2 justify-between">
+                <div className="bg-zinc-950 border border-zinc-800/80 rounded-xl p-4">
+                  <p className="text-sm text-zinc-300 leading-relaxed mb-4">{activeText}</p>
+                  <div className="flex items-center gap-2 justify-between flex-wrap">
                     <button
                       onClick={handleToggle}
                       disabled={toggling}
-                      className={`px-3 py-1 text-xs font-medium rounded transition-colors border ${
+                      className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border btn-press ${
                         isReplied
-                          ? 'border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300'
-                          : 'border-emerald-800 text-emerald-400 hover:bg-emerald-950'
+                          ? 'border-zinc-700 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300'
+                          : 'border-emerald-800/60 text-emerald-500 hover:bg-emerald-950/40'
                       } disabled:opacity-40`}
                     >
-                      {isReplied ? 'Undo completed' : 'Mark as replied'}
+                      {isReplied ? 'Undo replied' : 'Mark as replied'}
                     </button>
                     <div className="flex items-center gap-2">
                       <CopyButton text={activeText} />
-                      <PostReplyButton replyText={activeText} restaurantName={restaurantName} />
+                      <PostReplyButton replyText={activeText} />
                     </div>
                   </div>
                 </div>
@@ -234,19 +261,19 @@ function ReviewRow({
             </>
           ) : (
             <div className="flex items-center justify-between">
-              <p className="text-xs text-zinc-600 italic">
+              <p className="text-xs text-zinc-700 italic">
                 {isReplied ? 'This review was already replied to on Google.' : 'Draft not yet generated.'}
               </p>
               <button
                 onClick={handleToggle}
                 disabled={toggling}
-                className={`px-3 py-1 text-xs font-medium rounded transition-colors border ${
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors border btn-press ${
                   isReplied
-                    ? 'border-zinc-700 text-zinc-400 hover:border-zinc-600 hover:text-zinc-300'
-                    : 'border-emerald-800 text-emerald-400 hover:bg-emerald-950'
+                    ? 'border-zinc-700 text-zinc-500 hover:border-zinc-600 hover:text-zinc-300'
+                    : 'border-emerald-800/60 text-emerald-500 hover:bg-emerald-950/40'
                 } disabled:opacity-40`}
               >
-                {isReplied ? 'Undo completed' : 'Mark as replied'}
+                {isReplied ? 'Undo replied' : 'Mark as replied'}
               </button>
             </div>
           )}
@@ -258,10 +285,10 @@ function ReviewRow({
 
 const RATING_FILTERS: { value: RatingFilter; label: string }[] = [
   { value: 'all', label: 'All' },
-  { value: '5', label: '★★★★★' },
-  { value: '4', label: '★★★★' },
-  { value: '3', label: '★★★' },
-  { value: '1-2', label: '★–★★' },
+  { value: '5', label: '5★' },
+  { value: '4', label: '4★' },
+  { value: '3', label: '3★' },
+  { value: '1-2', label: '1–2★' },
 ]
 
 export default function ReviewList({ reviews, restaurantName }: { reviews: Review[]; restaurantName: string }) {
@@ -282,7 +309,6 @@ export default function ReviewList({ reviews, restaurantName }: { reviews: Revie
     router.refresh()
   }
 
-  // Stats (always computed from full list)
   const totalReviews = reviews.length
   const avgRating = totalReviews > 0
     ? (reviews.reduce((s, r) => s + (r.rating ?? 0), 0) / totalReviews).toFixed(1)
@@ -297,7 +323,7 @@ export default function ReviewList({ reviews, restaurantName }: { reviews: Revie
   ).length
 
   const filtered = useMemo(() => {
-    return reviews.filter(r => {
+    const base = reviews.filter(r => {
       const status = localStatus[r.id] ?? r.status
 
       if (tab === 'needs-reply' && status === 'replied') return false
@@ -315,6 +341,21 @@ export default function ReviewList({ reviews, restaurantName }: { reviews: Revie
 
       return true
     })
+
+    // Sort: urgent (low-rating, unreplied) first, then overdue, then rest
+    if (tab === 'needs-reply') {
+      base.sort((a, b) => {
+        const aUrgent = (localStatus[a.id] ?? a.status) !== 'replied' && a.rating != null && a.rating <= 2 ? 0 : 1
+        const bUrgent = (localStatus[b.id] ?? b.status) !== 'replied' && b.rating != null && b.rating <= 2 ? 0 : 1
+        if (aUrgent !== bUrgent) return aUrgent - bUrgent
+
+        const aOverdue = isOverdue(a.created_at) ? 0 : 1
+        const bOverdue = isOverdue(b.created_at) ? 0 : 1
+        return aOverdue - bOverdue
+      })
+    }
+
+    return base
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reviews, tab, ratingFilter, search, localStatus])
 
@@ -327,46 +368,48 @@ export default function ReviewList({ reviews, restaurantName }: { reviews: Revie
   return (
     <div>
       {/* Stats bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-5">
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg px-3 py-2.5">
-          <p className="text-xs text-zinc-600 mb-0.5">Total reviews</p>
-          <p className="text-lg font-semibold text-zinc-100">{totalReviews}</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl px-4 py-3 fade-up">
+          <p className="text-xs text-zinc-600 mb-1">Needs reply</p>
+          <p className="text-xl font-semibold text-zinc-100">{needsReplyCount}</p>
         </div>
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg px-3 py-2.5">
-          <p className="text-xs text-zinc-600 mb-0.5">Avg rating</p>
-          <p className="text-lg font-semibold text-amber-400">{avgRating ? `★ ${avgRating}` : '—'}</p>
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl px-4 py-3 fade-up" style={{ animationDelay: '40ms' }}>
+          <p className="text-xs text-zinc-600 mb-1">Avg rating</p>
+          <p className="text-xl font-semibold text-amber-400">{avgRating ? `★ ${avgRating}` : '—'}</p>
         </div>
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg px-3 py-2.5">
-          <p className="text-xs text-zinc-600 mb-0.5">Response rate</p>
-          <p className="text-lg font-semibold text-zinc-100">{responseRate}%</p>
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-xl px-4 py-3 fade-up" style={{ animationDelay: '80ms' }}>
+          <p className="text-xs text-zinc-600 mb-1">Response rate</p>
+          <p className="text-xl font-semibold text-zinc-100">{responseRate}%</p>
         </div>
-        <div className={`border rounded-lg px-3 py-2.5 ${
+        <div className={`rounded-xl px-4 py-3 border fade-up ${
           lowRatingPending > 0
-            ? 'bg-red-950/30 border-red-900/60'
-            : 'bg-zinc-900/50 border-zinc-800'
-        }`}>
-          <p className="text-xs text-zinc-600 mb-0.5">Low ratings pending</p>
-          <p className={`text-lg font-semibold ${lowRatingPending > 0 ? 'text-red-400' : 'text-zinc-500'}`}>
+            ? 'bg-red-950/30 border-red-900/50'
+            : 'bg-zinc-900/50 border-zinc-800/60'
+        }`} style={{ animationDelay: '120ms' }}>
+          <p className="text-xs text-zinc-600 mb-1">Urgent</p>
+          <p className={`text-xl font-semibold ${lowRatingPending > 0 ? 'text-red-400' : 'text-zinc-600'}`}>
             {lowRatingPending}
           </p>
         </div>
       </div>
 
       {/* Section tabs */}
-      <div className="flex border-b border-zinc-800 mb-4">
+      <div className="flex border-b border-zinc-800/60 mb-4">
         {tabs.map(t => (
           <button
             key={t.value}
             onClick={() => setTab(t.value)}
-            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px flex items-center gap-2 ${
               tab === t.value
                 ? 'border-zinc-100 text-zinc-100'
-                : 'border-transparent text-zinc-500 hover:text-zinc-300'
+                : 'border-transparent text-zinc-600 hover:text-zinc-300'
             }`}
           >
             {t.label}
-            <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-              tab === t.value ? 'bg-zinc-700 text-zinc-200' : 'bg-zinc-800 text-zinc-500'
+            <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${
+              tab === t.value
+                ? 'bg-zinc-700 text-zinc-200'
+                : 'bg-zinc-800/80 text-zinc-600'
             }`}>
               {t.count}
             </span>
@@ -375,10 +418,10 @@ export default function ReviewList({ reviews, restaurantName }: { reviews: Revie
       </div>
 
       {/* Search + rating filter */}
-      <div className="flex flex-col sm:flex-row gap-2 mb-4">
+      <div className="flex flex-col sm:flex-row gap-2 mb-5">
         <div className="relative flex-1">
           <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600"
             fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
@@ -387,21 +430,20 @@ export default function ReviewList({ reviews, restaurantName }: { reviews: Revie
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
-            placeholder="Search by author or review text…"
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-lg pl-9 pr-4 py-2 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:border-zinc-600 transition-colors"
+            placeholder="Search author or review text…"
+            className="w-full bg-zinc-900/60 border border-zinc-800/80 rounded-xl pl-9 pr-4 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
           />
         </div>
 
-        <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 rounded-lg px-2 py-1 shrink-0">
-          <span className="text-xs text-zinc-600 mr-1">Stars</span>
+        <div className="flex items-center gap-0.5 bg-zinc-900/60 border border-zinc-800/80 rounded-xl px-1.5 py-1.5 shrink-0">
           {RATING_FILTERS.map(f => (
             <button
               key={f.value}
               onClick={() => setRatingFilter(f.value)}
-              className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+              className={`px-2.5 py-1 text-xs font-medium rounded-lg transition-colors ${
                 ratingFilter === f.value
                   ? 'bg-zinc-700 text-zinc-100'
-                  : 'text-zinc-500 hover:text-zinc-300'
+                  : 'text-zinc-600 hover:text-zinc-300'
               }`}
             >
               {f.label}
@@ -412,22 +454,23 @@ export default function ReviewList({ reviews, restaurantName }: { reviews: Revie
 
       {/* List */}
       {filtered.length === 0 ? (
-        <div className="border border-zinc-800 rounded-lg px-4 py-10 text-center">
-          <p className="text-zinc-500 text-sm">
+        <div className="border border-zinc-800/60 rounded-2xl px-4 py-12 text-center">
+          <p className="text-zinc-600 text-sm">
             {tab === 'completed'
               ? 'No completed reviews yet. Mark a review as replied to move it here.'
               : 'No reviews match your filters.'}
           </p>
         </div>
       ) : (
-        <div className="space-y-1.5">
-          {filtered.map(review => (
+        <div className="flex flex-col gap-1.5">
+          {filtered.map((review, i) => (
             <ReviewRow
               key={review.id}
               review={review}
               restaurantName={restaurantName}
               effectiveStatus={getStatus(review)}
               onToggle={() => toggleStatus(review)}
+              index={i}
             />
           ))}
         </div>

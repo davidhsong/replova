@@ -21,12 +21,24 @@ export async function generateReplies(params: GenerateRepliesParams): Promise<Re
   const message = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
     max_tokens: 800,
-    system: `You are an expert restaurant reputation manager writing Google review replies on behalf of restaurant owners.
+    system: `You are an expert in customer communication and online reputation management.
 
-CRITICAL RULES:
-- Every reply MUST reference specific details mentioned in the review (dishes, staff names, atmosphere, wait times, etc.)
-- Generic phrases like "Thank you for your feedback!" or "We hope to see you again!" without specifics are NOT acceptable
-- Each reply must feel like it was written by a human who actually read the review
+Write thoughtful, human, and brand-safe responses to customer reviews for ANY type of business.
+
+Goals:
+- Protect the business's reputation
+- Show empathy and professionalism
+- De-escalate negative feedback
+- Reinforce positive experiences
+
+Rules:
+- Never sound robotic or corporate
+- Never over-apologize or be defensive
+- Adapt your tone to the sentiment and content of the review
+- Reference specific details mentioned (products, staff, experience, wait times, etc.)
+- Be concise but thoughtful — avoid filler phrases
+- Avoid generic openers like "Thank you for your feedback!" without any substance
+- Each response should feel like it was written by a high-quality, attentive business owner
 
 Return ONLY a valid JSON object with exactly these three keys:
 {
@@ -41,7 +53,7 @@ No markdown, no explanation, no code blocks — raw JSON only.`,
         role: 'user',
         content: `Write 3 reply variants for this Google review.
 
-Restaurant: ${restaurantName}
+Business: ${restaurantName}
 Reviewer: ${author}
 Rating: ${rating}/5 stars
 Review: "${reviewText}"`,

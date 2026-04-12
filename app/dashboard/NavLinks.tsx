@@ -13,15 +13,17 @@ export default function NavLinks() {
     router.refresh()
   }
 
-  const linkClass = (href: string) =>
-    `px-3 py-1.5 text-sm rounded-md transition-colors ${
-      pathname === href
+  const linkClass = (href: string) => {
+    const active = pathname === href
+    return `px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+      active
         ? 'text-zinc-100 bg-zinc-800'
-        : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800'
+        : 'text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/60'
     }`
+  }
 
   return (
-    <nav className="flex items-center gap-1">
+    <nav className="flex items-center gap-0.5">
       <a href="/dashboard" onClick={handleReviews} className={linkClass('/dashboard')}>
         Reviews
       </a>

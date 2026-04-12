@@ -37,17 +37,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .toUpperCase() || '?'
 
   return (
-    <div className="min-h-screen bg-zinc-950">
-      <header className="border-b border-zinc-800 sticky top-0 z-10 bg-zinc-950/95 backdrop-blur">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="text-sm font-semibold text-zinc-100">
+    <div className="min-h-dvh bg-zinc-950">
+      <header className="border-b border-zinc-800/80 sticky top-0 z-10 bg-zinc-950/95 backdrop-blur-sm">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-5">
+            <Link
+              href="/dashboard"
+              className="text-sm font-semibold text-zinc-100 tracking-tight"
+            >
               Replova
             </Link>
+            <div className="h-4 w-px bg-zinc-800" />
             <NavLinks />
           </div>
+
           <div className="flex items-center gap-3">
-            <Link href="/dashboard/settings" className="flex items-center gap-2 group">
+            <Link href="/dashboard/settings" className="flex items-center gap-2 group" title="Settings">
               {avatarUrl ? (
                 <img
                   src={avatarUrl}
@@ -55,7 +60,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
                   className="w-7 h-7 rounded-full object-cover ring-1 ring-zinc-700 group-hover:ring-zinc-500 transition-all"
                 />
               ) : (
-                <div className="w-7 h-7 rounded-full bg-zinc-700 group-hover:bg-zinc-600 flex items-center justify-center text-xs font-medium text-zinc-300 transition-colors">
+                <div className="w-7 h-7 rounded-full bg-zinc-800 group-hover:bg-zinc-700 flex items-center justify-center text-xs font-semibold text-zinc-400 transition-colors ring-1 ring-zinc-700 group-hover:ring-zinc-600">
                   {initials}
                 </div>
               )}
