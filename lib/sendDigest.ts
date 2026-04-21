@@ -19,6 +19,15 @@ interface ReviewRow {
   reply_draft_3: string | null
 }
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+}
+
 function stars(rating: number): string {
   const filled = '★'.repeat(Math.min(5, Math.max(0, rating)))
   const empty = '☆'.repeat(5 - Math.min(5, Math.max(0, rating)))
@@ -37,7 +46,7 @@ function buildHtml(restaurantName: string, reviews: ReviewRow[], dashboardUrl: s
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
           <p style="margin:0;font-weight:600;font-size:16px;color:#111827;">
-            ${r.author ?? 'Anonymous'}
+            ${escapeHtml(r.author ?? 'Anonymous')}
           </p>
           ${isUrgent ? '<span style="display:inline-block;padding:2px 8px;background:#fee2e2;color:#dc2626;border-radius:4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Urgent</span>' : ''}
         </div>
@@ -46,37 +55,39 @@ function buildHtml(restaurantName: string, reviews: ReviewRow[], dashboardUrl: s
         </p>
         ${isUrgent ? '<p style="margin:0 0 12px 0;font-size:13px;color:#dc2626;font-weight:600;">⚠️ This low-rating review needs a prompt, thoughtful response to protect your reputation.</p>' : ''}
         <p style="margin:0 0 20px 0;font-size:15px;color:#374151;line-height:1.6;font-style:italic;">
-          "${r.review_text ?? ''}"
+          &quot;${escapeHtml(r.review_text ?? '')}&quot;
         </p>
 
         <div style="margin-bottom:12px;padding:16px;background:#f9fafb;border-left:4px solid #6366f1;border-radius:4px;">
           <p style="margin:0 0 6px 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6366f1;">
             Suggested Reply — Professional
           </p>
-          <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.6;">${r.reply_draft_1 ?? ''}</p>
+          <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.6;">${escapeHtml(r.reply_draft_1 ?? '')}</p>
         </div>
 
         <div style="margin-bottom:12px;padding:16px;background:#f9fafb;border-left:4px solid #10b981;border-radius:4px;">
           <p style="margin:0 0 6px 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#10b981;">
             Suggested Reply — Warm
           </p>
-          <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.6;">${r.reply_draft_2 ?? ''}</p>
+          <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.6;">${escapeHtml(r.reply_draft_2 ?? '')}</p>
         </div>
 
         <div style="margin-bottom:0;padding:16px;background:#f9fafb;border-left:4px solid #f59e0b;border-radius:4px;">
           <p style="margin:0 0 6px 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#f59e0b;">
             Suggested Reply — Brief
           </p>
-          <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.6;">${r.reply_draft_3 ?? ''}</p>
+          <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.6;">${escapeHtml(r.reply_draft_3 ?? '')}</p>
         </div>
       </div>`
       }
     )
     .join('')
 
+  const urgentCountStr = escapeHtml(String(urgentCount))
+  const reviewCountStr = escapeHtml(String(reviews.length))
   const headerMessage = urgentCount > 0
-    ? `<strong>${urgentCount} urgent review${urgentCount > 1 ? 's' : ''}</strong> need${urgentCount === 1 ? 's' : ''} immediate attention — low ratings left unanswered hurt your reputation.`
-    : `You have <strong>${reviews.length} customer review${reviews.length > 1 ? 's' : ''}</strong> waiting for a reply. Copy a suggested reply and paste it into Google to stay on top of your reputation.`
+    ? `<strong>${urgentCountStr} urgent review${urgentCount > 1 ? 's' : ''}</strong> need${urgentCount === 1 ? 's' : ''} immediate attention — low ratings left unanswered hurt your reputation.`
+    : `You have <strong>${reviewCountStr} customer review${reviews.length > 1 ? 's' : ''}</strong> waiting for a reply. Copy a suggested reply and paste it into Google to stay on top of your reputation.`
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -90,7 +101,7 @@ function buildHtml(restaurantName: string, reviews: ReviewRow[], dashboardUrl: s
             <td style="padding:0 0 24px 0;">
               <p style="margin:0 0 6px 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#6366f1;">Replova</p>
               <h1 style="margin:0 0 8px 0;font-size:24px;font-weight:700;color:#111827;">
-                ${restaurantName}
+                ${escapeHtml(restaurantName)}
               </h1>
               <p style="margin:0;font-size:15px;color:#374151;line-height:1.6;">
                 ${headerMessage}

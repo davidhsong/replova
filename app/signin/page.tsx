@@ -1,64 +1,49 @@
 'use client'
 
 import { useState } from 'react'
-import { supabaseBrowser } from '@/lib/supabase'
+
+type State = 'idle' | 'loading' | 'sent'
 
 export default function SignInPage() {
   const [email, setEmail] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [state, setState] = useState<State>('idle')
   const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setLoading(true)
+    setState('loading')
     setError(null)
 
     try {
-      const { error: otpError } = await supabaseBrowser.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      const res = await fetch('/api/auth/magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email,
+          redirectTo: `${window.location.origin}/auth/callback`,
+        }),
       })
-      if (otpError) throw new Error(otpError.message)
-      setSuccess(true)
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Failed to sign in.')
+
+      setState('sent')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
-    } finally {
-      setLoading(false)
+      setState('idle')
     }
   }
 
-  if (success) {
-    return (
-      <div className="min-h-dvh bg-zinc-50 flex items-center justify-center px-6">
-        <div className="max-w-sm w-full text-center fade-up">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mx-auto mb-6">
-            <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-            </svg>
-          </div>
-          <h1 className="text-xl font-semibold text-zinc-900 mb-2">Check your inbox</h1>
-          <p className="text-zinc-500 text-sm leading-relaxed">
-            We sent a sign-in link to{' '}
-            <span className="text-zinc-900 font-medium">{email}</span>.{' '}
-            Click it to access your dashboard.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-dvh bg-zinc-50 flex flex-col">
+    <div className="min-h-dvh bg-zinc-950 flex flex-col">
       {/* Nav */}
-      <header className="border-b border-zinc-200 bg-white">
+      <header className="border-b border-zinc-800">
         <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="text-base font-semibold tracking-tight text-zinc-900">
+          <a href="/" className="text-base font-semibold tracking-tight text-zinc-100">
             Replova
           </a>
           <a
             href="/onboard"
-            className="text-sm font-medium text-zinc-500 hover:text-zinc-900 transition-colors"
+            className="text-sm font-medium text-zinc-500 hover:text-zinc-300 transition-colors"
           >
             Start free trial
           </a>
@@ -68,61 +53,83 @@ export default function SignInPage() {
       {/* Form */}
       <div className="flex-1 flex items-center justify-center px-6 py-16">
         <div className="w-full max-w-sm fade-up">
-          <div className="rounded-2xl bg-white border border-zinc-200 shadow-sm p-8">
-            <div className="mb-7">
-              <h1 className="text-2xl font-bold text-zinc-900 mb-1.5 tracking-tight">Sign in to Replova</h1>
-              <p className="text-zinc-500 text-sm leading-relaxed">
-                We&apos;ll send a magic link — no password needed.
-              </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="email"
-                  className="text-xs font-semibold text-zinc-500 uppercase tracking-wider"
-                >
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  className="border border-zinc-200 rounded-xl px-4 py-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow bg-zinc-50"
-                  placeholder="you@restaurant.com"
-                  autoFocus
-                />
-              </div>
-
-              {error && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
-                  {error}
-                </p>
-              )}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-press mt-1 rounded-full bg-zinc-900 text-white text-sm font-semibold py-3 hover:bg-zinc-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Sending…' : 'Send sign-in link'}
-              </button>
-            </form>
-
-            <p className="mt-5 text-center text-sm text-zinc-400">
-              New to Replova?{' '}
-              <a href="/onboard" className="text-zinc-900 font-medium hover:underline">
-                Start your free trial
-              </a>
+          <div className="mb-8 text-center">
+            <h1 className="text-2xl font-bold text-zinc-100 tracking-tight mb-2">
+              Welcome back
+            </h1>
+            <p className="text-zinc-500 text-sm">
+              Enter your email to sign in to your dashboard.
             </p>
+          </div>
+
+          <div className="rounded-2xl bg-zinc-900 border border-zinc-800 p-8">
+            {state === 'sent' ? (
+              <div className="flex flex-col items-center gap-4 py-4 text-center">
+                <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="text-sm text-zinc-200 font-medium">Check your email</p>
+                <p className="text-sm text-zinc-500">We sent a sign-in link to <span className="text-zinc-300">{email}</span>.</p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1.5">
+                  <label
+                    htmlFor="email"
+                    className="text-xs font-semibold text-zinc-500 uppercase tracking-wider"
+                  >
+                    Email address
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                    placeholder="you@example.com"
+                    autoFocus
+                  />
+                </div>
+
+                {error && (
+                  <p className="text-sm text-red-400 bg-red-950/50 border border-red-900 rounded-xl px-4 py-3">
+                    {error}
+                  </p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={state === 'loading' || !email.trim()}
+                  className="btn-press mt-1 rounded-full bg-zinc-100 text-zinc-900 text-sm font-semibold py-3 hover:bg-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {state === 'loading' ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Signing in…
+                    </>
+                  ) : (
+                    'Sign in'
+                  )}
+                </button>
+
+                <p className="text-center text-sm text-zinc-600">
+                  No account?{' '}
+                  <a href="/onboard" className="text-zinc-400 hover:text-zinc-200 transition-colors font-medium">
+                    Start your free trial
+                  </a>
+                </p>
+              </form>
+            )}
           </div>
         </div>
       </div>
 
-      <footer className="border-t border-zinc-200 bg-white py-5 px-6">
-        <p className="text-center text-xs text-zinc-400">
+      <footer className="border-t border-zinc-800 py-5 px-6">
+        <p className="text-center text-xs text-zinc-700">
           © {new Date().getFullYear()} Replova
         </p>
       </footer>

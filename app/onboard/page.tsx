@@ -106,7 +106,7 @@ export default function OnboardPage() {
           name: result.name,
           email,
           placeId: result.placeId,
-          redirectTo: `${window.location.origin}/dashboard?success=1`,
+          redirectTo: `${window.location.origin}/auth/callback?next=%2Fdashboard%3Fsuccess%3D1`,
         }),
       })
       const data = await res.json()

@@ -15,8 +15,17 @@ interface ReplyVariants {
   brief: string
 }
 
+function sanitize(value: string, maxLen: number): string {
+  return value
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '') // strip control chars
+    .slice(0, maxLen)
+}
+
 export async function generateReplies(params: GenerateRepliesParams): Promise<ReplyVariants> {
-  const { restaurantName, author, rating, reviewText } = params
+  const restaurantName = sanitize(params.restaurantName, 200)
+  const author = sanitize(params.author, 100)
+  const rating = Math.min(5, Math.max(0, Math.round(params.rating)))
+  const reviewText = sanitize(params.reviewText, 2000)
 
   const message = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
@@ -67,9 +76,20 @@ Review: "${reviewText}"`,
   try {
     parsed = JSON.parse(raw)
   } catch {
-    // Strip any accidental markdown fences and retry
     const cleaned = raw.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim()
-    parsed = JSON.parse(cleaned)
+    try {
+      parsed = JSON.parse(cleaned)
+    } catch {
+      throw new Error(`Claude returned unparseable JSON: ${raw.slice(0, 200)}`)
+    }
+  }
+
+  if (
+    typeof parsed.professional !== 'string' ||
+    typeof parsed.warm !== 'string' ||
+    typeof parsed.brief !== 'string'
+  ) {
+    throw new Error('Claude response missing required reply fields')
   }
 
   return parsed

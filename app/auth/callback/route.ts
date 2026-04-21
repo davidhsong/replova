@@ -4,8 +4,9 @@ import { NextRequest, NextResponse } from 'next/server'
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const code = searchParams.get('code')
+  const next = searchParams.get('next') ?? '/dashboard'
 
-  const redirectUrl = new URL('/dashboard', req.url)
+  const redirectUrl = new URL(next, req.url)
   const response = NextResponse.redirect(redirectUrl)
 
   if (code) {

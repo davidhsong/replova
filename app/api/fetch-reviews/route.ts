@@ -2,10 +2,15 @@ import { NextRequest, NextResponse } from 'next/server'
 import { syncRestaurantReviews } from '@/lib/syncReviews'
 
 export async function POST(req: NextRequest) {
+  const auth = req.headers.get('authorization')
+  if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const body = await req.json()
   const restaurantId: string = body.restaurantId
 
-  if (!restaurantId) {
+  if (!restaurantId || typeof restaurantId !== 'string') {
     return NextResponse.json({ error: 'restaurantId is required' }, { status: 400 })
   }
 

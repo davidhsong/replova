@@ -13,11 +13,12 @@ export async function POST() {
 
   const { data: restaurant } = await getSupabaseAdmin()
     .from('restaurants')
-    .select('id')
+    .select('id, active')
     .eq('owner_email', user.email)
     .single()
 
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
+  if (!restaurant.active) return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
   try {
     const result = await syncRestaurantReviews(restaurant.id)

@@ -138,6 +138,9 @@ export async function POST(req: NextRequest) {
   if (!replyText || typeof replyText !== 'string' || replyText.trim().length === 0) {
     return NextResponse.json({ error: 'replyText is required' }, { status: 400 })
   }
+  if (replyText.trim().length > 4096) {
+    return NextResponse.json({ error: 'replyText exceeds 4096 character limit' }, { status: 400 })
+  }
 
   const admin = getSupabaseAdmin()
 

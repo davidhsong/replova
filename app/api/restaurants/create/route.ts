@@ -40,12 +40,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Generate a magic link server-side so no email needs to be sent
+  // Generate a magic link server-side so no email needs to be sent.
+  // redirectTo must go through /auth/callback so the PKCE code is exchanged
+  // for a session before any SSR page renders.
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
+  const callbackUrl = redirectTo ?? `${baseUrl}/auth/callback?next=%2Fdashboard%3Fsuccess%3D1`
   const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
     type: 'magiclink',
     email,
-    options: { redirectTo: redirectTo ?? `${baseUrl}/dashboard?success=1` },
+    options: { redirectTo: callbackUrl },
   })
 
   if (linkError) {

@@ -14,6 +14,10 @@ export async function POST(req: NextRequest) {
   if (!locationName || typeof locationName !== 'string') {
     return NextResponse.json({ error: 'locationName is required' }, { status: 400 })
   }
+  // Prevent path traversal / injection into Google API URL segments
+  if (!/^accounts\/[^/]+\/locations\/[^/]+$/.test(locationName)) {
+    return NextResponse.json({ error: 'Invalid locationName format' }, { status: 400 })
+  }
 
   const { error } = await getSupabaseAdmin()
     .from('restaurants')
