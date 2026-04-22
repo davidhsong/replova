@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { BASE_URL } from '@/lib/baseUrl'
 
 export async function GET() {
   const cookieStore = await cookies()
@@ -9,7 +10,7 @@ export async function GET() {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.redirect(new URL('/signin', process.env.NEXT_PUBLIC_BASE_URL!))
+    return NextResponse.redirect(new URL('/signin', BASE_URL))
   }
 
   const { data: restaurant } = await getSupabaseAdmin()
@@ -19,7 +20,7 @@ export async function GET() {
     .single()
 
   if (!restaurant) {
-    return NextResponse.redirect(new URL('/onboard', process.env.NEXT_PUBLIC_BASE_URL!))
+    return NextResponse.redirect(new URL('/onboard', BASE_URL))
   }
 
   // Use restaurantId as state — verified on callback against the authenticated user's restaurant
@@ -27,11 +28,16 @@ export async function GET() {
 
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
-    redirect_uri: `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/google/callback`,
+    redirect_uri: `${BASE_URL}/api/auth/google/callback`,
     response_type: 'code',
-    scope: 'https://www.googleapis.com/auth/business.manage',
+    scope: [
+      'openid',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile',
+      'https://www.googleapis.com/auth/business.manage',
+    ].join(' '),
     access_type: 'offline',
-    prompt: 'consent', // always return refresh_token
+    prompt: 'consent',
     state,
   })
 

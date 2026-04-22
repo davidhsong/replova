@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
+import { BASE_URL } from '@/lib/baseUrl'
 
 // Use anon key so signInWithOtp routes through Supabase's email delivery,
 // not admin.generateLink which returns the raw token to the caller.
@@ -17,13 +18,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Email is required' }, { status: 400 })
   }
 
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
-
   const { error } = await getPublicClient().auth.signInWithOtp({
     email: email.trim().toLowerCase(),
-    options: { emailRedirectTo: redirectTo ?? `${baseUrl}/auth/callback` },
+    options: { emailRedirectTo: redirectTo ?? `${BASE_URL}/auth/callback` },
   })
 
   if (error) {

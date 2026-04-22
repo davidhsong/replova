@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { getValidGoogleToken } from '@/lib/googleAuth'
 
 type Restaurant = {
   id: string
@@ -20,56 +21,6 @@ type Review = {
   google_review_name: string | null
 }
 
-async function refreshAccessToken(restaurant: Restaurant): Promise<string | null> {
-  if (!restaurant.google_refresh_token) return null
-
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      refresh_token: restaurant.google_refresh_token,
-      grant_type: 'refresh_token',
-    }).toString(),
-  })
-
-  if (!res.ok) {
-    console.error('Token refresh failed:', await res.text())
-    return null
-  }
-
-  const data = (await res.json()) as { access_token: string; expires_in: number }
-  const expiresAt = Date.now() + data.expires_in * 1000
-
-  await getSupabaseAdmin()
-    .from('restaurants')
-    .update({
-      google_access_token: data.access_token,
-      google_token_expires_at: expiresAt,
-    })
-    .eq('id', restaurant.id)
-
-  return data.access_token
-}
-
-async function getValidToken(restaurant: Restaurant): Promise<string | null> {
-  const fiveMinutes = 5 * 60 * 1000
-  const isExpiredOrSoon =
-    !restaurant.google_token_expires_at ||
-    Date.now() > restaurant.google_token_expires_at - fiveMinutes
-
-  if (isExpiredOrSoon) {
-    return refreshAccessToken(restaurant)
-  }
-
-  return restaurant.google_access_token
-}
-
-/**
- * Find a Google review by matching author name and review text.
- * Returns the Google review resource name on success.
- */
 async function findGoogleReview(
   accessToken: string,
   locationName: string,
@@ -144,7 +95,6 @@ export async function POST(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
-  // Get restaurant with Google credentials
   const { data: restaurant } = await admin
     .from('restaurants')
     .select(
@@ -167,8 +117,7 @@ export async function POST(req: NextRequest) {
   if (!restaurant.google_location_name) {
     return NextResponse.json(
       {
-        error:
-          'Google Business location not linked. Please reconnect in Settings.',
+        error: 'Google Business location not linked. Please reconnect in Settings.',
         code: 'NO_LOCATION',
       },
       { status: 400 }
@@ -187,8 +136,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Review not found' }, { status: 404 })
   }
 
-  // Get a valid access token (refreshes automatically if needed)
-  const accessToken = await getValidToken(restaurant)
+  const accessToken = await getValidGoogleToken(restaurant, admin)
   if (!accessToken) {
     return NextResponse.json(
       {
@@ -199,7 +147,6 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // Find or use cached Google review name
   let googleReviewName = review.google_review_name
 
   if (!googleReviewName) {
@@ -221,7 +168,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Post the reply to Google
   const replyRes = await fetch(
     `https://mybusiness.googleapis.com/v4/${googleReviewName}/reply`,
     {
@@ -245,19 +191,13 @@ export async function POST(req: NextRequest) {
 
     if (replyRes.status === 401) {
       return NextResponse.json(
-        {
-          error: 'Google session expired. Please reconnect in Settings.',
-          code: 'TOKEN_EXPIRED',
-        },
+        { error: 'Google session expired. Please reconnect in Settings.', code: 'TOKEN_EXPIRED' },
         { status: 401 }
       )
     }
     if (replyRes.status === 403) {
       return NextResponse.json(
-        {
-          error:
-            'Not authorized to reply. Make sure you connected the Google account that manages this business.',
-        },
+        { error: 'Not authorized to reply. Make sure you connected the Google account that manages this business.' },
         { status: 403 }
       )
     }
@@ -268,24 +208,13 @@ export async function POST(req: NextRequest) {
       )
     }
     if (replyRes.status === 404) {
-      // Cached name may be stale — clear it and report
-      await admin
-        .from('reviews')
-        .update({ google_review_name: null })
-        .eq('id', reviewId)
-      return NextResponse.json(
-        { error: 'Review no longer exists on Google.' },
-        { status: 404 }
-      )
+      await admin.from('reviews').update({ google_review_name: null }).eq('id', reviewId)
+      return NextResponse.json({ error: 'Review no longer exists on Google.' }, { status: 404 })
     }
 
-    return NextResponse.json(
-      { error: `Google API error: ${errMessage}` },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: `Google API error: ${errMessage}` }, { status: 500 })
   }
 
-  // Success — cache the google_review_name and mark as replied
   await admin
     .from('reviews')
     .update({

@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
-
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL!
+import { BASE_URL } from '@/lib/baseUrl'
 
 export async function GET(req: NextRequest) {
   const cookieStore = await cookies()
@@ -138,14 +137,17 @@ async function findLocationByPlaceId(
       'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
       { headers: { Authorization: `Bearer ${accessToken}` } }
     )
+    const accountsBody = await accountsRes.text()
+    console.log('[GMB callback] Accounts status:', accountsRes.status)
+    console.log('[GMB callback] Accounts body:', accountsBody)
+
     if (!accountsRes.ok) {
-      console.error('Failed to list Google accounts:', await accountsRes.text())
+      console.error('[GMB callback] Failed to list accounts:', accountsRes.status, accountsBody)
       return null
     }
 
-    const { accounts } = (await accountsRes.json()) as {
-      accounts?: { name: string }[]
-    }
+    const { accounts } = JSON.parse(accountsBody) as { accounts?: { name: string }[] }
+    console.log('[GMB callback] Accounts found:', accounts?.length ?? 0)
     if (!accounts?.length) return null
 
     const allLocations: { name: string; metadata?: { placeId?: string } }[] = []
@@ -160,13 +162,18 @@ async function findLocationByPlaceId(
         })
         if (pageToken) params.set('pageToken', pageToken)
 
-        const locRes = await fetch(
-          `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?${params.toString()}`,
-          { headers: { Authorization: `Bearer ${accessToken}` } }
-        )
-        if (!locRes.ok) break
+        const locUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?${params.toString()}`
+        const locRes = await fetch(locUrl, { headers: { Authorization: `Bearer ${accessToken}` } })
+        const locBody = await locRes.text()
+        console.log('[GMB callback] Locations status:', locRes.status, 'for', account.name)
+        console.log('[GMB callback] Locations body:', locBody)
 
-        const locData = (await locRes.json()) as {
+        if (!locRes.ok) {
+          console.error('[GMB callback] Locations fetch failed:', locRes.status, locBody)
+          break
+        }
+
+        const locData = JSON.parse(locBody) as {
           locations?: { name: string; metadata?: { placeId?: string } }[]
           nextPageToken?: string
         }
@@ -175,6 +182,8 @@ async function findLocationByPlaceId(
         pageToken = locData.nextPageToken
       } while (pageToken)
     }
+
+    console.log('[GMB callback] Total locations found:', allLocations.length, '— looking for placeId:', placeId)
 
     // First: exact placeId match
     const exact = allLocations.find(loc => loc.metadata?.placeId === placeId)
@@ -185,7 +194,7 @@ async function findLocationByPlaceId(
 
     return null
   } catch (err) {
-    console.error('Error finding Google Business location:', err)
+    console.error('[GMB callback] Error finding Google Business location:', err)
     return null
   }
 }

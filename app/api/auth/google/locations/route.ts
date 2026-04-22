@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { getValidGoogleToken } from '@/lib/googleAuth'
 
 export type GmbLocation = {
   name: string    // "accounts/xxx/locations/yyy"
@@ -16,33 +17,50 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data: restaurant } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin()
+
+  const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id, google_access_token')
+    .select('id, google_access_token, google_refresh_token, google_token_expires_at')
     .eq('owner_email', user.email)
     .single()
 
   if (!restaurant) return NextResponse.json({ error: 'No restaurant found' }, { status: 404 })
   if (!restaurant.google_access_token) return NextResponse.json({ error: 'Google not connected' }, { status: 400 })
 
-  const accessToken = restaurant.google_access_token
+  // Always use a valid (possibly refreshed) token
+  const accessToken = await getValidGoogleToken(restaurant, admin)
+  if (!accessToken) {
+    return NextResponse.json({ error: 'Failed to get valid Google token. Please reconnect.' }, { status: 401 })
+  }
+
+  console.log('[GMB locations] Fetching accounts for user:', user.email)
 
   const accountsRes = await fetch(
     'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
     { headers: { Authorization: `Bearer ${accessToken}` } }
   )
 
+  const accountsBody = await accountsRes.text()
+  console.log('[GMB locations] Accounts response status:', accountsRes.status)
+  console.log('[GMB locations] Accounts response body:', accountsBody)
+
   if (!accountsRes.ok) {
-    const text = await accountsRes.text()
-    return NextResponse.json({ error: `Failed to list accounts: ${text}` }, { status: 502 })
+    return NextResponse.json(
+      { error: `Google accounts API error (${accountsRes.status}): ${accountsBody}` },
+      { status: 502 }
+    )
   }
 
-  const { accounts } = (await accountsRes.json()) as { accounts?: { name: string }[] }
+  const accountsData = JSON.parse(accountsBody) as { accounts?: { name: string }[] }
+  const accounts = accountsData.accounts ?? []
 
-  if (!accounts?.length) {
+  console.log('[GMB locations] Accounts found:', accounts.length, accounts.map(a => a.name))
+
+  if (!accounts.length) {
     return NextResponse.json({
       locations: [],
-      message: 'This Google account has no Business Profile.',
+      debug: 'No Business Profile accounts found for this Google account. Make sure the signed-in Google account owns or manages a Business Profile.',
     })
   }
 
@@ -58,13 +76,21 @@ export async function GET() {
       })
       if (pageToken) params.set('pageToken', pageToken)
 
-      const locRes = await fetch(
-        `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?${params.toString()}`,
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      )
-      if (!locRes.ok) break
+      const url = `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?${params.toString()}`
+      console.log('[GMB locations] Fetching locations from:', url)
 
-      const locData = (await locRes.json()) as {
+      const locRes = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } })
+      const locBody = await locRes.text()
+
+      console.log('[GMB locations] Locations response status:', locRes.status)
+      console.log('[GMB locations] Locations response body:', locBody)
+
+      if (!locRes.ok) {
+        console.error('[GMB locations] Failed to list locations for account:', account.name, locRes.status, locBody)
+        break
+      }
+
+      const locData = JSON.parse(locBody) as {
         locations?: { name: string; title?: string; metadata?: { placeId?: string } }[]
         nextPageToken?: string
       }
@@ -80,6 +106,8 @@ export async function GET() {
       pageToken = locData.nextPageToken
     } while (pageToken)
   }
+
+  console.log('[GMB locations] Total locations found:', locations.length)
 
   return NextResponse.json({ locations })
 }

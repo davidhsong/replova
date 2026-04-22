@@ -30,124 +30,189 @@ export default async function BillingPage() {
   const trialEnd = new Date(trialStart)
   trialEnd.setDate(trialEnd.getDate() + 30)
   const now = new Date()
-  const inTrial = restaurant.active && now < trialEnd && !restaurant.stripe_customer_id
+  const inTrial = restaurant.active && now < trialEnd
   const daysLeft = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+  const trialProgress = Math.round(((30 - daysLeft) / 30) * 100)
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8">
-      <div className="mb-8 fade-up">
-        <h1 className="text-lg font-semibold text-zinc-100 tracking-tight">Billing</h1>
-        <p className="text-zinc-600 text-sm mt-0.5">Manage your subscription</p>
+    <>
+      <div className="sec-head">
+        <h1 style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.025em', color: 'var(--t1)', marginBottom: 2 }}>Billing</h1>
+        <p style={{ fontSize: 13, color: 'var(--t3)' }}>Manage your subscription and payment details</p>
       </div>
 
-      <div className="space-y-4">
+      <div className="page-wrap" style={{ maxWidth: 680 }}>
+
+        {/* Trial banner */}
+        {inTrial && (
+          <div className="banner banner-amber fade-up" style={{ marginBottom: 16 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            Free trial · {daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining — ends{' '}
+            {trialEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+          </div>
+        )}
 
         {/* Subscription status */}
-        <div className="fade-up border border-zinc-800/80 rounded-2xl p-6 bg-zinc-900/30">
-          <h2 className="text-sm font-semibold text-zinc-200 mb-5">Subscription</h2>
-
-          <div className="flex items-start justify-between mb-5">
+        <div className="card fade-up" style={{ padding: 24, marginBottom: 12 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
             <div>
-              <p className="text-sm font-semibold text-zinc-100">Replova Monthly</p>
-              <p className="text-xs text-zinc-600 mt-0.5">$99 / month</p>
+              <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 4 }}>Subscription</h2>
+              <p style={{ fontSize: 13, color: 'var(--t3)' }}>Replova Monthly · $99 / month</p>
             </div>
             {restaurant.active ? (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-950/60 text-emerald-400 border border-emerald-900/60">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot" />
-                Active
+              <span className="badge badge-green" style={{ padding: '4px 12px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                <span className="dot dot-green pulse-dot" style={{ width: 6, height: 6 }} />
+                Active{inTrial ? ' — Free trial' : ''}
               </span>
             ) : (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-950/60 text-red-400 border border-red-900/60">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-400" />
+              <span className="badge badge-red" style={{ padding: '4px 12px', fontSize: 12 }}>
                 Inactive
               </span>
             )}
           </div>
 
+          {/* Trial progress bar */}
           {inTrial && (
-            <div className="bg-amber-950/30 border border-amber-900/40 rounded-xl px-4 py-3 mb-5">
-              <p className="text-sm text-amber-300 font-medium">
-                Free trial · {daysLeft} day{daysLeft !== 1 ? 's' : ''} remaining
-              </p>
-              <p className="text-xs text-amber-600 mt-0.5">
-                Ends {trialEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} · You won&apos;t be charged until then
-              </p>
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                <span style={{ fontSize: 12, color: 'var(--t3)' }}>Trial progress</span>
+                <span style={{ fontSize: 12, color: 'var(--warn)', fontWeight: 600 }}>{daysLeft} days left</span>
+              </div>
+              <div style={{ height: 4, borderRadius: 999, background: 'var(--surface-2)', overflow: 'hidden' }}>
+                <div style={{ height: '100%', borderRadius: 999, background: 'var(--warn)', width: `${trialProgress}%`, transition: 'width 0.3s' }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                <span style={{ fontSize: 11, color: 'var(--t3)' }}>Day {30 - daysLeft}</span>
+                <span style={{ fontSize: 11, color: 'var(--t3)' }}>Day 30</span>
+              </div>
             </div>
           )}
 
           {!restaurant.active && (
-            <div className="bg-red-950/30 border border-red-900/40 rounded-xl px-4 py-3 mb-5">
-              <p className="text-sm text-red-300 font-medium">Subscription inactive</p>
-              <p className="text-xs text-red-500 mt-0.5">
-                Reactivate below to resume weekly review replies.
-              </p>
+            <div className="banner banner-red" style={{ marginBottom: 20 }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              Subscription inactive — reactivate below to resume weekly review replies.
             </div>
           )}
 
-          {restaurant.stripe_customer_id ? (
-            <a
-              href="/api/billing-portal"
-              className="btn-press inline-flex items-center gap-2 bg-zinc-800 text-zinc-100 text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-zinc-700 transition-colors border border-zinc-700"
-            >
-              Manage subscription
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-              </svg>
-            </a>
-          ) : restaurant.active ? (
-            <a
-              href="/api/create-checkout"
-              className="btn-press inline-block bg-zinc-100 text-zinc-900 text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-white transition-colors"
-            >
-              Add payment method
-            </a>
-          ) : (
-            <a
-              href="/api/create-checkout"
-              className="btn-press inline-block bg-zinc-100 text-zinc-900 text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-white transition-colors"
-            >
-              Reactivate subscription
-            </a>
-          )}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+            {restaurant.stripe_customer_id ? (
+              <a
+                href="/api/billing-portal"
+                className="btn-press"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px',
+                  background: 'var(--surface-2)', border: '1px solid var(--border-md)',
+                  borderRadius: 10, fontSize: 13, fontWeight: 500, color: 'var(--t1)', textDecoration: 'none',
+                }}
+              >
+                Manage subscription
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </a>
+            ) : restaurant.active ? (
+              <>
+                <a
+                  href="/api/create-checkout"
+                  className="btn-press"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px',
+                    background: 'var(--surface-2)', border: '1px solid var(--border-md)',
+                    borderRadius: 10, fontSize: 13, fontWeight: 500, color: 'var(--t1)', textDecoration: 'none',
+                  }}
+                >
+                  Add payment method
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </a>
+                <span style={{ fontSize: 12, color: 'var(--t3)' }}>No charge until {trialEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</span>
+              </>
+            ) : (
+              <a
+                href="/api/create-checkout"
+                className="btn-press"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', padding: '9px 18px',
+                  background: 'var(--t1)', color: 'var(--bg)',
+                  borderRadius: 999, fontSize: 13, fontWeight: 700, textDecoration: 'none', border: 'none',
+                }}
+              >
+                Reactivate subscription
+              </a>
+            )}
+          </div>
         </div>
 
         {/* What's included */}
-        <div className="fade-up border border-zinc-800/80 rounded-2xl p-6 bg-zinc-900/30" style={{ animationDelay: '40ms' }}>
-          <h2 className="text-sm font-semibold text-zinc-200 mb-5">What&apos;s included</h2>
-          <ul className="space-y-3">
+        <div className="card fade-up" style={{ padding: 24, marginBottom: 12, animationDelay: '40ms' }}>
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 20 }}>What&apos;s included</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
             {[
-              'AI-generated reply drafts for every new Google review',
-              '3 tone options per review: Professional, Warm, and Brief',
-              'Weekly Monday morning email digest',
-              'Dashboard to view, search, and copy replies',
-              'Auto-detect already-replied reviews',
-            ].map(item => (
-              <li key={item} className="flex items-start gap-3 text-sm text-zinc-400">
-                <svg className="w-4 h-4 text-blue-500 mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                {item}
-              </li>
+              { icon: '✦', title: 'AI reply drafts', desc: '3 tone options generated per review: Professional, Warm, and Brief.' },
+              { icon: '🔔', title: 'Urgent alerts', desc: 'Low-rating reviews are flagged and surfaced at the top for immediate action.' },
+              { icon: '📧', title: 'Weekly digest', desc: 'Every Monday morning, a summary of reviews that need your attention.' },
+              { icon: '✓', title: 'Auto-detect replied', desc: "Replova detects when you've already replied on Google and marks it complete." },
+              { icon: '🔍', title: 'Review dashboard', desc: 'Search, filter, and track all your reviews and reply status in one place.' },
+              { icon: '⚡', title: 'Saves 5+ hrs/week', desc: 'Stop copying and pasting replies manually — let AI do the heavy lifting.' },
+            ].map(({ icon, title, desc }) => (
+              <div key={title} style={{
+                display: 'flex', gap: 12, padding: 14,
+                background: 'var(--surface-0)', borderRadius: 12, border: '1px solid var(--border)',
+              }}>
+                <div style={{
+                  width: 32, height: 32, background: 'var(--surface-2)', borderRadius: 9,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0,
+                }}>
+                  {icon}
+                </div>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 3 }}>{title}</p>
+                  <p style={{ fontSize: 12, color: 'var(--t3)', lineHeight: 1.55 }}>{desc}</p>
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
+        </div>
+
+        {/* Plan pricing */}
+        <div className="card fade-up" style={{ padding: 24, marginBottom: 12, animationDelay: '80ms' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+            <div>
+              <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 4 }}>Plan pricing</h2>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                <span style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--t1)' }}>$99</span>
+                <span style={{ fontSize: 14, color: 'var(--t2)', fontWeight: 500 }}>/month</span>
+              </div>
+              <p style={{ fontSize: 12, color: 'var(--t3)', marginTop: 4 }}>Billed monthly · Cancel anytime · No contracts</p>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {['Cancel anytime', 'No setup fees', '30-day free trial'].map(item => (
+                <div key={item} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  <span style={{ fontSize: 12, color: 'var(--t2)' }}>{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
         {/* Help */}
-        <div className="fade-up border border-zinc-800/80 rounded-2xl p-6 bg-zinc-900/30" style={{ animationDelay: '80ms' }}>
-          <h2 className="text-sm font-semibold text-zinc-200 mb-2">Need help?</h2>
-          <p className="text-sm text-zinc-500 leading-relaxed">
-            Email us at{' '}
-            <a
-              href="mailto:support@replova.app"
-              className="text-zinc-300 hover:text-zinc-100 underline underline-offset-2 transition-colors"
-            >
-              support@replova.app
-            </a>
+        <div className="card fade-up" style={{ padding: 24, animationDelay: '120ms' }}>
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 4 }}>Need help?</h2>
+          <p style={{ fontSize: 13, color: 'var(--t2)', lineHeight: 1.65 }}>
+            Questions about billing? Email us at{' '}
+            <a href="mailto:support@replova.app" style={{ color: 'var(--accent)', fontWeight: 500 }}>support@replova.app</a>
             {' '}and we&apos;ll get back to you within 24 hours.
           </p>
         </div>
 
       </div>
-    </div>
+    </>
   )
 }

@@ -1,7 +1,10 @@
 import { Resend } from 'resend'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { BASE_URL } from '@/lib/baseUrl'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+
+const STALE_DAYS = 3
 
 interface Restaurant {
   id: string
@@ -17,6 +20,8 @@ interface ReviewRow {
   reply_draft_1: string | null
   reply_draft_2: string | null
   reply_draft_3: string | null
+  created_at: string
+  status: string | null
 }
 
 function escapeHtml(str: string): string {
@@ -34,14 +39,20 @@ function stars(rating: number): string {
   return filled + empty
 }
 
+function daysWaiting(createdAt: string): number {
+  return Math.floor((Date.now() - new Date(createdAt).getTime()) / (1000 * 60 * 60 * 24))
+}
+
 function buildHtml(restaurantName: string, reviews: ReviewRow[], dashboardUrl: string): string {
   const urgentCount = reviews.filter(r => r.rating != null && r.rating <= 2).length
 
   const reviewBlocks = reviews
-    .map(
-      (r, i) => {
-        const isUrgent = r.rating != null && r.rating <= 2
-        return `
+    .map((r, i) => {
+      const isUrgent = r.rating != null && r.rating <= 2
+      const waiting = daysWaiting(r.created_at)
+      const isStale = waiting >= STALE_DAYS
+
+      return `
       ${i > 0 ? '<hr style="border:none;border-top:1px solid #e5e7eb;margin:32px 0;">' : ''}
       <div>
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
@@ -49,11 +60,13 @@ function buildHtml(restaurantName: string, reviews: ReviewRow[], dashboardUrl: s
             ${escapeHtml(r.author ?? 'Anonymous')}
           </p>
           ${isUrgent ? '<span style="display:inline-block;padding:2px 8px;background:#fee2e2;color:#dc2626;border-radius:4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Urgent</span>' : ''}
+          ${isStale && !isUrgent ? `<span style="display:inline-block;padding:2px 8px;background:#fef3c7;color:#d97706;border-radius:4px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Waiting ${waiting}d</span>` : ''}
         </div>
         <p style="margin:0 0 12px 0;font-size:20px;color:#f59e0b;letter-spacing:2px;">
           ${stars(r.rating ?? 0)}
         </p>
         ${isUrgent ? '<p style="margin:0 0 12px 0;font-size:13px;color:#dc2626;font-weight:600;">⚠️ This low-rating review needs a prompt, thoughtful response to protect your reputation.</p>' : ''}
+        ${isStale && !isUrgent ? `<p style="margin:0 0 12px 0;font-size:13px;color:#d97706;font-weight:600;">⏰ This review has been waiting ${waiting} day${waiting !== 1 ? 's' : ''} for a reply.</p>` : ''}
         <p style="margin:0 0 20px 0;font-size:15px;color:#374151;line-height:1.6;font-style:italic;">
           &quot;${escapeHtml(r.review_text ?? '')}&quot;
         </p>
@@ -79,8 +92,7 @@ function buildHtml(restaurantName: string, reviews: ReviewRow[], dashboardUrl: s
           <p style="margin:0;font-size:14px;color:#1f2937;line-height:1.6;">${escapeHtml(r.reply_draft_3 ?? '')}</p>
         </div>
       </div>`
-      }
-    )
+    })
     .join('')
 
   const urgentCountStr = escapeHtml(String(urgentCount))
@@ -134,22 +146,23 @@ function buildHtml(restaurantName: string, reviews: ReviewRow[], dashboardUrl: s
 }
 
 export async function sendWeeklyDigest(restaurant: Restaurant): Promise<void> {
+  // Include both 'drafted' (fresh) and 'emailed' (previously sent but still unanswered)
+  // so users keep getting reminders until they actually reply.
   const { data: reviews, error } = await getSupabaseAdmin()
     .from('reviews')
-    .select('id, author, rating, review_text, reply_draft_1, reply_draft_2, reply_draft_3')
+    .select('id, author, rating, review_text, reply_draft_1, reply_draft_2, reply_draft_3, created_at, status')
     .eq('restaurant_id', restaurant.id)
-    .eq('status', 'drafted')
+    .in('status', ['drafted', 'emailed'])
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(`Failed to fetch reviews: ${error.message}`)
 
   if (!reviews || reviews.length === 0) {
-    console.log(`No drafted reviews for ${restaurant.name}`)
+    console.log(`No pending reviews for ${restaurant.name}`)
     return
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'https://replova.vercel.app')
-  const html = buildHtml(restaurant.name, reviews, `${baseUrl}/dashboard`)
+  const html = buildHtml(restaurant.name, reviews, `${BASE_URL}/dashboard`)
 
   const { error: sendError } = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL ?? 'Replova <onboarding@resend.dev>',
@@ -160,13 +173,17 @@ export async function sendWeeklyDigest(restaurant: Restaurant): Promise<void> {
 
   if (sendError) throw new Error(`Failed to send email: ${sendError.message}`)
 
-  const ids = reviews.map((r) => r.id)
-  const { error: updateError } = await getSupabaseAdmin()
-    .from('reviews')
-    .update({ status: 'emailed' })
-    .in('id', ids)
+  // Mark only the 'drafted' reviews as 'emailed' — already-emailed ones
+  // keep their status so we can count how long they've been waiting.
+  const draftedIds = (reviews as ReviewRow[]).filter(r => r.status === 'drafted').map(r => r.id)
+  if (draftedIds.length > 0) {
+    const { error: updateError } = await getSupabaseAdmin()
+      .from('reviews')
+      .update({ status: 'emailed' })
+      .in('id', draftedIds)
 
-  if (updateError) throw new Error(`Failed to update review statuses: ${updateError.message}`)
+    if (updateError) throw new Error(`Failed to update review statuses: ${updateError.message}`)
+  }
 
   console.log(`Digest sent to ${restaurant.owner_email} — ${reviews.length} reviews`)
 }

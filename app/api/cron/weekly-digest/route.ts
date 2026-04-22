@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { syncRestaurantReviews } from '@/lib/syncReviews'
 import { sendWeeklyDigest } from '@/lib/sendDigest'
 
 export async function GET(req: NextRequest) {
@@ -22,24 +23,7 @@ export async function GET(req: NextRequest) {
 
   for (const restaurant of restaurants ?? []) {
     try {
-      const baseUrl = process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}`
-        : 'http://localhost:3000'
-
-      const res = await fetch(`${baseUrl}/api/fetch-reviews`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.CRON_SECRET}`,
-        },
-        body: JSON.stringify({ restaurantId: restaurant.id }),
-      })
-
-      if (!res.ok) {
-        const body = await res.text()
-        throw new Error(`fetch-reviews failed (${res.status}): ${body}`)
-      }
-
+      await syncRestaurantReviews(restaurant.id)
       await sendWeeklyDigest(restaurant)
       processed++
     } catch (err) {

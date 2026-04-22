@@ -1,4 +1,5 @@
 # Replova
+
 AI-powered Google review reply bot for restaurants. $99/month SaaS.
 Stack: Next.js 14 App Router, TypeScript, Tailwind, Supabase, Claude API, Resend, Stripe, Vercel.
 Run dev server: npm run dev

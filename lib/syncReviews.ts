@@ -1,7 +1,9 @@
+import pLimit from 'p-limit'
 import { generateReplies } from '@/lib/generateReplies'
 import { getPlaceReviews } from '@/lib/places'
 import { fetchAllGmbReviews, starRatingToNumber } from '@/lib/myBusiness'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { getValidGoogleToken } from '@/lib/googleAuth'
 
 export interface SyncResult {
   source: 'gmb' | 'places'
@@ -31,41 +33,7 @@ type ReviewCandidate = {
   hasGoogleReply: boolean
 }
 
-async function getValidAccessToken(restaurant: RestaurantRecord): Promise<string | null> {
-  const fiveMin = 5 * 60 * 1000
-  const needsRefresh =
-    !restaurant.google_token_expires_at ||
-    Date.now() > restaurant.google_token_expires_at - fiveMin
-
-  if (!needsRefresh) return restaurant.google_access_token
-  if (!restaurant.google_refresh_token) return null
-
-  const res = await fetch('https://oauth2.googleapis.com/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: process.env.GOOGLE_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      refresh_token: restaurant.google_refresh_token,
-      grant_type: 'refresh_token',
-    }).toString(),
-  })
-
-  if (!res.ok) {
-    console.error('Token refresh failed:', await res.text())
-    return null
-  }
-
-  const data = await res.json() as { access_token: string; expires_in: number }
-  const expiresAt = Date.now() + data.expires_in * 1000
-
-  await getSupabaseAdmin()
-    .from('restaurants')
-    .update({ google_access_token: data.access_token, google_token_expires_at: expiresAt })
-    .eq('id', restaurant.id)
-
-  return data.access_token
-}
+const AI_CONCURRENCY = 5
 
 export async function syncRestaurantReviews(restaurantId: string): Promise<SyncResult> {
   const admin = getSupabaseAdmin()
@@ -104,7 +72,7 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
 
   // Prefer Google My Business API (returns all reviews + reply status)
   if (restaurant.google_location_name) {
-    const accessToken = await getValidAccessToken(restaurant)
+    const accessToken = await getValidGoogleToken(restaurant, admin)
     if (accessToken) {
       try {
         const gmbReviews = await fetchAllGmbReviews(accessToken, restaurant.google_location_name)
@@ -222,34 +190,36 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
 
     newlyStored += inserted?.length ?? 0
 
+    // Limit concurrent Claude API calls to avoid rate limits
+    const limit = pLimit(AI_CONCURRENCY)
+
     await Promise.all(
-      (inserted ?? []).map(async row => {
-        try {
-          const replies = await generateReplies({
+      (inserted ?? []).map(row =>
+        limit(async () => {
+          const success = await generateWithRetry({
             restaurantName: restaurant.name,
             author: row.author ?? '',
             rating: row.rating ?? 0,
             reviewText: row.review_text ?? '',
           })
 
-          await admin
-            .from('reviews')
-            .update({
-              reply_draft_1: replies.professional,
-              reply_draft_2: replies.warm,
-              reply_draft_3: replies.brief,
-              status: 'drafted',
-            })
-            .eq('id', row.id)
-
-          repliesGenerated++
-        } catch (err) {
-          console.error(`generateReplies failed for review ${row.id}:`, err)
-          draftsFailed++
-          // Leave status as 'pending' — shows "Draft not yet generated" in UI
-          // so user knows it exists and can contact support
-        }
-      })
+          if (success) {
+            await admin
+              .from('reviews')
+              .update({
+                reply_draft_1: success.professional,
+                reply_draft_2: success.warm,
+                reply_draft_3: success.brief,
+                status: 'drafted',
+              })
+              .eq('id', row.id)
+            repliesGenerated++
+          } else {
+            draftsFailed++
+            // Status stays 'pending' — visible in UI as "Draft not yet generated"
+          }
+        })
+      )
     )
   }
 
@@ -261,4 +231,26 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
     repliesGenerated,
     draftsFailed,
   }
+}
+
+async function generateWithRetry(
+  params: Parameters<typeof generateReplies>[0],
+  maxAttempts = 3
+): Promise<Awaited<ReturnType<typeof generateReplies>> | null> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await generateReplies(params)
+    } catch (err) {
+      const isRateLimit =
+        err instanceof Error && (err.message.includes('429') || err.message.toLowerCase().includes('rate'))
+      if (attempt < maxAttempts) {
+        // Exponential backoff: 2s, 4s, 8s — extra delay for rate limit errors
+        const delay = (isRateLimit ? 4000 : 2000) * Math.pow(2, attempt - 1)
+        await new Promise(res => setTimeout(res, delay))
+      } else {
+        console.error(`generateReplies failed after ${maxAttempts} attempts:`, err)
+      }
+    }
+  }
+  return null
 }

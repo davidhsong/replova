@@ -4,6 +4,7 @@ import { NextRequest } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { BASE_URL } from '@/lib/baseUrl'
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!)
@@ -24,11 +25,9 @@ export async function GET(req: NextRequest) {
 
   if (!restaurant?.stripe_customer_id) redirect('/dashboard')
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? `https://${process.env.VERCEL_URL}`
-
   const session = await getStripe().billingPortal.sessions.create({
     customer: restaurant.stripe_customer_id,
-    return_url: `${baseUrl}/dashboard/billing`,
+    return_url: `${BASE_URL}/dashboard/billing`,
   })
 
   redirect(session.url)

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 
 export async function POST(req: NextRequest) {
-  const { name, email, placeId, redirectTo } = await req.json()
+  const { name, email, placeId } = await req.json()
 
   if (!name || !email || !placeId) {
     return NextResponse.json({ error: 'name, email, and placeId are required' }, { status: 400 })
@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
-  // Check if this email already has a restaurant
+  // Check if this email already has a restaurant — let them sign in
   const { data: existing } = await admin
     .from('restaurants')
     .select('id')
@@ -18,10 +18,8 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (existing) {
-    return NextResponse.json(
-      { error: 'An account with this email already exists. Please sign in instead.' },
-      { status: 409 }
-    )
+    // Restaurant exists — client will send sign-in OTP
+    return NextResponse.json({ success: true, id: existing.id, alreadyExists: true })
   }
 
   const { data, error } = await admin
@@ -40,21 +38,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  // Generate a magic link server-side so no email needs to be sent.
-  // redirectTo must go through /auth/callback so the PKCE code is exchanged
-  // for a session before any SSR page renders.
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
-  const callbackUrl = redirectTo ?? `${baseUrl}/auth/callback?next=%2Fdashboard%3Fsuccess%3D1`
-  const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
-    type: 'magiclink',
+  // Pre-create the auth user with email confirmed so OTP works even when
+  // Supabase "Email Confirm" is ON. The client sends the actual magic link.
+  const { error: createUserError } = await admin.auth.admin.createUser({
     email,
-    options: { redirectTo: callbackUrl },
+    email_confirm: true,
   })
-
-  if (linkError) {
-    // Restaurant was created — still succeed but without a direct link
-    return NextResponse.json({ success: true, id: data.id })
+  if (createUserError && !createUserError.message.toLowerCase().includes('already')) {
+    console.error('[restaurants/create] createUser error:', createUserError.message)
   }
 
-  return NextResponse.json({ success: true, id: data.id, magicLink: linkData.properties.action_link })
+  return NextResponse.json({ success: true, id: data.id })
 }

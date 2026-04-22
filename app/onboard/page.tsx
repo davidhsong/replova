@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { supabaseBrowser } from '@/lib/supabase'
+import { getSupabaseBrowser } from '@/lib/supabase'
 
 type Step = 'search' | 'confirm' | 'email' | 'success'
 
@@ -106,22 +106,18 @@ export default function OnboardPage() {
           name: result.name,
           email,
           placeId: result.placeId,
-          redirectTo: `${window.location.origin}/auth/callback?next=%2Fdashboard%3Fsuccess%3D1`,
         }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed to create account.')
 
-      if (data.magicLink) {
-        // Sign the user in directly — no email needed
-        window.location.href = data.magicLink
-        return
-      }
+      const redirectTo = data.alreadyExists
+        ? `${window.location.origin}/auth/callback?next=%2Fdashboard`
+        : `${window.location.origin}/auth/callback?next=%2Fdashboard%3Fsuccess%3D1`
 
-      // Fallback: magic link generation failed, send OTP email the normal way
-      const { error: otpError } = await supabaseBrowser.auth.signInWithOtp({
+      const { error: otpError } = await getSupabaseBrowser().auth.signInWithOtp({
         email,
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+        options: { emailRedirectTo: redirectTo },
       })
       if (otpError) throw new Error(otpError.message)
 

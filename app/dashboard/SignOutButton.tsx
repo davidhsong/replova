@@ -1,22 +1,28 @@
 'use client'
 
-import { supabaseBrowser } from '@/lib/supabase'
+import { getSupabaseBrowser } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 
 export default function SignOutButton() {
   const router = useRouter()
 
   async function handleSignOut() {
-    await supabaseBrowser.auth.signOut()
+    await getSupabaseBrowser().auth.signOut()
     router.push('/signin')
   }
 
   return (
     <button
       onClick={handleSignOut}
-      className="text-xs font-medium text-zinc-600 hover:text-zinc-300 transition-colors px-2 py-1.5 rounded-lg hover:bg-zinc-800/60"
+      className="nav-item"
+      style={{ fontSize: 12, color: 'var(--t3)' }}
     >
-      Sign out
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+        <polyline points="16 17 21 12 16 7"/>
+        <line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      <span className="nav-lbl">Sign out</span>
     </button>
   )
 }
