@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
-import { syncRestaurantReviews } from '@/lib/syncReviews'
 import { sendWeeklyDigest } from '@/lib/sendDigest'
 
 export async function GET(req: NextRequest) {
@@ -23,7 +22,6 @@ export async function GET(req: NextRequest) {
 
   for (const restaurant of restaurants ?? []) {
     try {
-      await syncRestaurantReviews(restaurant.id)
       await sendWeeklyDigest(restaurant)
       processed++
     } catch (err) {

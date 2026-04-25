@@ -38,12 +38,62 @@ export default function SettingsPage() {
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<string | null>(null)
 
+  const [replySettings, setReplySettings] = useState({
+    auto_reply_enabled: false,
+    auto_reply_delay_hours: 2,
+    reply_persona: '',
+    notify_negative_reviews: true,
+    negative_threshold: 3,
+  })
+  const [replySettingsLoaded, setReplySettingsLoaded] = useState(false)
+  const [savingReplySettings, setSavingReplySettings] = useState(false)
+  const [replySettingsResult, setReplySettingsResult] = useState<{ ok: boolean; msg: string } | null>(null)
+
   useEffect(() => {
     ;(async () => {
       const { data } = await getSupabaseBrowser().auth.getUser()
       if (data.user) setEmail(data.user.email ?? '')
     })()
   }, [])
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(data => {
+        if (data && !data.error) {
+          setReplySettings({
+            auto_reply_enabled: data.auto_reply_enabled ?? false,
+            auto_reply_delay_hours: data.auto_reply_delay_hours ?? 2,
+            reply_persona: data.reply_persona ?? '',
+            notify_negative_reviews: data.notify_negative_reviews ?? true,
+            negative_threshold: data.negative_threshold ?? 3,
+          })
+        }
+        setReplySettingsLoaded(true)
+      })
+      .catch(() => setReplySettingsLoaded(true))
+  }, [])
+
+  async function handleSaveReplySettings() {
+    setSavingReplySettings(true)
+    setReplySettingsResult(null)
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(replySettings),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Save failed')
+      }
+      setReplySettingsResult({ ok: true, msg: 'Settings saved.' })
+    } catch (err) {
+      setReplySettingsResult({ ok: false, msg: err instanceof Error ? err.message : 'Save failed.' })
+    } finally {
+      setSavingReplySettings(false)
+    }
+  }
 
   useEffect(() => {
     fetch('/api/restaurant')
@@ -299,6 +349,166 @@ export default function SettingsPage() {
                 </svg>
                 Connect Google Business
               </a>
+            </div>
+          )}
+        </SectionCard>
+
+        {/* Reply Settings */}
+        <SectionCard
+          title="Reply settings"
+          description="Configure how Replova handles automatic replies and alerts."
+          delay={60}
+        >
+          {!replySettingsLoaded ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {[0, 1, 2].map(i => <div key={i} className="skeleton" style={{ height: 40, borderRadius: 8 }} />)}
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+              {/* Auto-reply toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 2 }}>Auto-reply to reviews</p>
+                  <p style={{ fontSize: 12, color: 'var(--t3)' }}>Automatically post approved AI drafts after the delay period.</p>
+                </div>
+                <button
+                  role="switch"
+                  aria-checked={replySettings.auto_reply_enabled}
+                  onClick={() => setReplySettings(s => ({ ...s, auto_reply_enabled: !s.auto_reply_enabled }))}
+                  className="btn-press"
+                  style={{
+                    flexShrink: 0, width: 40, height: 22, borderRadius: 11,
+                    background: replySettings.auto_reply_enabled ? 'var(--ok)' : 'var(--border-md)',
+                    border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.15s',
+                  }}
+                >
+                  <span style={{
+                    display: 'block', width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                    position: 'absolute', top: 3,
+                    left: replySettings.auto_reply_enabled ? 21 : 3,
+                    transition: 'left 0.15s',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  }} />
+                </button>
+              </div>
+
+              {/* Delay hours */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--t3)' }}>
+                  Delay before sending (hours)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={24}
+                  value={replySettings.auto_reply_delay_hours}
+                  onChange={e => setReplySettings(s => ({ ...s, auto_reply_delay_hours: Math.min(24, Math.max(1, Number(e.target.value))) }))}
+                  style={{
+                    width: 100, background: 'var(--surface-0)', border: '1px solid var(--border-md)',
+                    borderRadius: 'var(--radius-m)', padding: '9px 12px', fontSize: 13,
+                    color: 'var(--t1)', fontFamily: 'inherit',
+                  }}
+                />
+              </div>
+
+              {/* Reply persona */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--t3)' }}>
+                  Your reply voice / persona
+                </label>
+                <textarea
+                  rows={3}
+                  maxLength={300}
+                  value={replySettings.reply_persona}
+                  onChange={e => setReplySettings(s => ({ ...s, reply_persona: e.target.value }))}
+                  placeholder="Describe your restaurant's tone, e.g. 'We're casual and friendly. Use first names. Keep it brief and genuine.'"
+                  style={{
+                    width: '100%', background: 'var(--surface-0)', border: '1px solid var(--border-md)',
+                    borderRadius: 'var(--radius-m)', padding: '9px 12px', fontSize: 13,
+                    color: 'var(--t1)', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6,
+                    boxSizing: 'border-box',
+                  }}
+                />
+                <p style={{ fontSize: 11, color: 'var(--t3)', textAlign: 'right' }}>{replySettings.reply_persona.length}/300</p>
+              </div>
+
+              {/* Negative review alerts toggle */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <div>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 2 }}>Alert me on low ratings</p>
+                  <p style={{ fontSize: 12, color: 'var(--t3)' }}>Get an email when a review falls at or below the threshold.</p>
+                </div>
+                <button
+                  role="switch"
+                  aria-checked={replySettings.notify_negative_reviews}
+                  onClick={() => setReplySettings(s => ({ ...s, notify_negative_reviews: !s.notify_negative_reviews }))}
+                  className="btn-press"
+                  style={{
+                    flexShrink: 0, width: 40, height: 22, borderRadius: 11,
+                    background: replySettings.notify_negative_reviews ? 'var(--ok)' : 'var(--border-md)',
+                    border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.15s',
+                  }}
+                >
+                  <span style={{
+                    display: 'block', width: 16, height: 16, borderRadius: '50%', background: '#fff',
+                    position: 'absolute', top: 3,
+                    left: replySettings.notify_negative_reviews ? 21 : 3,
+                    transition: 'left 0.15s',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                  }} />
+                </button>
+              </div>
+
+              {/* Alert threshold */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--t3)' }}>
+                  Alert threshold (stars)
+                </label>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button
+                      key={star}
+                      onClick={() => setReplySettings(s => ({ ...s, negative_threshold: star }))}
+                      className="btn-press"
+                      style={{
+                        width: 36, height: 36, borderRadius: 8, fontSize: 13, fontWeight: 600,
+                        border: `1px solid ${replySettings.negative_threshold === star ? 'var(--t1)' : 'var(--border-md)'}`,
+                        background: replySettings.negative_threshold === star ? 'var(--surface-2)' : 'var(--surface-0)',
+                        color: replySettings.negative_threshold === star ? 'var(--t1)' : 'var(--t3)',
+                        cursor: 'pointer', fontFamily: 'inherit',
+                      }}
+                    >
+                      {star}
+                    </button>
+                  ))}
+                </div>
+                <p style={{ fontSize: 12, color: 'var(--t3)' }}>Alert when rating is {replySettings.negative_threshold} star{replySettings.negative_threshold !== 1 ? 's' : ''} or below.</p>
+              </div>
+
+              {/* Save button */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, paddingTop: 4 }}>
+                <button
+                  onClick={handleSaveReplySettings}
+                  disabled={savingReplySettings}
+                  className="btn-press"
+                  style={{
+                    padding: '9px 18px', background: 'var(--surface-2)', border: '1px solid var(--border-md)',
+                    borderRadius: 'var(--radius-m)', fontSize: 13, fontWeight: 600, color: 'var(--t1)',
+                    cursor: 'pointer', fontFamily: 'inherit', opacity: savingReplySettings ? 0.5 : 1,
+                  }}
+                >
+                  {savingReplySettings ? 'Saving…' : 'Save settings'}
+                </button>
+                {replySettingsResult && (
+                  <p style={{ fontSize: 12, fontWeight: 500, color: replySettingsResult.ok ? 'var(--ok)' : 'var(--err)', display: 'flex', alignItems: 'center', gap: 5 }}>
+                    {replySettingsResult.ok
+                      ? <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                      : null}
+                    {replySettingsResult.msg}
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </SectionCard>

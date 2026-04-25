@@ -1,5 +1,13 @@
 const API_KEY = process.env.GOOGLE_PLACES_API_KEY
 
+export interface PlaceSearchResult {
+  placeId: string
+  name: string
+  address: string
+  rating: number | null
+  totalRatings: number | null
+}
+
 interface FindPlaceResult {
   placeId: string
   name: string
@@ -18,6 +26,61 @@ interface PlaceReviewsResult {
   overallRating: number
   totalRatings: number
   reviews: Review[]
+}
+
+export async function searchNearbyPlaces(query: string): Promise<PlaceSearchResult[]> {
+  const params = new URLSearchParams({
+    query,
+    type: 'restaurant',
+    key: API_KEY!,
+  })
+
+  const res = await fetch(
+    `https://maps.googleapis.com/maps/api/place/textsearch/json?${params}`
+  )
+  const data = await res.json()
+
+  if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+    throw new Error(`Google Places textsearch error: ${data.status} — ${data.error_message ?? 'no details'}`)
+  }
+
+  return (data.results ?? []).slice(0, 5).map((r: {
+    place_id: string
+    name: string
+    formatted_address: string
+    rating?: number
+    user_ratings_total?: number
+  }) => ({
+    placeId: r.place_id,
+    name: r.name,
+    address: r.formatted_address,
+    rating: r.rating ?? null,
+    totalRatings: r.user_ratings_total ?? null,
+  }))
+}
+
+export async function getPlaceRatingSnapshot(
+  placeId: string
+): Promise<{ rating: number | null; totalRatings: number | null }> {
+  const params = new URLSearchParams({
+    place_id: placeId,
+    fields: 'rating,user_ratings_total',
+    key: API_KEY!,
+  })
+
+  const res = await fetch(
+    `https://maps.googleapis.com/maps/api/place/details/json?${params}`
+  )
+  const data = await res.json()
+
+  if (data.status !== 'OK') {
+    throw new Error(`Google Places details error: ${data.status} — ${data.error_message ?? 'no details'}`)
+  }
+
+  return {
+    rating: data.result.rating ?? null,
+    totalRatings: data.result.user_ratings_total ?? null,
+  }
 }
 
 export async function findPlaceId(

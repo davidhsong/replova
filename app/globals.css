@@ -351,6 +351,22 @@ body {
   pointer-events: none;
 }
 
+/* ── Stats strip ─────────────────────────────────────────────────── */
+.stats-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  overflow-x: auto;
+}
+
+/* ── Intelligence panel two-column grid ──────────────────────────── */
+.intel-grid {
+  display: grid;
+  grid-template-columns: 65fr 35fr;
+  gap: 24px;
+  align-items: start;
+}
+
 /* ── Mobile responsive sidebar ───────────────────────────────────── */
 @media (max-width: 768px) {
   .dark-app { --sidebar-w: 56px; }
@@ -359,4 +375,6 @@ body {
   .sidebar-usr-name { display: none; }
   .page-wrap { padding: 20px 16px; }
   .sec-head { padding: 18px 16px; }
+  .stats-strip { grid-template-columns: repeat(2, 1fr); }
+  .intel-grid { grid-template-columns: 1fr; }
 }

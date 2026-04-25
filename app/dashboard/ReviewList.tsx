@@ -299,8 +299,12 @@ export default function ReviewList({
     // A refresh only happens after a real sync (handled in Settings page).
   }
 
+  const localNeedsReply = reviews.filter(r => getStatus(r) !== 'replied').length
+  const localCompleted = reviews.filter(r => getStatus(r) === 'replied').length
+  const localUrgent = reviews.filter(r => getStatus(r) !== 'replied' && r.rating != null && r.rating <= 2).length
+
   const responseRate = stats.total > 0
-    ? Math.round(((stats.total - stats.needsReply) / stats.total) * 100)
+    ? Math.round(((stats.total - localNeedsReply) / stats.total) * 100)
     : 0
 
   const filtered = useMemo(() => {
@@ -331,9 +335,6 @@ export default function ReviewList({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reviews, tab, ratingFilter, search, localStatus])
 
-  const localNeedsReply = reviews.filter(r => getStatus(r) !== 'replied').length
-  const localCompleted = reviews.filter(r => getStatus(r) === 'replied').length
-
   const tabs: { value: SectionTab; label: string; count: number }[] = [
     { value: 'needs-reply', label: 'Needs Reply', count: localNeedsReply },
     { value: 'completed',   label: 'Completed',   count: localCompleted },
@@ -342,13 +343,13 @@ export default function ReviewList({
 
   return (
     <div>
-      {/* Stats — sourced from server-computed values */}
+      {/* Stats — needs reply / urgent update optimistically via local state */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 20 }}>
         {[
-          { label: 'Needs reply',   value: stats.needsReply,                          color: 'var(--t1)',  danger: false },
+          { label: 'Needs reply',   value: localNeedsReply,                           color: 'var(--t1)',  danger: false },
           { label: 'Avg rating',    value: stats.avgRating ? `★ ${stats.avgRating.toFixed(1)}` : '—', color: '#f59e0b', danger: false },
           { label: 'Response rate', value: `${responseRate}%`,                         color: 'var(--t1)',  danger: false },
-          { label: 'Urgent',        value: stats.urgent,                               color: stats.urgent > 0 ? 'var(--err)' : 'var(--t3)', danger: stats.urgent > 0 },
+          { label: 'Urgent',        value: localUrgent,                               color: localUrgent > 0 ? 'var(--err)' : 'var(--t3)', danger: localUrgent > 0 },
         ].map((s, i) => (
           <div
             key={i}

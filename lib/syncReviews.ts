@@ -4,6 +4,7 @@ import { getPlaceReviews } from '@/lib/places'
 import { fetchAllGmbReviews, starRatingToNumber } from '@/lib/myBusiness'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { getValidGoogleToken } from '@/lib/googleAuth'
+import { sendNegativeReviewAlert } from '@/lib/alerts'
 
 export interface SyncResult {
   source: 'gmb' | 'places'
@@ -217,6 +218,12 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
           } else {
             draftsFailed++
             // Status stays 'pending' — visible in UI as "Draft not yet generated"
+          }
+
+          if ((row.rating ?? 0) <= 3) {
+            void sendNegativeReviewAlert(row.id).catch(err =>
+              console.error('Alert failed for review', row.id, err)
+            )
           }
         })
       )
