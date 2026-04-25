@@ -34,57 +34,47 @@ export default function LocationSwitcherClient({ locations, activeLocationId, lo
   }
 
   return (
-    <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--border)' }}>
-      {locations.length > 1 ? (
-        <select
-          value={activeLocationId}
-          onChange={handleChange}
-          disabled={switching}
-          style={{
-            width: '100%',
-            background: 'var(--surface-2)',
-            border: '1px solid var(--border-md)',
-            borderRadius: 8,
-            padding: '6px 10px',
-            fontSize: 12,
-            fontWeight: 600,
-            color: 'var(--t1)',
-            fontFamily: 'inherit',
-            cursor: switching ? 'wait' : 'pointer',
-            opacity: switching ? 0.6 : 1,
-            appearance: 'none',
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
-            backgroundRepeat: 'no-repeat',
-            backgroundPosition: 'right 8px center',
-            paddingRight: 28,
-          }}
-        >
-          {locations.map(loc => (
-            <option key={loc.id} value={loc.id}>{loc.name}</option>
-          ))}
-        </select>
-      ) : (
-        <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--t2)', padding: '4px 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {locations[0]?.name ?? ''}
-        </p>
-      )}
+    <div style={{ padding: '0 12px 12px' }}>
+      <select
+        value={activeLocationId}
+        onChange={handleChange}
+        disabled={switching}
+        style={{
+          width: '100%',
+          background: 'var(--surface-2)',
+          border: '1px solid var(--line-md)',
+          borderRadius: 6,
+          padding: '6px 28px 6px 10px',
+          fontSize: 12,
+          fontWeight: 500,
+          color: 'var(--t1)',
+          fontFamily: 'inherit',
+          cursor: switching ? 'wait' : 'pointer',
+          opacity: switching ? 0.6 : 1,
+          appearance: 'none',
+          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23807c70' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'right 8px center',
+        }}
+      >
+        {locations.map(loc => (
+          <option key={loc.id} value={loc.id}>{loc.name}</option>
+        ))}
+      </select>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
-        <span style={{ fontSize: 11, color: 'var(--t3)' }}>
-          {currentCount} of {locationLimit} location{locationLimit !== 1 ? 's' : ''} used
-        </span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: 6 }}>
         {atLimit ? (
           <a
             href="/dashboard/billing"
-            style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}
+            style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600 }}
             title="Upgrade to add more locations"
           >
-            Upgrade
+            Upgrade plan ↑
           </a>
         ) : (
           <a
             href="/onboard?add=true"
-            style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}
+            style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600 }}
           >
             + Add location
           </a>

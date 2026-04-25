@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { useRouter } from 'next/navigation'
 import CopyButton from './CopyButton'
 import PostReplyButton from './PostReplyButton'
 
@@ -58,7 +57,7 @@ function Stars({ rating }: { rating: number }) {
       {Array.from({ length: 5 }, (_, i) => (
         <svg key={i} width="11" height="11" viewBox="0 0 24 24"
           fill={i < rating ? '#f59e0b' : 'none'}
-          stroke={i < rating ? '#f59e0b' : 'var(--border-hi)'}
+          stroke={i < rating ? '#f59e0b' : 'var(--line-hi)'}
           strokeWidth="1.5"
         >
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -68,22 +67,20 @@ function Stars({ rating }: { rating: number }) {
   )
 }
 
-function ratingBorderColor(rating: number | null): string {
+function railColor(rating: number | null): string {
   if (rating === null) return 'transparent'
-  if (rating <= 2) return 'var(--err)'
+  if (rating <= 2) return 'var(--neg)'
   if (rating === 3) return 'var(--warn)'
-  return 'var(--ok)'
+  return 'var(--pos)'
 }
 
 function ReviewRow({
   review,
-  restaurantName,
   effectiveStatus,
   onToggle,
   index,
 }: {
   review: Review
-  restaurantName: string
   effectiveStatus: string | null
   onToggle: () => void
   index: number
@@ -111,53 +108,60 @@ function ReviewRow({
     setToggling(false)
   }
 
+  const initials = (review.author ?? 'A').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+
   return (
-    <div
-      className={`review-row fade-up ${open ? 'open' : ''} ${isReplied ? 'replied' : ''}`}
-      style={{ animationDelay: `${index * 40}ms`, borderLeft: `3px solid ${isReplied ? 'var(--border)' : ratingBorderColor(review.rating)}` }}
-    >
+    <article style={{
+      background: 'var(--surface)',
+      borderTop: '1px solid var(--line)',
+      borderLeft: `3px solid ${isReplied ? 'transparent' : railColor(review.rating)}`,
+      opacity: isReplied ? 0.5 : 1,
+      transition: 'opacity 0.15s',
+    }}>
       {/* Row header */}
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <button
           onClick={() => setOpen(o => !o)}
-          style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 14, padding: '13px 16px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', minWidth: 0 }}
+          style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '16px 16px 16px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', minWidth: 0 }}
         >
-          {/* Rating */}
-          <div style={{ flexShrink: 0, width: 58 }}>
-            {review.rating != null ? (
-              <>
-                <Stars rating={review.rating} />
-                <div style={{ fontSize: 10, color: 'var(--t3)', marginTop: 2 }}>{review.rating}/5</div>
-              </>
-            ) : (
-              <span style={{ fontSize: 10, color: 'var(--t3)' }}>—</span>
-            )}
+          {/* Avatar */}
+          <div style={{
+            width: 30, height: 30, borderRadius: '50%',
+            background: 'var(--surface-2)', border: '1px solid var(--line)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, fontWeight: 600, color: 'var(--t2)', flexShrink: 0,
+          }}>
+            {initials}
           </div>
 
           {/* Author + preview */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3, flexWrap: 'wrap' }}>
-              <span style={{
-                fontSize: 13, fontWeight: 600,
-                color: isReplied ? 'var(--t3)' : 'var(--t1)',
-                textDecoration: isReplied ? 'line-through' : 'none',
-              }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--t1)' }}>
                 {review.author ?? 'Anonymous'}
               </span>
-              {isLowRating && !isReplied && <span className="badge badge-red">Urgent</span>}
-              {!isLowRating && isOverdueReview && <span className="badge badge-amber">Overdue</span>}
-              {isReplied && <span className="badge badge-green">Replied</span>}
+              {review.rating != null && <Stars rating={review.rating} />}
+              {isLowRating && !isReplied && <span className="pill pill-neg">Urgent</span>}
+              {!isLowRating && isOverdueReview && <span className="pill pill-warn">Overdue</span>}
+              {isReplied && (
+                <span className="pill pill-pos">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                  Replied
+                </span>
+              )}
             </div>
             {review.review_text && (
-              <p style={{ fontSize: 12, color: 'var(--t3)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {review.review_text.slice(0, 96)}{review.review_text.length > 96 ? '…' : ''}
+              <p className="t-xs c-t3" style={{ margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {review.review_text.slice(0, 100)}{review.review_text.length > 100 ? '…' : ''}
               </p>
             )}
           </div>
 
           {/* Date + chevron */}
           <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
-            <span style={{ fontSize: 12, color: 'var(--t3)' }}>{reviewDate}</span>
+            <span className="t-xs c-t3">{reviewDate}</span>
             <svg
               style={{ color: 'var(--t3)', transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0)' }}
               width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
@@ -185,20 +189,26 @@ function ReviewRow({
 
       {/* Expanded panel */}
       {open && (
-        <div className="fade-in" style={{ padding: '0 16px 16px', borderTop: '1px solid var(--border)' }}>
-          {/* Metadata */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, margin: '16px 0', fontSize: 12 }}>
-            {isLowRating && !isReplied && <span style={{ color: 'var(--err)', fontWeight: 500 }}>⚠ Prioritise this response</span>}
+        <div className="fade-in" style={{ padding: '0 20px 20px 20px', borderTop: '1px solid var(--line)' }}>
+          {/* Context hint */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, margin: '14px 0', fontSize: 12 }}>
+            {isLowRating && !isReplied && <span style={{ color: 'var(--neg)', fontWeight: 500 }}>⚠ Prioritise this response</span>}
             {!isLowRating && isOverdueReview && <span style={{ color: 'var(--warn)', fontWeight: 500 }}>⏰ Waiting {OVERDUE_DAYS}+ days for a reply</span>}
-            {isReplied && <span style={{ color: 'var(--ok)', fontWeight: 500 }}>✓ Already replied on Google</span>}
+            {isReplied && <span style={{ color: 'var(--pos)', fontWeight: 500 }}>✓ Already replied on Google</span>}
           </div>
 
-          {/* Full review text */}
+          {/* Full review text — serif italic for negative */}
           {review.review_text ? (
-            <div style={{ margin: '0 0 16px', paddingLeft: 14, borderLeft: '2px solid var(--border-md)' }}>
-              <p style={{ fontSize: 13, color: 'var(--t2)', lineHeight: 1.7, fontStyle: 'italic', margin: 0 }}>
-                &ldquo;{review.review_text}&rdquo;
-              </p>
+            <div style={{ marginBottom: 16, paddingLeft: 14, borderLeft: `2px solid ${isLowRating ? 'var(--neg-line)' : 'var(--line-md)'}` }}>
+              {isLowRating ? (
+                <p className="t-serif t-italic" style={{ fontSize: 17, color: 'var(--t1)', lineHeight: 1.5, margin: 0, letterSpacing: '-0.005em', fontWeight: 400 }}>
+                  &ldquo;{review.review_text}&rdquo;
+                </p>
+              ) : (
+                <p style={{ fontSize: 13, color: 'var(--t2)', lineHeight: 1.7, fontStyle: 'italic', margin: 0 }}>
+                  &ldquo;{review.review_text}&rdquo;
+                </p>
+              )}
             </div>
           ) : (
             <p style={{ fontSize: 13, color: 'var(--t3)', fontStyle: 'italic', marginBottom: 16 }}>No review text — rating only.</p>
@@ -206,17 +216,20 @@ function ReviewRow({
 
           {/* Reply drafts */}
           {(review.reply_draft_1 || review.reply_draft_2 || review.reply_draft_3) ? (
-            <>
-              <div style={{
-                display: 'flex', gap: 4, marginBottom: 12,
-                background: 'var(--bg)', borderRadius: 10, padding: 4,
-                width: 'fit-content', border: '1px solid var(--border)',
-              }}>
+            <div style={{ background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 'var(--r-5)', padding: 16 }}>
+              <div className="t-eyebrow" style={{ marginBottom: 12 }}>Suggested reply</div>
+              <div style={{ display: 'flex', gap: 3, marginBottom: 12, background: 'var(--surface)', borderRadius: 'var(--r-4)', padding: 3, border: '1px solid var(--line)', width: 'fit-content' }}>
                 {REPLY_LABELS.map(({ label, field }) => (
                   <button
                     key={field}
                     onClick={() => setActiveTab(field)}
-                    className={`draft-tab ${activeTab === field ? 'active' : ''}`}
+                    style={{
+                      padding: '5px 12px', borderRadius: 'var(--r-3)', fontSize: 11, fontWeight: 600,
+                      background: activeTab === field ? 'var(--t1)' : 'transparent',
+                      color: activeTab === field ? 'var(--bg)' : 'var(--t3)',
+                      border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                      letterSpacing: '0.02em', transition: 'all 0.1s',
+                    }}
                   >
                     {label}
                   </button>
@@ -224,17 +237,14 @@ function ReviewRow({
               </div>
 
               {activeText && (
-                <div style={{ background: 'var(--bg)', border: '1px solid var(--border-md)', borderRadius: 12, padding: '14px 16px' }}>
+                <>
                   <p style={{ fontSize: 13, color: 'var(--t2)', lineHeight: 1.75, margin: '0 0 14px' }}>{activeText}</p>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                     <button
                       onClick={handleToggle}
                       disabled={toggling}
-                      style={{
-                        padding: '6px 12px', fontSize: 12, fontWeight: 500, borderRadius: 8, cursor: 'pointer',
-                        background: 'none', border: '1px solid var(--border-md)', color: 'var(--t2)',
-                        fontFamily: 'inherit', transition: 'all 0.12s', opacity: toggling ? 0.4 : 1,
-                      }}
+                      className="btn btn-ghost btn-sm"
+                      style={{ opacity: toggling ? 0.4 : 1 }}
                     >
                       {isReplied ? 'Undo replied' : 'Mark as replied'}
                     </button>
@@ -247,9 +257,9 @@ function ReviewRow({
                       />
                     </div>
                   </div>
-                </div>
+                </>
               )}
-            </>
+            </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <p style={{ fontSize: 12, color: 'var(--t3)', fontStyle: 'italic' }}>
@@ -258,11 +268,8 @@ function ReviewRow({
               <button
                 onClick={handleToggle}
                 disabled={toggling}
-                style={{
-                  padding: '6px 12px', fontSize: 12, fontWeight: 500, borderRadius: 8, cursor: 'pointer',
-                  background: 'none', border: '1px solid var(--border-md)', color: 'var(--t2)',
-                  fontFamily: 'inherit', opacity: toggling ? 0.4 : 1,
-                }}
+                className="btn btn-ghost btn-sm"
+                style={{ opacity: toggling ? 0.4 : 1 }}
               >
                 {isReplied ? 'Undo replied' : 'Mark as replied'}
               </button>
@@ -270,7 +277,7 @@ function ReviewRow({
           )}
         </div>
       )}
-    </div>
+    </article>
   )
 }
 
@@ -295,7 +302,6 @@ export default function ReviewList({
   currentPage: number
   totalPages: number
 }) {
-  const router = useRouter()
   const [tab, setTab] = useState<SectionTab>('needs-reply')
   const [ratingFilter, setRatingFilter] = useState<RatingFilter>('all')
   const [search, setSearch] = useState('')
@@ -309,17 +315,10 @@ export default function ReviewList({
     const current = getStatus(review)
     const next = current === 'replied' ? 'drafted' : 'replied'
     setLocalStatus(prev => ({ ...prev, [review.id]: next }))
-    // No router.refresh() here — optimistic update is sufficient for the toggle.
-    // A refresh only happens after a real sync (handled in Settings page).
   }
 
   const localNeedsReply = reviews.filter(r => getStatus(r) !== 'replied').length
   const localCompleted = reviews.filter(r => getStatus(r) === 'replied').length
-  const localUrgent = reviews.filter(r => getStatus(r) !== 'replied' && r.rating != null && r.rating <= 2).length
-
-  const responseRate = stats.total > 0
-    ? Math.round(((stats.total - localNeedsReply) / stats.total) * 100)
-    : 0
 
   const filtered = useMemo(() => {
     const base = reviews.filter(r => {
@@ -350,163 +349,97 @@ export default function ReviewList({
   }, [reviews, tab, ratingFilter, search, localStatus])
 
   const tabs: { value: SectionTab; label: string; count: number }[] = [
-    { value: 'needs-reply', label: 'Needs Reply', count: localNeedsReply },
-    { value: 'completed',   label: 'Completed',   count: localCompleted },
-    { value: 'all',         label: 'All',          count: reviews.length },
+    { value: 'needs-reply', label: 'Awaiting reply', count: localNeedsReply },
+    { value: 'completed',   label: 'Replied',        count: localCompleted },
+    { value: 'all',         label: 'All',             count: reviews.length },
   ]
 
   return (
     <div>
-      {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 18 }}>
-        {[
-          { label: 'Needs reply',   value: String(localNeedsReply),  color: 'var(--t1)',  danger: false },
-          {
-            label: 'Avg rating',
-            value: stats.avgRating ? stats.avgRating.toFixed(1) : '—',
-            color: '#f59e0b',
-            danger: false,
-            suffix: stats.avgRating ? (
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="#f59e0b" stroke="none" style={{ marginLeft: 2 }}>
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
-            ) : null,
-          },
-          { label: 'Response rate', value: `${responseRate}%`,        color: responseRate >= 70 ? 'var(--ok)' : responseRate >= 40 ? 'var(--warn)' : 'var(--t1)', danger: false },
-          { label: 'Urgent',        value: String(localUrgent),       color: localUrgent > 0 ? 'var(--err)' : 'var(--t3)', danger: localUrgent > 0 },
-        ].map((s, i) => (
-          <div
-            key={i}
-            className="stat-card fade-up"
-            style={{
-              animationDelay: `${i * 35}ms`,
-              ...(s.danger ? { background: 'var(--err-sub)', borderColor: 'rgba(239,68,68,0.18)' } : {}),
-            }}
-          >
-            <div style={{ fontSize: 10, color: 'var(--t3)', marginBottom: 7, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{s.label}</div>
-            <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.04em', color: s.color, lineHeight: 1, display: 'flex', alignItems: 'center' }}>
-              {s.value}
-              {'suffix' in s && s.suffix}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Tab bar */}
-      <div className="tab-bar" style={{ marginBottom: 14 }}>
-        {tabs.map(t => (
-          <button key={t.value} onClick={() => setTab(t.value)} className={`tab-btn ${tab === t.value ? 'active' : ''}`}>
-            {t.label}
-            <span className="badge badge-zinc" style={{ padding: '1px 6px', fontSize: 10 }}>{t.count}</span>
-          </button>
-        ))}
-      </div>
-
-      {/* Search + rating filter */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
-        <div className="search-wrap" style={{ flex: 1, minWidth: 200, position: 'relative' }}>
-          <svg
-            style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--t3)' }}
-            width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-          >
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search by author or content…"
-            style={{
-              width: '100%', background: 'var(--surface-1)', border: '1px solid var(--border-md)',
-              borderRadius: 'var(--radius-m)', padding: '8px 14px 8px 34px', fontSize: 13,
-              color: 'var(--t1)', outline: 'none', fontFamily: 'inherit',
-            }}
-            onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--accent-sub)' }}
-            onBlur={e => { e.currentTarget.style.borderColor = 'var(--border-md)'; e.currentTarget.style.boxShadow = 'none' }}
-          />
-        </div>
-
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 2,
-          background: 'var(--surface-1)', border: '1px solid var(--border)', borderRadius: 10, padding: 3, flexShrink: 0,
-        }}>
-          {RATING_FILTERS.map(f => (
-            <button
-              key={f.value}
-              onClick={() => setRatingFilter(f.value)}
-              style={{
-                padding: '4px 10px', borderRadius: 7, border: 'none', cursor: 'pointer',
-                fontSize: 12, fontWeight: 500, fontFamily: 'inherit', transition: 'all 0.12s',
-                background: ratingFilter === f.value ? 'var(--surface-2)' : 'transparent',
-                color: ratingFilter === f.value ? 'var(--t1)' : 'var(--t3)',
-              }}
-            >
-              {f.label}
+      {/* Filter bar */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 0 }}>
+        <div className="tabs">
+          {tabs.map(t => (
+            <button key={t.value} onClick={() => setTab(t.value)} className={`tab ${tab === t.value ? 'active' : ''}`}>
+              {t.label}
+              <span className="tnum c-t4" style={{ marginLeft: 4, fontSize: 11 }}>{t.count}</span>
             </button>
           ))}
         </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          {/* Rating filter pills */}
+          <div style={{
+            display: 'flex', gap: 2,
+            background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 'var(--r-4)', padding: 3, flexShrink: 0,
+          }}>
+            {RATING_FILTERS.map(f => (
+              <button
+                key={f.value}
+                onClick={() => setRatingFilter(f.value)}
+                style={{
+                  padding: '3px 9px', borderRadius: 'var(--r-3)', border: 'none', cursor: 'pointer',
+                  fontSize: 11, fontWeight: 500, fontFamily: 'inherit', transition: 'all 0.1s',
+                  background: ratingFilter === f.value ? 'var(--surface)' : 'transparent',
+                  color: ratingFilter === f.value ? 'var(--t1)' : 'var(--t3)',
+                  boxShadow: ratingFilter === f.value ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                }}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div style={{ position: 'relative', marginTop: 10, marginBottom: 0 }}>
+        <svg
+          style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--t4)' }}
+          width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+        >
+          <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input
+          type="text"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search by author or content…"
+          className="field"
+          style={{ paddingLeft: 32, fontSize: 13 }}
+        />
       </div>
 
       {/* Review list */}
-      {filtered.length === 0 ? (
-        <div style={{ border: '1px solid var(--border)', borderRadius: 16, padding: '56px 24px', textAlign: 'center' }}>
-          <div style={{
-            width: 44, height: 44, background: 'var(--surface-1)', borderRadius: 12,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
-          }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-            </svg>
+      <div style={{ border: '1px solid var(--line)', borderRadius: 'var(--r-6)', overflow: 'hidden', marginTop: 10, borderTopLeftRadius: 0, borderTopRightRadius: 0, borderTop: 'none' }}>
+        {filtered.length === 0 ? (
+          <div style={{ padding: '48px 24px', textAlign: 'center' }}>
+            <p className="t-serif t-italic c-t3" style={{ fontSize: 18, marginBottom: 6 }}>Nothing here.</p>
+            <p className="t-xs c-t3">
+              {tab === 'completed' ? 'Mark a review as replied to move it here.' : 'Try adjusting your search or filters.'}
+            </p>
           </div>
-          <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--t2)', marginBottom: 4 }}>
-            {tab === 'completed' ? 'No completed reviews yet' : 'No reviews match your filters'}
-          </p>
-          <p style={{ fontSize: 13, color: 'var(--t3)' }}>
-            {tab === 'completed' ? 'Mark a review as replied to move it here.' : 'Try adjusting your search or filters.'}
-          </p>
-        </div>
-      ) : (
-        <div>
-          {filtered.map((review, i) => (
+        ) : (
+          filtered.map((review, i) => (
             <ReviewRow
               key={review.id}
               review={review}
-              restaurantName={restaurantName}
               effectiveStatus={getStatus(review)}
               onToggle={() => toggleStatus(review)}
               index={i}
             />
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 20 }}>
           {currentPage > 1 && (
-            <a
-              href={`/dashboard?page=${currentPage - 1}`}
-              style={{
-                padding: '6px 14px', fontSize: 13, fontWeight: 500, borderRadius: 8,
-                border: '1px solid var(--border-md)', color: 'var(--t2)', textDecoration: 'none',
-              }}
-            >
-              ← Prev
-            </a>
+            <a href={`/dashboard?page=${currentPage - 1}`} className="btn btn-ghost btn-sm">← Prev</a>
           )}
-          <span style={{ fontSize: 12, color: 'var(--t3)' }}>
-            Page {currentPage} of {totalPages}
-          </span>
+          <span className="t-xs c-t3">Page {currentPage} of {totalPages}</span>
           {currentPage < totalPages && (
-            <a
-              href={`/dashboard?page=${currentPage + 1}`}
-              style={{
-                padding: '6px 14px', fontSize: 13, fontWeight: 500, borderRadius: 8,
-                border: '1px solid var(--border-md)', color: 'var(--t2)', textDecoration: 'none',
-              }}
-            >
-              Next →
-            </a>
+            <a href={`/dashboard?page=${currentPage + 1}`} className="btn btn-ghost btn-sm">Next →</a>
           )}
         </div>
       )}

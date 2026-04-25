@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: { absolute: "Replova — Reply to every Google review in 60 seconds" },
@@ -6,112 +7,127 @@ export const metadata: Metadata = {
     "Replova monitors your Google Business reviews and drafts three ready-to-post replies for every new one. Professional, Warm, or Brief. Post directly to Google in under 60 seconds.",
 };
 
-function ProductMockup() {
+function Logo({ size = 20 }: { size?: number }) {
+  const box = size + 6;
   return (
-    <div className="rounded-2xl bg-zinc-950 border border-zinc-800 shadow-2xl overflow-hidden text-left w-full">
-      <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div style={{ width: 20, height: 20, background: 'oklch(0.62 0.19 258)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-            </svg>
-          </div>
-          <span className="text-xs font-semibold text-zinc-100 tracking-tight">Replova</span>
-          <span className="text-zinc-700 text-xs">/</span>
-          <span className="text-xs text-zinc-500">Review Center</span>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot"></span>
-          <span className="text-xs text-zinc-500">Live</span>
-        </div>
-      </div>
+    <div style={{
+      width: box, height: box,
+      background: 'var(--accent)', borderRadius: Math.round(box * 0.35),
+      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    }}>
+      <svg width={size * 0.58} height={size * 0.58} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+      </svg>
+    </div>
+  );
+}
 
-      <div className="px-4 py-2.5 bg-red-950/40 border-b border-red-900/30 flex items-center gap-2">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#f87171" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+function Stars({ rating, size = 11 }: { rating: number; size?: number }) {
+  return (
+    <div style={{ display: 'flex', gap: 2 }}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <svg key={i} width={size} height={size} viewBox="0 0 24 24"
+          fill={i < rating ? 'var(--gold)' : 'none'}
+          stroke={i < rating ? 'var(--gold)' : 'var(--line-md)'}
+          strokeWidth="1.5"
+        >
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
         </svg>
-        <span className="text-xs text-red-400 font-medium">2 urgent reviews — no reply yet</span>
-        <span className="ml-auto text-xs text-red-500/60">just now</span>
+      ))}
+    </div>
+  );
+}
+
+function HeroProductShot() {
+  const faded = [
+    { stars: 5, name: 'Sofia L.', t: 'Best carbonara outside Rome.', time: 'Yesterday', op: 0.55 },
+    { stars: 4, name: 'Marco R.', t: 'Truffle pizza was excellent.', time: 'Apr 19', op: 0.32 },
+  ];
+
+  return (
+    <div className="card" style={{ background: 'var(--surface)', borderRadius: 14, overflow: 'hidden', boxShadow: 'var(--shadow-2)' }}>
+      {/* Chrome */}
+      <div style={{ padding: '10px 14px', borderBottom: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--surface-2)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Logo size={14} />
+          <span style={{ color: 'var(--t4)', fontSize: 11 }}>/</span>
+          <span className="t-xs c-t3">Reviews</span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--pos)', display: 'inline-block' }} className="pulse-dot" />
+          <span className="t-xs c-t3">Monitoring</span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-px bg-zinc-800 border-b border-zinc-800">
-        <div className="bg-zinc-950 px-4 py-2.5">
-          <p className="text-xs text-zinc-600">Awaiting reply</p>
-          <p className="text-sm font-bold text-red-400">3</p>
+      {/* Stat strip */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr 1fr', borderBottom: '1px solid var(--line)' }}>
+        <div style={{ padding: '14px 16px', borderRight: '1px solid var(--line)' }}>
+          <div className="t-eyebrow" style={{ marginBottom: 4 }}>Score</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <span className="t-serif" style={{ fontSize: 28, lineHeight: 1, color: 'var(--t1)' }}>78</span>
+            <span className="t-xs c-pos" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+              4
+            </span>
+          </div>
         </div>
-        <div className="bg-zinc-950 px-4 py-2.5">
-          <p className="text-xs text-zinc-600">Google rating</p>
-          <p className="text-sm font-bold text-amber-400">4.1 ★</p>
+        <div style={{ padding: '14px 16px', borderRight: '1px solid var(--line)' }}>
+          <div className="t-eyebrow" style={{ marginBottom: 4 }}>Rating</div>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+            <span className="tnum" style={{ fontSize: 18, fontWeight: 600 }}>4.3</span>
+            <Stars rating={4} size={11} />
+          </div>
         </div>
-        <div className="bg-zinc-950 px-4 py-2.5">
-          <p className="text-xs text-zinc-600">Response rate</p>
-          <p className="text-sm font-bold text-zinc-100">94%</p>
+        <div style={{ padding: '14px 16px' }}>
+          <div className="t-eyebrow" style={{ marginBottom: 4 }}>Awaiting</div>
+          <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--neg)' }}>3</div>
         </div>
       </div>
 
-      <div className="flex border-b border-zinc-800 px-4">
-        <span className="py-2 text-xs font-semibold text-zinc-100 border-b-2 border-zinc-100 -mb-px mr-4">Needs Reply</span>
-        <span className="py-2 text-xs text-zinc-600 mr-4">Completed</span>
-        <span className="py-2 text-xs text-zinc-600">All</span>
-      </div>
-
-      {/* Urgent review — expanded */}
-      <div className="border-b border-zinc-800/60" style={{ borderLeft: '3px solid #ef4444' }}>
-        <div className="px-4 py-3 flex items-center gap-3">
-          <div className="shrink-0 w-14">
-            <div className="flex gap-0.5">
-              {[1,0,0,0,0].map((f,i) => (
-                <svg key={i} width="9" height="9" viewBox="0 0 24 24" fill={f ? '#f59e0b' : 'none'} stroke={f ? '#f59e0b' : '#3f3f46'} strokeWidth="1.5">
-                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                </svg>
-              ))}
+      {/* Negative review */}
+      <div style={{ padding: '14px 16px', borderBottom: '1px solid var(--line)' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+          <div style={{ width: 3, alignSelf: 'stretch', background: 'var(--neg)', borderRadius: 1, flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>James K.</span>
+              <Stars rating={2} size={11} />
+              <span className="pill pill-neg">Urgent · 1-star</span>
             </div>
-            <p className="text-zinc-600 text-xs mt-0.5">1/5</p>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 mb-0.5">
-              <p className="text-xs font-semibold text-zinc-100">James K.</p>
-              <span className="text-xs px-1.5 py-px rounded bg-red-950/80 text-red-400 border border-red-900/50 font-semibold">Urgent</span>
-            </div>
-            <p className="text-xs text-zinc-500 truncate">Waited 45 min despite a reservation. Food was cold...</p>
-          </div>
-          <span className="text-xs text-zinc-600 shrink-0">2h ago</span>
-        </div>
-
-        <div className="px-4 pb-4 pt-3 space-y-3 border-t border-zinc-800/60">
-          <div className="flex gap-1">
-            <span className="px-2.5 py-1 text-xs bg-zinc-700 text-zinc-100 rounded-md font-semibold">Professional</span>
-            <span className="px-2.5 py-1 text-xs text-zinc-500 rounded-md">Warm</span>
-            <span className="px-2.5 py-1 text-xs text-zinc-500 rounded-md">Brief</span>
-          </div>
-          <div className="bg-zinc-900/80 border border-zinc-800 rounded-xl p-3">
-            <p className="text-xs text-zinc-300 leading-relaxed mb-3">
-              Hi James — a 45-minute wait with a reservation, and food that arrived cold, is completely unacceptable. I sincerely apologize. Please reach out directly so I can make this right.
+            <p className="t-serif t-italic" style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--t2)', margin: 0 }}>
+              &ldquo;Service was slow tonight and my pasta came out cold. We waited 45 minutes.&rdquo;
             </p>
-            <div className="flex items-center gap-2 justify-end">
-              <span className="px-2.5 py-1 text-xs bg-zinc-800 text-zinc-400 rounded-lg border border-zinc-700/60">Copy</span>
-              <span className="px-2.5 py-1 text-xs bg-blue-600 text-white rounded-lg font-medium">Reply on Google</span>
-            </div>
           </div>
+          <span className="t-xs c-t4" style={{ flexShrink: 0 }}>3h</span>
         </div>
-      </div>
-
-      <div className="px-4 py-3 border-b border-zinc-800/40 flex items-center gap-3 opacity-50" style={{ borderLeft: '3px solid #f59e0b' }}>
-        <div className="shrink-0 w-14">
-          <div className="flex gap-0.5">
-            {[1,1,0,0,0].map((f,i) => (
-              <svg key={i} width="9" height="9" viewBox="0 0 24 24" fill={f ? '#f59e0b' : 'none'} stroke={f ? '#f59e0b' : '#3f3f46'} strokeWidth="1.5">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
+        <div style={{ marginTop: 12, padding: 12, background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 10 }}>
+          <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            {['Professional', 'Warm', 'Brief'].map((l, i) => (
+              <span key={l} style={{
+                fontSize: 10, fontWeight: 600, padding: '2px 8px', borderRadius: 4,
+                background: i === 0 ? 'var(--surface)' : 'transparent',
+                color: i === 0 ? 'var(--t1)' : 'var(--t3)',
+                border: i === 0 ? '1px solid var(--line-md)' : '1px solid transparent',
+              }}>{l}</span>
             ))}
           </div>
+          <p style={{ fontSize: 12, color: 'var(--t2)', lineHeight: 1.55, margin: 0 }}>
+            Hi James — a 45-minute wait and cold food fall well below the standard we hold ourselves to. I&apos;d like the chance to make this right…
+          </p>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-semibold text-zinc-100">Maria S.</p>
-          <p className="text-xs text-zinc-500 truncate">The pasta used to be amazing but something has changed...</p>
-        </div>
-        <span className="text-xs text-zinc-600">Yesterday</span>
       </div>
+
+      {/* Faded rows */}
+      {faded.map((r, i) => (
+        <div key={r.name} style={{ padding: '12px 16px', borderBottom: i === 0 ? '1px solid var(--line)' : 'none', display: 'flex', alignItems: 'center', gap: 12, opacity: r.op }}>
+          <Stars rating={r.stars} size={11} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <span style={{ fontSize: 13, fontWeight: 600 }}>{r.name}</span>
+            <span className="t-xs c-t3" style={{ marginLeft: 8 }}>{r.t}</span>
+          </div>
+          <span className="t-xs c-t4">{r.time}</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -120,452 +136,231 @@ export default function Home() {
   const year = new Date().getFullYear();
 
   return (
-    <div className="flex flex-col min-h-[100dvh] font-sans">
+    <div style={{ background: 'var(--bg)', color: 'var(--t1)', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
 
-      {/* ── Nav ────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-20 bg-zinc-950/95 backdrop-blur border-b border-zinc-800/60">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div style={{ width: 26, height: 26, background: 'oklch(0.62 0.19 258)', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-              </svg>
-            </div>
-            <span className="text-sm font-bold tracking-tight text-zinc-100">Replova</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <a href="/signin" className="text-sm text-zinc-400 hover:text-zinc-100 transition-colors px-2 py-1.5">
+      {/* Nav */}
+      <header style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(250,249,246,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid var(--line)' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 32px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+            <Logo size={18} />
+            <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--t1)' }}>Replova</span>
+          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <a href="/signin" style={{ fontSize: 13, color: 'var(--t3)', padding: '6px 12px', textDecoration: 'none' }}>
               Sign in
             </a>
-            <a href="/onboard" className="btn-press rounded-full bg-white text-zinc-900 text-sm font-semibold px-4 py-2 hover:bg-zinc-100 transition-colors">
+            <a href="/onboard" className="btn btn-primary btn-press" style={{ textDecoration: 'none' }}>
               Start free trial
             </a>
           </div>
         </div>
       </header>
 
-      {/* ── Hero ─────────────────────────────────────────────── */}
-      <section className="bg-zinc-950 border-b border-zinc-800/60" style={{
-        backgroundImage: 'radial-gradient(circle at 70% 50%, rgba(59,130,246,0.06) 0%, transparent 60%)',
-      }}>
-        <div className="max-w-6xl mx-auto px-6 py-20 md:py-28">
-          <div className="grid md:grid-cols-[1fr_1.05fr] gap-14 items-center">
-            <div className="fade-up">
-              <div className="inline-flex items-center gap-2 mb-8">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 pulse-dot shrink-0" />
-                <span className="text-xs font-medium text-zinc-400 tracking-wide">For Google Business owners</span>
-              </div>
-
-              <h1 className="text-5xl md:text-[3.6rem] font-extrabold leading-[1.08] tracking-tight text-white mb-6">
-                Every unanswered review<br />
-                <span style={{ color: 'oklch(0.70 0.17 258)' }}>loses you a customer.</span>
-              </h1>
-
-              <p className="text-zinc-400 text-lg leading-relaxed mb-10 max-w-md">
-                Replova monitors your Google Business and drafts three ready-to-post replies for every new review — Professional, Warm, or Brief. Post directly to Google in 60 seconds.
-              </p>
-
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <a
-                  href="/onboard"
-                  className="btn-press inline-flex items-center gap-2 rounded-full bg-white text-zinc-900 text-sm font-bold px-7 py-3.5 hover:bg-zinc-100 transition-colors"
-                >
-                  Start your free trial
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </svg>
-                </a>
-                <span className="text-xs text-zinc-500">30 days free · No credit card</span>
-              </div>
+      {/* Hero */}
+      <section style={{ maxWidth: 1140, margin: '0 auto', padding: '72px 32px 56px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'start' }}>
+        <div className="fade-up">
+          <div className="t-eyebrow" style={{ marginBottom: 18 }}>Reputation management for restaurants</div>
+          <h1 className="t-serif" style={{ fontSize: 56, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: 22 }}>
+            Reviews aren&apos;t<br />
+            <span style={{ fontStyle: 'italic' }}>marketing.</span><br />
+            They&apos;re the menu<br />
+            after the meal.
+          </h1>
+          <p style={{ fontSize: 16, color: 'var(--t2)', maxWidth: 430, marginBottom: 28, lineHeight: 1.6 }}>
+            Replova reads every Google review the moment it lands, drafts a reply in your voice,
+            and tells you what your customers actually think — line by line, week by week.
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <a href="/onboard" className="btn btn-primary btn-lg btn-press" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              Start free trial
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </a>
+            <span className="t-xs c-t3">30 days · no card</span>
+          </div>
+          <div style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 32 }}>
+            <div>
+              <div className="t-mono" style={{ fontSize: 22, fontWeight: 600 }}>4,200<span className="c-t3">+</span></div>
+              <div className="t-xs c-t3">restaurants tracked</div>
             </div>
-
-            <div className="fade-up" style={{ animationDelay: '100ms' }}>
-              <ProductMockup />
+            <div className="vr" style={{ height: 32 }} />
+            <div>
+              <div className="t-mono" style={{ fontSize: 22, fontWeight: 600 }}>91<span className="c-t3">%</span></div>
+              <div className="t-xs c-t3">reply rate avg</div>
+            </div>
+            <div className="vr" style={{ height: 32 }} />
+            <div>
+              <div className="t-mono" style={{ fontSize: 22, fontWeight: 600 }}>5h<span className="c-t3"> /wk</span></div>
+              <div className="t-xs c-t3">saved per location</div>
             </div>
           </div>
         </div>
+        <div className="fade-up" style={{ animationDelay: '80ms' }}>
+          <HeroProductShot />
+        </div>
       </section>
 
-      {/* ── Stat bar ─────────────────────────────────────────── */}
-      <section className="bg-white border-b border-zinc-100">
-        <div className="max-w-4xl mx-auto px-6 py-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-0 md:divide-x divide-zinc-100">
-            {[
-              {
-                number: '89%',
-                copy: 'of customers read owner replies before choosing a restaurant',
-                source: 'BrightLocal, 2024',
-              },
-              {
-                number: '2×',
-                copy: 'more trust for businesses that respond to every review',
-                source: 'Harvard Business Review',
-              },
-              {
-                number: '60s',
-                copy: 'average time to post a reply with Replova vs. 20+ minutes manually',
-                source: 'Replova internal data',
-              },
-            ].map(({ number, copy, source }) => (
-              <div key={number} className="md:px-10 first:pl-0 last:pr-0 fade-up">
-                <div className="text-4xl font-extrabold tracking-tight text-zinc-900 mb-2" style={{ fontFeatureSettings: '"tnum"' }}>
-                  {number}
-                </div>
-                <p className="text-sm text-zinc-600 leading-relaxed mb-1">{copy}</p>
-                <p className="text-xs text-zinc-400">{source}</p>
-              </div>
+      {/* Trust strip */}
+      <section style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto', padding: '24px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
+          <span className="t-eyebrow">In the kitchens of</span>
+          <div style={{ display: 'flex', gap: 36, alignItems: 'center', flexWrap: 'wrap' }}>
+            {['Bella Napoli', 'Casa Lupita', 'The Cured', 'Hudson & Coal', 'Ferment', 'Maison Petit'].map(n => (
+              <span key={n} className="t-serif t-italic" style={{ fontSize: 18, color: 'var(--t3)' }}>{n}</span>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── The truth ────────────────────────────────────────── */}
-      <section className="bg-white py-24 px-6 border-b border-zinc-100">
-        <div className="max-w-4xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-6 items-start">
-
-            {/* The problem */}
-            <div className="rounded-2xl border border-zinc-200 p-7">
-              <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-5">Without Replova</p>
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-9 h-9 rounded-full bg-zinc-100 flex items-center justify-center text-sm font-bold text-zinc-600 shrink-0">J</div>
-                <div>
-                  <p className="text-sm font-bold text-zinc-900">James K.</p>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <span className="text-amber-500 text-xs">★</span>
-                    <span className="text-xs text-zinc-400">☆☆☆☆ · 4 days ago</span>
-                  </div>
-                </div>
-                <span className="ml-auto text-xs font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-100">1 star</span>
-              </div>
-              <p className="text-sm text-zinc-600 leading-relaxed mb-5">
-                &ldquo;Waited 45 minutes even though we had a reservation. Food arrived cold and no one came to check on our table. Very disappointing — won&apos;t be back.&rdquo;
-              </p>
-              <div className="pt-4 border-t border-zinc-100 flex items-center gap-2">
-                <svg className="w-4 h-4 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-                </svg>
-                <p className="text-xs text-zinc-500">
-                  Sitting unanswered for <strong className="text-zinc-700">4 days</strong>. New customers are reading this right now.
-                </p>
-              </div>
-            </div>
-
-            {/* The solution */}
-            <div className="rounded-2xl bg-zinc-950 border border-zinc-800 p-7 flex flex-col gap-5">
-              <div>
-                <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-5">With Replova — 47 seconds later</p>
-                <div className="flex gap-1.5 mb-4">
-                  {['Professional', 'Warm', 'Brief'].map((t, i) => (
-                    <span key={t} className={`px-2.5 py-1 text-xs rounded-md font-semibold ${i === 0 ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-500'}`}>
-                      {t}
-                    </span>
-                  ))}
-                </div>
-                <div className="bg-zinc-900/70 border border-zinc-700/50 rounded-xl p-4">
-                  <p className="text-xs text-zinc-300 leading-relaxed mb-3">
-                    &ldquo;Hi James — a 45-minute wait with a reservation, and food that came out cold, is completely unacceptable. I sincerely apologize. This isn&apos;t our standard and I&apos;d like to make it right. Please reach out directly.&rdquo;
-                  </p>
-                  <div className="flex items-center justify-end gap-2">
-                    <span className="px-2.5 py-1 text-xs bg-zinc-800 text-zinc-400 rounded-lg border border-zinc-700/60">Copy</span>
-                    <span className="px-2.5 py-1 text-xs bg-blue-600 text-white rounded-lg font-medium">Reply on Google</span>
-                  </div>
-                </div>
-              </div>
-              <div className="pt-4 border-t border-zinc-800 flex items-center gap-2">
-                <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                </svg>
-                <p className="text-xs text-zinc-400">
-                  Posted. Future customers see you <strong className="text-zinc-200">actually care</strong>.
-                </p>
-              </div>
-            </div>
-
-          </div>
-
-          {/* The argument */}
-          <div className="mt-16 max-w-2xl">
-            <p className="text-2xl md:text-3xl font-bold text-zinc-900 leading-snug tracking-tight mb-4">
-              Other customers read your responses.<br />
-              <span className="text-zinc-400">That&apos;s the part most owners miss.</span>
-            </p>
-            <p className="text-zinc-500 text-base leading-relaxed">
-              A thoughtful reply to a 1-star review doesn&apos;t just patch things up with one upset customer —
-              it shows the next 200 people who read it that you run a restaurant that gives a damn.
-              Most owners know this. Most owners are also too busy to do anything about it.
-              That&apos;s exactly what Replova is for.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* ── How it works ─────────────────────────────────────── */}
-      <section className="py-24 px-6 bg-zinc-50 border-b border-zinc-100">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-14">
-            <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3">How it works</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 tracking-tight">Simpler than writing it yourself.</h2>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-10">
-            {[
-              {
-                n: '01',
-                title: 'Connect your Google Business',
-                body: 'Link your Google Business Profile in under 2 minutes. Replova starts monitoring your reviews immediately.',
-              },
-              {
-                n: '02',
-                title: 'Get three drafts, instantly',
-                body: 'The moment a new review comes in, Replova generates a Professional, Warm, and Brief reply — each written for that specific review.',
-              },
-              {
-                n: '03',
-                title: 'Pick one, post to Google',
-                body: 'Click the tone that fits, hit Reply on Google — and it&apos;s live. No switching tabs, no copy-pasting.',
-              },
-            ].map(({ n, title, body }, i) => (
-              <div key={n} className="fade-up" style={{ animationDelay: `${i * 80}ms` }}>
-                <div className="text-5xl font-extrabold text-zinc-200 mb-4 leading-none font-mono tracking-tighter">{n}</div>
-                <h3 className="text-base font-bold text-zinc-900 mb-2">{title}</h3>
-                <p className="text-sm text-zinc-500 leading-relaxed" dangerouslySetInnerHTML={{ __html: body }} />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Features ─────────────────────────────────────────── */}
-      <section className="py-24 px-6 bg-white border-b border-zinc-100">
-        <div className="max-w-4xl mx-auto">
-          <div className="mb-14">
-            <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3">What you get</p>
-            <h2 className="text-3xl md:text-4xl font-bold text-zinc-900 tracking-tight">
-              Built for the way restaurants actually work.
+      {/* The Work */}
+      <section style={{ maxWidth: 1140, margin: '0 auto', padding: '80px 32px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 48, marginBottom: 48 }}>
+          <div>
+            <div className="t-eyebrow c-accent">The work</div>
+            <h2 className="t-serif" style={{ fontSize: 40, lineHeight: 1.05, letterSpacing: '-0.02em', marginTop: 8 }}>
+              What you&apos;d do<br />if you had time.
             </h2>
           </div>
+          <p style={{ fontSize: 16, color: 'var(--t2)', lineHeight: 1.7, alignSelf: 'end', maxWidth: 520 }}>
+            Most owner-operators write replies between covers, after a shift, or never. Replova writes
+            them in your voice the second a review lands — three options, each in a different register,
+            ready for one tap.
+          </p>
+        </div>
 
-          <div className="space-y-4">
-            {/* Feature 1 — large dark card */}
-            <div className="rounded-2xl bg-zinc-950 p-8 md:p-10">
-              <div className="grid md:grid-cols-[1fr_1.2fr] gap-8 items-start">
-                <div>
-                  <div className="w-10 h-10 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center mb-5">
-                    <svg className="w-5 h-5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                    </svg>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: 'var(--line)', border: '1px solid var(--line)', borderRadius: 14, overflow: 'hidden' }}>
+          {[
+            {
+              n: '01', t: 'Reply',
+              b: 'Three drafts per review — Professional, Warm, Brief. Edit, then post to Google in one tap.',
+              ex: '"Hi James — a 45-minute wait and cold food fall well below…"',
+            },
+            {
+              n: '02', t: 'Read',
+              b: 'A reputation score updated daily — rating, volume, response rate, and sentiment — broken down so you can see what moved it.',
+              ex: '78 / 100 · Rating up · Sentiment flat · Response 91%',
+            },
+            {
+              n: '03', t: 'Recover',
+              b: 'Negative reviews surface first, with suggested recovery offers. Staff shoutouts roll up so you know who to thank.',
+              ex: 'Marco · 9 mentions · "attentive without being intrusive"',
+            },
+          ].map(c => (
+            <div key={c.n} style={{ background: 'var(--surface)', padding: 32 }}>
+              <div className="t-mono c-accent" style={{ fontSize: 11, marginBottom: 18 }}>{c.n}</div>
+              <h3 className="t-serif" style={{ fontSize: 28, marginBottom: 12, letterSpacing: '-0.01em' }}>{c.t}</h3>
+              <p className="t-sm c-t2" style={{ marginBottom: 18, lineHeight: 1.65 }}>{c.b}</p>
+              <div className="t-mono t-xs" style={{ color: 'var(--t3)', padding: 10, background: 'var(--surface-2)', borderRadius: 6, borderLeft: '2px solid var(--accent-line)' }}>
+                {c.ex}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section style={{ borderTop: '1px solid var(--line)', background: 'var(--surface)', padding: '80px 32px' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto' }}>
+          <div style={{ marginBottom: 40, display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 48 }}>
+            <div>
+              <div className="t-eyebrow c-accent">Pricing</div>
+              <h2 className="t-serif" style={{ fontSize: 40, lineHeight: 1.05, marginTop: 8 }}>Three sizes,<br />one job.</h2>
+            </div>
+            <p style={{ alignSelf: 'end', maxWidth: 520, fontSize: 15, color: 'var(--t2)' }}>
+              Same product, more locations. Cancel any time. Free for 30 days, no card.
+            </p>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', border: '1px solid var(--line-md)', borderRadius: 14, overflow: 'hidden' }}>
+            {([
+              {
+                plan: 'Starter', price: 39, locs: '1 location', comps: '3 competitor slots', best: 'Single-site GMs',
+                features: ['AI reply drafts', 'Urgent alerts', 'Weekly digest', 'Review request campaigns'],
+                highlight: false,
+              },
+              {
+                plan: 'Growth', price: 99, locs: '5 locations', comps: '5 competitor slots', best: 'Small chains',
+                features: ['Everything in Starter', 'Reputation score', 'Sentiment analysis', 'Competitor tracking', 'Monthly PDF report'],
+                highlight: true,
+              },
+              {
+                plan: 'Agency', price: 199, locs: '15 locations', comps: '10 competitor slots', best: 'Groups & agencies',
+                features: ['Everything in Growth', 'Custom reply persona', 'White-label PDF reports', 'Priority support'],
+                highlight: false,
+              },
+            ] as const).map((p, i) => (
+              <div key={p.plan} style={{
+                padding: 32,
+                background: p.highlight ? 'var(--bg)' : 'var(--surface)',
+                borderRight: i < 2 ? '1px solid var(--line-md)' : 'none',
+                position: 'relative',
+              }}>
+                {p.highlight && (
+                  <div style={{ position: 'absolute', top: 14, right: 16 }}>
+                    <span className="pill pill-accent">Most picked</span>
                   </div>
-                  <h3 className="text-xl font-bold text-zinc-100 mb-3 tracking-tight">Three replies, every time.</h3>
-                  <p className="text-zinc-400 text-sm leading-relaxed">
-                    Claude AI reads the actual content of each review and writes three responses — not templates. A 1-star complaint about slow service gets a different reply than a 5-star shoutout to your chef.
-                  </p>
+                )}
+                <div className="t-eyebrow" style={{ color: p.highlight ? 'var(--accent)' : 'var(--t3)', marginBottom: 12 }}>{p.plan}</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
+                  <span className="t-serif" style={{ fontSize: 48, lineHeight: 1 }}>${p.price}</span>
+                  <span className="t-sm c-t3">/ month</span>
                 </div>
-                <div className="space-y-2.5">
-                  {[
-                    { label: 'Professional', desc: 'Formal, measured, builds brand trust', active: true },
-                    { label: 'Warm', desc: 'Personal, empathetic, builds loyalty', active: false },
-                    { label: 'Brief', desc: '2–3 sentences, done in 10 seconds', active: false },
-                  ].map(({ label, desc, active }) => (
-                    <div key={label} className={`rounded-xl px-4 py-3 border transition-colors ${active ? 'bg-zinc-800 border-zinc-700' : 'bg-zinc-900/50 border-zinc-800/50'}`}>
-                      <div className="flex items-center justify-between mb-0.5">
-                        <span className={`text-xs font-bold ${active ? 'text-zinc-100' : 'text-zinc-500'}`}>{label}</span>
-                        {active && <span className="text-xs text-blue-400 font-medium">Selected</span>}
-                      </div>
-                      <p className={`text-xs ${active ? 'text-zinc-400' : 'text-zinc-600'}`}>{desc}</p>
+                <div className="t-xs c-t3" style={{ marginBottom: 24 }}>{p.locs} · {p.comps}</div>
+                <div className="t-xs" style={{ color: 'var(--t2)', marginBottom: 14, fontStyle: 'italic' }}>For: {p.best}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 24 }}>
+                  {p.features.map(f => (
+                    <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 1, flexShrink: 0 }}>
+                        <path d="M20 6L9 17l-5-5"/>
+                      </svg>
+                      <span className="t-sm c-t2">{f}</span>
                     </div>
                   ))}
                 </div>
+                <a
+                  href={`/onboard?plan=${p.plan.toLowerCase()}`}
+                  className={`btn ${p.highlight ? 'btn-primary' : 'btn-ghost'} btn-press`}
+                  style={{ width: '100%', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  Start with {p.plan}
+                </a>
               </div>
-            </div>
-
-            {/* Features 2+3 — side-by-side cards */}
-            <div className="grid md:grid-cols-2 gap-4">
-              <div className="rounded-2xl border border-zinc-200 bg-white p-7">
-                <div className="w-9 h-9 rounded-xl bg-red-50 border border-red-100 flex items-center justify-center mb-4">
-                  <svg className="w-4 h-4 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                  </svg>
-                </div>
-                <h3 className="text-sm font-bold text-zinc-900 mb-2">1-star alerts — while you can still act</h3>
-                <p className="text-sm text-zinc-500 leading-relaxed">
-                  Bad reviews get flagged as urgent the moment they come in. You&apos;ll never wake up to a 1-star that&apos;s been sitting unanswered for three days.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-zinc-200 bg-white p-7">
-                <div className="w-9 h-9 rounded-xl bg-zinc-100 flex items-center justify-center mb-4">
-                  <svg className="w-4 h-4 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1 3m8.5-3l1 3m0 0l.5 1.5m-.5-1.5h-9.5m0 0l-.5 1.5M9 11.25v1.5M12 9v3.75m3-6v6" />
-                  </svg>
-                </div>
-                <h3 className="text-sm font-bold text-zinc-900 mb-2">Competitor tracking — know where you stand</h3>
-                <p className="text-sm text-zinc-500 leading-relaxed">
-                  Automatically discovers nearby restaurants and tracks their ratings daily. See exactly when a competitor&apos;s score drops — or climbs past yours.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-zinc-200 bg-white p-7">
-                <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center mb-4">
-                  <svg className="w-4 h-4 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                    <polyline points="22,6 12,13 2,6"/>
-                  </svg>
-                </div>
-                <h3 className="text-sm font-bold text-zinc-900 mb-2">Weekly digest every Monday</h3>
-                <p className="text-sm text-zinc-500 leading-relaxed">
-                  A short email with your response rate, top keywords from reviews, and the replies that still need attention. Arrives before the week starts.
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-zinc-200 bg-white p-7">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-4">
-                  <svg className="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h3 className="text-sm font-bold text-zinc-900 mb-2">Auto-detects replied reviews</h3>
-                <p className="text-sm text-zinc-500 leading-relaxed">
-                  If you reply directly on Google, Replova marks it done automatically. Your dashboard always reflects reality — no double-work.
-                </p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ── Pricing ──────────────────────────────────────────── */}
-      <section className="py-24 px-6 bg-zinc-950 border-b border-zinc-800/60">
-        <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
-            <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-4">Pricing</p>
-            <h2 className="text-4xl font-extrabold text-white tracking-tight mb-3">Simple, transparent pricing</h2>
-            <p className="text-zinc-400 text-base">30 days free on any plan. No credit card required.</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6">
-            {/* Starter */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8 flex flex-col">
-              <div className="mb-6">
-                <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Starter</p>
-                <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-4xl font-extrabold text-white">$39</span>
-                  <span className="text-zinc-400 text-sm">/month</span>
-                </div>
-                <p className="text-zinc-500 text-sm">For single-location restaurants</p>
-              </div>
-              <ul className="space-y-3 flex-1 mb-8">
-                {['1 location', '3 competitor slots', 'AI reply drafts (3 tones)', 'Urgent 1-star alerts', 'Weekly digest', 'Review request campaigns'].map(f => (
-                  <li key={f} className="flex items-center gap-2.5">
-                    <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-sm text-zinc-400">{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <a href="/onboard?plan=starter" className="btn-press block text-center rounded-full border border-zinc-700 text-zinc-100 text-sm font-semibold px-6 py-3 hover:border-zinc-500 hover:bg-zinc-800 transition-colors">
-                Start free trial
-              </a>
-            </div>
-
-            {/* Growth */}
-            <div className="rounded-2xl border-2 border-blue-500/50 bg-zinc-900 p-8 flex flex-col relative">
-              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-                <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap">Most popular</span>
-              </div>
-              <div className="mb-6">
-                <p className="text-xs font-bold text-blue-400 uppercase tracking-widest mb-2">Growth</p>
-                <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-4xl font-extrabold text-white">$99</span>
-                  <span className="text-zinc-400 text-sm">/month</span>
-                </div>
-                <p className="text-zinc-500 text-sm">For serious operators</p>
-              </div>
-              <ul className="space-y-3 flex-1 mb-8">
-                {['Up to 5 locations', '5 competitor slots', 'Everything in Starter', 'Sentiment analysis & trends', 'Reputation score tracking', 'Monthly PDF reports'].map(f => (
-                  <li key={f} className="flex items-center gap-2.5">
-                    <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-sm text-zinc-300">{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <a href="/onboard?plan=growth" className="btn-press block text-center rounded-full bg-white text-zinc-900 text-sm font-bold px-6 py-3 hover:bg-zinc-100 transition-colors">
-                Start free trial
-              </a>
-            </div>
-
-            {/* Agency */}
-            <div className="rounded-2xl border border-zinc-800 bg-zinc-900/50 p-8 flex flex-col">
-              <div className="mb-6">
-                <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Agency</p>
-                <div className="flex items-baseline gap-1 mb-1">
-                  <span className="text-4xl font-extrabold text-white">$199</span>
-                  <span className="text-zinc-400 text-sm">/month</span>
-                </div>
-                <p className="text-zinc-500 text-sm">For multi-location groups</p>
-              </div>
-              <ul className="space-y-3 flex-1 mb-8">
-                {['Up to 15 locations', '10 competitor slots', 'Everything in Growth', 'Priority email support', 'Custom reply persona', 'White-label reports'].map(f => (
-                  <li key={f} className="flex items-center gap-2.5">
-                    <svg className="w-4 h-4 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                    </svg>
-                    <span className="text-sm text-zinc-400">{f}</span>
-                  </li>
-                ))}
-              </ul>
-              <a href="/onboard?plan=agency" className="btn-press block text-center rounded-full border border-zinc-700 text-zinc-100 text-sm font-semibold px-6 py-3 hover:border-zinc-500 hover:bg-zinc-800 transition-colors">
-                Start free trial
-              </a>
-            </div>
-          </div>
-
-          <p className="text-center text-xs text-zinc-600 mt-8">Billed monthly · Cancel anytime · No contracts</p>
-        </div>
-      </section>
-
-      {/* ── Bottom CTA ───────────────────────────────────────── */}
-      <section className="py-24 px-6 bg-zinc-950">
-        <div className="max-w-2xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight mb-4 leading-tight">
-            Your competitors are responding.<br />
-            <span className="text-zinc-500">Are you?</span>
+      {/* Editorial CTA */}
+      <section style={{ borderTop: '1px solid var(--line)', padding: '96px 32px', background: 'var(--bg)' }}>
+        <div style={{ maxWidth: 880, margin: '0 auto', textAlign: 'center' }}>
+          <h2 className="t-serif" style={{ fontSize: 48, lineHeight: 1.1, letterSpacing: '-0.02em', marginBottom: 18 }}>
+            Open the dashboard<br />before the lunch rush.
           </h2>
-          <p className="text-zinc-400 text-base mb-10 leading-relaxed">
-            30 days free. Set up in under 5 minutes. No credit card required.
+          <p style={{ fontSize: 16, color: 'var(--t2)', maxWidth: 540, margin: '0 auto 32px' }}>
+            Five minutes of setup. Thirty days free. After that, $39 a month for one location.
           </p>
-          <a
-            href="/onboard"
-            className="btn-press inline-flex items-center gap-2 rounded-full bg-white text-zinc-900 text-sm font-bold px-8 py-4 hover:bg-zinc-100 transition-colors"
-          >
-            Start your free trial
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+          <a href="/onboard" className="btn btn-primary btn-lg btn-press" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            Find my restaurant
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
           </a>
         </div>
       </section>
 
-      {/* ── Footer ───────────────────────────────────────────── */}
-      <footer className="bg-zinc-950 border-t border-zinc-800/60">
-        <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div style={{ width: 20, height: 20, background: 'oklch(0.62 0.19 258)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-              </svg>
-            </div>
-            <span className="text-sm font-bold text-zinc-400">Replova</span>
-          </div>
-          <div className="flex items-center gap-6">
-            <a href="/terms" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">Terms</a>
-            <a href="/privacy" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">Privacy</a>
-            <a href="/refunds" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">Refunds</a>
-            <a href="mailto:support@replova.app" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors">Support</a>
-            <span className="text-xs text-zinc-700">© {year} Replova</span>
+      {/* Footer */}
+      <footer style={{ borderTop: '1px solid var(--line)', background: 'var(--surface)', marginTop: 'auto' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto', padding: '24px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+            <Logo size={14} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t3)' }}>Replova</span>
+          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+            <a href="/terms" className="t-xs c-t4" style={{ textDecoration: 'none' }}>Terms</a>
+            <a href="/privacy" className="t-xs c-t4" style={{ textDecoration: 'none' }}>Privacy</a>
+            <a href="/refunds" className="t-xs c-t4" style={{ textDecoration: 'none' }}>Refunds</a>
+            <a href="mailto:support@replova.app" className="t-xs c-t4" style={{ textDecoration: 'none' }}>Support</a>
+            <span className="t-xs c-t4">© {year} Replova</span>
           </div>
         </div>
       </footer>

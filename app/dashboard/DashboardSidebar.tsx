@@ -1,219 +1,193 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import SignOutButton from './SignOutButton'
+import { usePathname, useRouter } from 'next/navigation'
+import {
+  IconMessage, IconUsers, IconSend, IconCard, IconCog,
+  IconChevDown, IconSignOut, IconLogo,
+} from '@/components/icons'
+import { getSupabaseBrowser } from '@/lib/supabase'
 import LocationSwitcherClient from '@/components/dashboard/LocationSwitcherClient'
+import type { Plan } from '@/lib/planLimits'
 
 type Location = { id: string; name: string }
 
 interface Props {
   restaurantName: string
+  plan: Plan
   displayName: string
   initials: string
   avatarUrl?: string
+  userEmail: string
   locations: Location[]
   activeLocationId: string
   locationLimit: number
+  awaitingCount: number
 }
 
-const NAV_GROUPS = [
-  {
-    label: null,
-    items: [
-      {
-        href: '/dashboard',
-        label: 'Reviews',
-        exact: true,
-        icon: (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-          </svg>
-        ),
-      },
-    ],
-  },
-  {
-    label: 'Features',
-    items: [
-      {
-        href: '/dashboard/review-requests',
-        label: 'Review Requests',
-        exact: false,
-        icon: (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-            <polyline points="22,6 12,13 2,6"/>
-          </svg>
-        ),
-      },
-      {
-        href: '/dashboard/competitors',
-        label: 'Competitors',
-        exact: false,
-        icon: (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="18" y1="20" x2="18" y2="10"/>
-            <line x1="12" y1="20" x2="12" y2="4"/>
-            <line x1="6" y1="20" x2="6" y2="14"/>
-          </svg>
-        ),
-      },
-    ],
-  },
-  {
-    label: 'Account',
-    items: [
-      {
-        href: '/dashboard/settings',
-        label: 'Settings',
-        exact: false,
-        icon: (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="3"/>
-            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-          </svg>
-        ),
-      },
-      {
-        href: '/dashboard/billing',
-        label: 'Billing',
-        exact: false,
-        icon: (
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="1" y="4" width="22" height="16" rx="2"/>
-            <line x1="1" y1="10" x2="23" y2="10"/>
-          </svg>
-        ),
-      },
-    ],
-  },
+const PLAN_LABELS: Record<Plan, string> = {
+  starter: 'Starter',
+  growth: 'Growth',
+  agency: 'Agency',
+}
+
+const TOP_ITEMS = [
+  { href: '/dashboard', label: 'Reviews', Icon: IconMessage, exact: true, showsBadge: true },
+  { href: '/dashboard/competitors', label: 'Competitors', Icon: IconUsers, exact: false, showsBadge: false },
+  { href: '/dashboard/review-requests', label: 'Requests', Icon: IconSend, exact: false, showsBadge: false },
 ]
 
-export default function DashboardSidebar({ restaurantName, displayName, initials, avatarUrl, locations, activeLocationId, locationLimit }: Props) {
-  const pathname = usePathname()
+const BOTTOM_ITEMS = [
+  { href: '/dashboard/billing', label: 'Billing', Icon: IconCard },
+  { href: '/dashboard/settings', label: 'Settings', Icon: IconCog },
+]
 
-  function isActive(item: { href: string; exact: boolean }) {
-    return item.exact ? pathname === item.href : pathname.startsWith(item.href)
+export default function DashboardSidebar({
+  restaurantName, plan, displayName, initials, avatarUrl, userEmail,
+  locations, activeLocationId, locationLimit, awaitingCount,
+}: Props) {
+  const pathname = usePathname()
+  const router = useRouter()
+
+  function active(href: string, exact = false) {
+    return exact ? pathname === href : pathname.startsWith(href)
+  }
+
+  async function handleSignOut() {
+    await getSupabaseBrowser().auth.signOut()
+    router.push('/signin')
   }
 
   return (
     <aside className="sidebar">
-      {/* Logo */}
-      <div style={{ padding: '14px 10px 10px', borderBottom: '1px solid var(--border)' }}>
-        <Link
-          href="/"
-          style={{
-            background: 'none',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 9,
-            padding: '4px',
-            borderRadius: 10,
-            textDecoration: 'none',
-          }}
-        >
+      {/* Workspace switcher */}
+      <div style={{ borderBottom: '1px solid var(--line)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px' }}>
           <div style={{
-            width: 30,
-            height: 30,
-            background: 'var(--accent)',
-            borderRadius: 9,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-            boxShadow: '0 0 12px oklch(0.61 0.2 258 / 0.35)',
+            width: 28, height: 28, borderRadius: 7, background: 'var(--t1)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0, color: 'var(--bg)',
           }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-            </svg>
+            <IconLogo s={16} />
           </div>
-          <span className="sidebar-logo-txt" style={{ fontSize: 14, fontWeight: 800, color: 'var(--t1)', letterSpacing: '-0.025em' }}>
-            Replova
-          </span>
-        </Link>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{
+              fontSize: 13, fontWeight: 600, color: 'var(--t1)',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {restaurantName}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--t3)', marginTop: 1 }}>
+              {locations.length} location{locations.length !== 1 ? 's' : ''} · {PLAN_LABELS[plan]}
+            </div>
+          </div>
+          {locations.length > 1 && (
+            <span style={{ color: 'var(--t3)' }}>
+              <IconChevDown s={12} sw={2} />
+            </span>
+          )}
+        </div>
+
+        {locations.length > 1 && (
+          <LocationSwitcherClient
+            locations={locations}
+            activeLocationId={activeLocationId}
+            locationLimit={locationLimit}
+            currentCount={locations.length}
+          />
+        )}
       </div>
 
-      {/* Location switcher */}
-      <LocationSwitcherClient
-        locations={locations}
-        activeLocationId={activeLocationId}
-        locationLimit={locationLimit}
-        currentCount={locations.length}
-      />
-
-      {/* Nav groups */}
-      <div className="sidebar-body">
-        {NAV_GROUPS.map((group, gi) => (
-          <div key={gi} style={{ marginBottom: group.label ? 16 : 4 }}>
-            {group.label && (
-              <p className="nav-lbl" style={{
-                fontSize: 10,
-                fontWeight: 600,
-                color: 'var(--t3)',
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                padding: '8px 10px 4px',
-              }}>
-                {group.label}
-              </p>
-            )}
-            {group.items.map(item => {
-              const active = isActive(item)
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`nav-item ${active ? 'active' : ''}`}
-                  style={active ? {
-                    background: 'var(--accent-sub)',
-                    color: 'var(--accent-hi)',
-                    borderLeft: '2px solid var(--accent)',
-                  } : undefined}
-                >
-                  {item.icon}
-                  <span className="nav-lbl">{item.label}</span>
-                </Link>
-              )
-            })}
+      {/* Nav */}
+      <div style={{ padding: '12px 0', flex: 1, overflowY: 'auto' }}>
+        <div className="nav-group">
+          <div style={{
+            fontSize: 10, fontWeight: 600, color: 'var(--t4)',
+            letterSpacing: '0.08em', textTransform: 'uppercase',
+            padding: '4px 10px 8px',
+          }}>
+            Workspace
           </div>
-        ))}
+          {TOP_ITEMS.map(({ href, label, Icon, exact, showsBadge }) => {
+            const isActive = active(href, exact)
+            const badge = showsBadge && awaitingCount > 0 ? awaitingCount : null
+            return (
+              <Link key={href} href={href} className={`nav-item${isActive ? ' active' : ''}`}>
+                <span className="ico" style={{ color: isActive ? 'var(--accent)' : undefined }}>
+                  <Icon s={14} />
+                </span>
+                <span>{label}</span>
+                {badge !== null && <span className="nav-counter">{badge}</span>}
+              </Link>
+            )
+          })}
+        </div>
+
+        <div className="nav-group" style={{ marginTop: 8 }}>
+          <div style={{
+            fontSize: 10, fontWeight: 600, color: 'var(--t4)',
+            letterSpacing: '0.08em', textTransform: 'uppercase',
+            padding: '4px 10px 8px',
+          }}>
+            Account
+          </div>
+          {BOTTOM_ITEMS.map(({ href, label, Icon }) => {
+            const isActive = active(href)
+            return (
+              <Link key={href} href={href} className={`nav-item${isActive ? ' active' : ''}`}>
+                <span className="ico" style={{ color: isActive ? 'var(--accent)' : undefined }}>
+                  <Icon s={14} />
+                </span>
+                <span>{label}</span>
+              </Link>
+            )
+          })}
+        </div>
       </div>
 
-      {/* Footer — user info + sign out */}
-      <div className="sidebar-foot">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '4px 4px 8px' }}>
+      {/* User footer */}
+      <div style={{ borderTop: '1px solid var(--line)', padding: 10 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 8px', borderRadius: 8 }}>
           {avatarUrl ? (
             <img
               src={avatarUrl}
-              alt={displayName || 'Avatar'}
+              alt={displayName}
               style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
             />
           ) : (
             <div style={{
-              width: 28,
-              height: 28,
-              borderRadius: '50%',
-              background: 'var(--accent-sub)',
-              border: '1px solid oklch(0.61 0.2 258 / 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              fontSize: 10,
-              fontWeight: 800,
+              width: 28, height: 28, borderRadius: '50%',
+              background: 'var(--accent-sub)', border: '1px solid var(--accent-line)',
               color: 'var(--accent)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0, fontSize: 10, fontWeight: 700,
             }}>
               {initials}
             </div>
           )}
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div className="sidebar-usr-name" style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {restaurantName}
+            <div style={{
+              fontSize: 12, fontWeight: 600, color: 'var(--t1)',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {displayName || restaurantName}
+            </div>
+            <div style={{
+              fontSize: 11, color: 'var(--t3)',
+              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            }}>
+              {userEmail}
             </div>
           </div>
+          <button
+            onClick={handleSignOut}
+            title="Sign out"
+            className="btn-quiet btn-sm"
+            style={{ padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center' }}
+          >
+            <IconSignOut s={13} />
+          </button>
         </div>
-        <SignOutButton />
       </div>
     </aside>
   )

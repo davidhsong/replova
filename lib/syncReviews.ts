@@ -45,6 +45,13 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
     .eq('id', restaurantId)
     .single<RestaurantRecord>()
 
+  const { data: settings } = await admin
+    .from('restaurant_settings')
+    .select('reply_persona')
+    .eq('restaurant_id', restaurantId)
+    .single<{ reply_persona: string | null }>()
+  const persona = settings?.reply_persona ?? null
+
   if (restError || !restaurant) {
     throw new Error('Restaurant not found')
   }
@@ -202,6 +209,7 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
             author: row.author ?? '',
             rating: row.rating ?? 0,
             reviewText: row.review_text ?? '',
+            persona,
           })
 
           if (success) {

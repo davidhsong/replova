@@ -1,8 +1,24 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 
-type State = 'idle' | 'loading' | 'sent'
+type State = 'idle' | 'loading' | 'sent' | 'error'
+
+function Logo({ size = 20 }: { size?: number }) {
+  const box = size + 6;
+  return (
+    <div style={{
+      width: box, height: box,
+      background: 'var(--accent)', borderRadius: Math.round(box * 0.35),
+      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    }}>
+      <svg width={size * 0.58} height={size * 0.58} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+      </svg>
+    </div>
+  );
+}
 
 export default function SignInPage() {
   const [email, setEmail] = useState('')
@@ -26,112 +42,125 @@ export default function SignInPage() {
     if (!res.ok) {
       const data = await res.json().catch(() => ({}))
       setError(data.error ?? 'Something went wrong. Please try again.')
-      setState('idle')
+      setState('error')
     } else {
       setState('sent')
     }
   }
 
   return (
-    <div className="min-h-dvh bg-zinc-950 flex flex-col">
+    <div style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+
       {/* Nav */}
-      <header className="border-b border-zinc-800">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="text-base font-semibold tracking-tight text-zinc-100">
-            Replova
-          </a>
-          <a
-            href="/onboard"
-            className="text-sm font-medium text-zinc-500 hover:text-zinc-300 transition-colors"
-          >
-            Start free trial
+      <header style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 32px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+            <Logo size={18} />
+            <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--t1)' }}>Replova</span>
+          </Link>
+          <a href="/onboard" className="t-xs c-t3" style={{ textDecoration: 'none' }}>
+            No account? <span style={{ color: 'var(--t1)', fontWeight: 600, textDecoration: 'underline', marginLeft: 4 }}>Start a trial</span>
           </a>
         </div>
       </header>
 
-      {/* Form */}
-      <div className="flex-1 flex items-center justify-center px-6 py-16">
-        <div className="w-full max-w-sm fade-up">
-          <div className="mb-8 text-center">
-            <h1 className="text-2xl font-bold text-zinc-100 tracking-tight mb-2">
-              Welcome back
-            </h1>
-            <p className="text-zinc-500 text-sm">
-              Enter your email to sign in to your dashboard.
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-zinc-900 border border-zinc-800 p-8">
-            {state === 'sent' ? (
-              <div className="flex flex-col items-center gap-4 py-4 text-center">
-                <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm text-zinc-200 font-medium">Check your email</p>
-                <p className="text-sm text-zinc-500">We sent a sign-in link to <span className="text-zinc-300">{email}</span>.</p>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1.5">
-                  <label
-                    htmlFor="email"
-                    className="text-xs font-semibold text-zinc-500 uppercase tracking-wider"
-                  >
-                    Email address
-                  </label>
-                  <input
-                    id="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    className="bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    placeholder="you@example.com"
-                    autoFocus
-                  />
-                </div>
-
-                {error && (
-                  <p className="text-sm text-red-400 bg-red-950/50 border border-red-900 rounded-xl px-4 py-3">
-                    {error}
-                  </p>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={state === 'loading' || !email.trim()}
-                  className="btn-press mt-1 rounded-full bg-zinc-100 text-zinc-900 text-sm font-semibold py-3 hover:bg-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {state === 'loading' ? (
-                    <>
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      Signing in…
-                    </>
-                  ) : (
-                    'Sign in'
-                  )}
-                </button>
-
-                <p className="text-center text-sm text-zinc-600">
-                  No account?{' '}
-                  <a href="/onboard" className="text-zinc-400 hover:text-zinc-200 transition-colors font-medium">
-                    Start your free trial
-                  </a>
-                </p>
-              </form>
-            )}
-          </div>
+      {/* Body */}
+      <main style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.05fr 1fr', maxWidth: 1140, width: '100%', margin: '0 auto', padding: '48px 32px', gap: 80, alignItems: 'center' }}>
+        <div className="fade-up">
+          <div className="t-eyebrow" style={{ marginBottom: 20 }}>Sign in</div>
+          <h1 className="t-serif" style={{ fontSize: 54, lineHeight: 1.0, letterSpacing: '-0.02em', marginBottom: 20 }}>
+            Magic link.<br />No password.<br />
+            <span style={{ fontStyle: 'italic', color: 'var(--t3)' }}>Ever.</span>
+          </h1>
+          <p style={{ fontSize: 15, color: 'var(--t2)', maxWidth: 380, lineHeight: 1.65 }}>
+            We email a link straight to the address on your account. Click it; you&apos;re in.
+            Nothing to remember, nothing to reset.
+          </p>
         </div>
-      </div>
 
-      <footer className="border-t border-zinc-800 py-5 px-6">
-        <p className="text-center text-xs text-zinc-700">
-          © {new Date().getFullYear()} Replova
-        </p>
+        <div className="card fade-up" style={{ padding: 36, maxWidth: 440, justifySelf: 'end', width: '100%', boxShadow: 'var(--shadow-2)' }}>
+          {state === 'sent' ? (
+            <div className="fade-up">
+              <div style={{ width: 40, height: 40, borderRadius: 8, background: 'var(--pos-sub)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--pos)', marginBottom: 18 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              </div>
+              <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.01em', marginBottom: 8 }}>Check your email.</h2>
+              <p className="t-sm c-t2" style={{ marginBottom: 24, lineHeight: 1.6 }}>
+                We sent a sign-in link to <strong style={{ color: 'var(--t1)' }}>{email}</strong>. It expires in 15 minutes.
+              </p>
+              <button className="btn btn-ghost btn-sm" onClick={() => { setState('idle'); setEmail('') }}>
+                Use a different email
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit}>
+              <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.01em', marginBottom: 6 }}>Welcome back.</h2>
+              <p className="t-sm c-t3" style={{ marginBottom: 24 }}>Enter your work email.</p>
+
+              <label className="t-eyebrow" style={{ display: 'block', marginBottom: 8 }}>Email</label>
+              <input
+                type="email"
+                autoFocus
+                required
+                className="field field-lg"
+                placeholder="maria@bellanapoli.com"
+                value={email}
+                onChange={e => { setEmail(e.target.value); setState('idle') }}
+                style={state === 'error' ? { borderColor: 'var(--neg-line)' } : {}}
+              />
+
+              {state === 'error' && error && (
+                <div className="fade-in" style={{ marginTop: 10, padding: '8px 10px', background: 'var(--neg-sub)', border: '1px solid var(--neg-line)', borderRadius: 6, fontSize: 12, color: 'var(--neg)', display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 1, flexShrink: 0 }}>
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                  <div style={{ flex: 1 }}>
+                    {error}
+                    {error.includes('No account') && (
+                      <a href="/onboard" style={{ color: 'var(--accent)', fontWeight: 600, marginLeft: 6, textDecoration: 'underline' }}>
+                        Start trial →
+                      </a>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={state === 'loading' || !email.trim()}
+                className="btn btn-primary btn-lg"
+                style={{ width: '100%', marginTop: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}
+              >
+                {state === 'loading' ? (
+                  <>
+                    <span className="spin" style={{ display: 'inline-flex' }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                      </svg>
+                    </span>
+                    Sending…
+                  </>
+                ) : 'Send sign-in link'}
+              </button>
+
+              <div style={{ marginTop: 24, paddingTop: 18, borderTop: '1px solid var(--line)', fontSize: 12, color: 'var(--t3)', textAlign: 'center' }}>
+                New to Replova?{' '}
+                <a href="/onboard" style={{ color: 'var(--t1)', fontWeight: 600, textDecoration: 'underline' }}>Start a trial</a>
+              </div>
+            </form>
+          )}
+        </div>
+      </main>
+
+      {/* Footer */}
+      <footer style={{ borderTop: '1px solid var(--line)', background: 'var(--surface)' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto', padding: '20px 32px', textAlign: 'center' }}>
+          <span className="t-xs c-t4">© {new Date().getFullYear()} Replova</span>
+        </div>
       </footer>
+
     </div>
   )
 }

@@ -4,7 +4,9 @@ import Stripe from 'stripe'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { PLAN_LIMITS } from '@/lib/planLimits'
+import { IconCheck, IconX, IconExternal } from '@/components/icons'
 import type { Plan } from '@/lib/planLimits'
+import PlanChangeButton from './PlanChangeButton'
 
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!)
@@ -23,26 +25,61 @@ const PLAN_META: Record<Plan, {
   competitors: number
   tagline: string
 }> = {
-  starter: { label: 'Starter', price: 39,  locations: 1,  competitors: 3,  tagline: 'Perfect for a single location' },
-  growth:  { label: 'Growth',  price: 99,  locations: 5,  competitors: 5,  tagline: 'Great for growing restaurants' },
-  agency:  { label: 'Agency',  price: 199, locations: 15, competitors: 10, tagline: 'Built for multi-location operators' },
+  starter: { label: 'Starter', price: 39,  locations: 1,  competitors: 3,  tagline: 'Single-site operator' },
+  growth:  { label: 'Growth',  price: 99,  locations: 5,  competitors: 5,  tagline: 'Small chains' },
+  agency:  { label: 'Agency',  price: 199, locations: 15, competitors: 10, tagline: 'Groups & agencies' },
+}
+
+const PLAN_FEATURES: Record<Plan, { features: string[]; missing: string[] }> = {
+  starter: {
+    features: [
+      'AI reply drafts (3 variants)',
+      'Urgent review alerts',
+      'Weekly digest email',
+      'Review request campaigns',
+    ],
+    missing: ['Reputation score', 'Sentiment analysis', 'Competitor tracking', 'Monthly PDF report', 'Custom reply persona'],
+  },
+  growth: {
+    features: [
+      'Everything in Starter, plus:',
+      'Reputation score (composite)',
+      'Sentiment analysis & trend',
+      'Competitor tracking',
+      'Monthly PDF report',
+    ],
+    missing: ['Custom reply persona', 'White-label PDF reports'],
+  },
+  agency: {
+    features: [
+      'Everything in Growth, plus:',
+      'Custom reply persona',
+      'White-label PDF reports',
+      'Priority support',
+    ],
+    missing: [],
+  },
 }
 
 const PLAN_ORDER: Plan[] = ['starter', 'growth', 'agency']
 
-function CheckIcon({ color = 'var(--ok)' }: { color?: string }) {
+function UsageBar({ used, total, label }: { used: number; total: number | string; label: string }) {
+  const totalNum = typeof total === 'number' ? total : Infinity
+  const pct = typeof total === 'number' ? Math.min((used / total) * 100, 100) : 10
+  const ratio = used / totalNum
+  const color = ratio >= 1 ? 'var(--neg)' : ratio >= 0.8 ? 'var(--warn)' : 'var(--pos)'
   return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
-      <path d="M20 6L9 17l-5-5"/>
-    </svg>
-  )
-}
-
-function LockIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 1 }}>
-      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
-    </svg>
+    <div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
+        <span className="t-sm c-t2">{label}</span>
+        <span className="tnum t-sm" style={{ fontWeight: 600 }}>
+          {used} <span className="c-t3">/ {total}</span>
+        </span>
+      </div>
+      <div style={{ height: 5, background: 'var(--surface-2)', borderRadius: 3, overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 3, transition: 'width 0.3s' }} />
+      </div>
+    </div>
   )
 }
 
@@ -101,12 +138,11 @@ export default async function BillingPage() {
   const now = new Date()
   const inTrial = restaurant.active && !hasStripe && now < trialEnd
   const daysLeft = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
-  const trialProgress = Math.round(((30 - daysLeft) / 30) * 100)
 
   let renewalDate: Date | null = null
   let trialEndsViaStripe: Date | null = null
   let stripeTrialDaysLeft: number | null = null
-  let inStripeTrialByDate: boolean = false
+  let inStripeTrialByDate = false
 
   if (hasStripe) {
     try {
@@ -138,351 +174,218 @@ export default async function BillingPage() {
 
   const usedLocations = locationCount ?? 0
   const usedCompetitors = competitorCount ?? 0
-  const locationPct = Math.round((usedLocations / limits.locations) * 100)
-  const competitorPct = Math.round((usedCompetitors / (limits.competitors * Math.max(usedLocations, 1))) * 100)
 
   return (
     <>
-      <div className="sec-head">
-        <h1 style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.025em', color: 'var(--t1)', marginBottom: 2 }}>Billing</h1>
-        <p style={{ fontSize: 13, color: 'var(--t3)' }}>Manage your plan and payment details</p>
+      <div className="page-header" style={{ maxWidth: 1040 }}>
+        <div className="t-eyebrow" style={{ marginBottom: 6 }}>
+          <span style={{ color: 'var(--t3)' }}>Workspace</span>
+          {' › '}
+          <span>Billing</span>
+        </div>
+        <h1 className="t-h1" style={{ marginBottom: 4 }}>Billing</h1>
+        <p className="t-sm c-t3">{restaurant.name}</p>
       </div>
 
-      <div className="page-wrap" style={{ maxWidth: 700 }}>
+      <div className="page-body" style={{ maxWidth: 1040 }}>
 
-        {/* ── Status card ─────────────────────────────── */}
-        <div className="card fade-up" style={{ padding: 24, marginBottom: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: showingTrial ? 20 : 0 }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--t1)' }}>
-                  Replova {meta.label}
-                </h2>
-                {restaurant.active ? (
-                  <span className="badge badge-green" style={{ padding: '3px 10px', fontSize: 11, display: 'inline-flex', alignItems: 'center', gap: 5 }}>
-                    <span className="dot dot-green pulse-dot" style={{ width: 5, height: 5 }} />
-                    {showingTrial ? 'Free trial' : 'Active'}
-                  </span>
-                ) : (
-                  <span className="badge badge-red" style={{ padding: '3px 10px', fontSize: 11 }}>Inactive</span>
-                )}
-              </div>
-              <p style={{ fontSize: 13, color: 'var(--t3)' }}>
-                {showingTrial
-                  ? `$${meta.price}/mo · free until ${effectiveTrialEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
-                  : renewalDate
-                    ? `$${meta.price}/mo · renews ${renewalDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`
-                    : `$${meta.price}/mo · billed monthly`
-                }
-              </p>
+        {/* Status card — 2-column */}
+        <div className="card fade-up" style={{
+          padding: 28, marginBottom: 32,
+          display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32,
+        }}>
+          {/* Left: plan info */}
+          <div>
+            <div className="t-eyebrow" style={{ marginBottom: 8 }}>Current plan</div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 4 }}>
+              <h2 className="t-serif" style={{ fontSize: 36, lineHeight: 1, letterSpacing: '-0.02em' }}>
+                {meta.label}
+              </h2>
+              {restaurant.active ? (
+                showingTrial
+                  ? <span className="pill pill-accent">Free trial</span>
+                  : <span className="pill pill-pos">Active</span>
+              ) : (
+                <span className="pill pill-neg">Inactive</span>
+              )}
             </div>
+            <div className="t-sm c-t2" style={{ marginBottom: 24 }}>
+              <span className="tnum" style={{ fontWeight: 600, color: 'var(--t1)' }}>${meta.price}</span> / month
+              {renewalDate && (
+                <span className="c-t3">
+                  {' · '}renews {renewalDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </span>
+              )}
+            </div>
+
+            {showingTrial && (
+              <div style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
+                  <span className="t-eyebrow">Trial · day {30 - effectiveDaysLeft} of 30</span>
+                  <span className="t-xs c-t3">
+                    <strong style={{ color: effectiveDaysLeft <= 7 ? 'var(--warn)' : 'var(--t1)' }} className="tnum">
+                      {effectiveDaysLeft} days
+                    </strong> remaining
+                  </span>
+                </div>
+                <div style={{ height: 6, background: 'var(--surface-2)', borderRadius: 3, overflow: 'hidden' }}>
+                  <div style={{ width: `${effectiveTrialProgress}%`, height: '100%', background: 'var(--accent)', borderRadius: 3, transition: 'width 0.4s' }} />
+                </div>
+                <div className="t-xs c-t3" style={{ marginTop: 6 }}>
+                  First charge: <strong style={{ color: 'var(--t1)' }}>
+                    {effectiveTrialEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </strong>. Cancel any time before then, no charge.
+                </div>
+              </div>
+            )}
+
+            {!restaurant.active && (
+              <div className="banner banner-neg" style={{ marginBottom: 20 }}>
+                Subscription inactive. Reactivate below to resume review management.
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
               {hasStripe ? (
-                <a
-                  href="/api/billing-portal"
-                  className="btn-press"
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px',
-                    background: 'var(--surface-2)', border: '1px solid var(--border-md)',
-                    borderRadius: 10, fontSize: 12, fontWeight: 500, color: 'var(--t1)', textDecoration: 'none',
-                  }}
-                >
-                  Manage subscription
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                  </svg>
+                <a href="/api/billing-portal" className="btn btn-primary btn-sm">
+                  Manage subscription <IconExternal s={11} />
                 </a>
               ) : restaurant.active ? (
                 <>
-                  <a
-                    href="/api/create-checkout"
-                    className="btn-press"
-                    style={{
-                      display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px',
-                      background: 'var(--surface-2)', border: '1px solid var(--border-md)',
-                      borderRadius: 10, fontSize: 12, fontWeight: 500, color: 'var(--t1)', textDecoration: 'none',
-                    }}
-                  >
-                    Add payment method
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                    </svg>
+                  <a href="/api/create-checkout" className="btn btn-primary btn-sm">
+                    Add payment method <IconExternal s={11} />
                   </a>
-                  <span style={{ fontSize: 11, color: 'var(--t3)' }}>No charge until {effectiveTrialEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}</span>
+                  <span className="t-xs c-t3">
+                    No charge until {effectiveTrialEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+                  </span>
                 </>
               ) : (
-                <a
-                  href="/api/create-checkout"
-                  className="btn-press"
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', padding: '8px 16px',
-                    background: 'var(--t1)', color: 'var(--bg)',
-                    borderRadius: 999, fontSize: 13, fontWeight: 700, textDecoration: 'none', border: 'none',
-                  }}
-                >
+                <a href="/api/create-checkout" className="btn btn-primary">
                   Reactivate subscription
                 </a>
               )}
             </div>
           </div>
 
-          {/* Trial progress */}
-          {showingTrial && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
-                <span style={{ fontSize: 12, color: 'var(--t3)' }}>Free trial</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: effectiveDaysLeft <= 7 ? 'var(--warn)' : 'var(--t2)' }}>
-                  {effectiveDaysLeft} day{effectiveDaysLeft !== 1 ? 's' : ''} remaining
-                </span>
-              </div>
-              <div style={{ height: 5, borderRadius: 999, background: 'var(--surface-2)', overflow: 'hidden' }}>
-                <div style={{ height: '100%', borderRadius: 999, background: 'var(--warn)', width: `${effectiveTrialProgress}%`, transition: 'width 0.3s' }} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-                <span style={{ fontSize: 11, color: 'var(--t3)' }}>Day {30 - effectiveDaysLeft}</span>
-                <span style={{ fontSize: 11, color: 'var(--t3)' }}>Day 30 · first charge</span>
-              </div>
-            </div>
-          )}
-
-          {!restaurant.active && (
-            <div className="banner banner-red" style={{ marginTop: showingTrial ? 16 : 0 }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
-              Subscription inactive. Reactivate above to resume review management.
-            </div>
-          )}
+          {/* Right: usage */}
+          <div style={{ borderLeft: '1px solid var(--line)', paddingLeft: 32, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="t-eyebrow">Usage this month</div>
+            <UsageBar used={usedLocations} total={limits.locations} label="Locations" />
+            <UsageBar
+              used={usedCompetitors}
+              total={limits.competitors * Math.max(usedLocations, 1)}
+              label="Competitor slots"
+            />
+          </div>
         </div>
 
-        {/* ── Plan selection ───────────────────────────── */}
-        <div className="card fade-up" style={{ padding: 24, marginBottom: 12, animationDelay: '40ms' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 8 }}>
-            <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)' }}>Choose your plan</h2>
-            {hasStripe && (
-              <span style={{ fontSize: 12, color: 'var(--t3)' }}>
-                Plan changes take effect immediately via Stripe
-              </span>
-            )}
-          </div>
+        {/* Plan ladder */}
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 18, gap: 12 }}>
+          <h3 style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em' }}>Change plan</h3>
+          <span className="t-xs c-t3">Stripe will prorate any change</span>
+        </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 16 }}>
-            {PLAN_ORDER.map((p) => {
-              const m = PLAN_META[p]
-              const isCurrent = p === plan
-              const isUpgrade = PLAN_ORDER.indexOf(p) > PLAN_ORDER.indexOf(plan)
-              const isDowngrade = PLAN_ORDER.indexOf(p) < PLAN_ORDER.indexOf(plan)
+        <div style={{ border: '1px solid var(--line-md)', borderRadius: 'var(--r-6)', overflow: 'hidden', marginBottom: 32 }}>
+          {PLAN_ORDER.map((p, i) => {
+            const m = PLAN_META[p]
+            const f = PLAN_FEATURES[p]
+            const isCurrent = p === plan
+            const isUpgrade = PLAN_ORDER.indexOf(p) > PLAN_ORDER.indexOf(plan)
 
-              // CTA href
-              let href = hasStripe
-                ? '/api/billing-portal'
-                : `/api/create-checkout?plan=${p}`
-
-              return (
-                <div key={p} style={{
-                  padding: '16px 14px 14px',
-                  borderRadius: 14,
-                  border: isCurrent ? '2px solid var(--accent)' : '1px solid var(--border)',
-                  background: isCurrent ? 'var(--accent-sub)' : 'var(--surface-0)',
-                  position: 'relative',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 10,
-                }}>
+            return (
+              <div key={p} style={{
+                display: 'grid', gridTemplateColumns: '200px 1fr 240px', gap: 32,
+                padding: '28px 32px',
+                borderTop: i > 0 ? '1px solid var(--line)' : 'none',
+                background: isCurrent ? 'var(--surface)' : 'transparent',
+                alignItems: 'flex-start',
+              }}>
+                {/* Plan name + price */}
+                <div>
+                  <div className="t-eyebrow" style={{ color: isCurrent ? 'var(--accent)' : 'var(--t3)', marginBottom: 8 }}>
+                    {m.label}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 4 }}>
+                    <span className="t-serif" style={{ fontSize: 36, lineHeight: 1 }}>${m.price}</span>
+                    <span className="t-xs c-t3">/ mo</span>
+                  </div>
+                  <div className="t-xs c-t3">
+                    {m.locations === 1 ? '1 location' : `Up to ${m.locations} locations`} · {m.competitors} competitor slots
+                  </div>
+                  <div className="t-xs" style={{ color: 'var(--t2)', marginTop: 10, fontStyle: 'italic' }}>For: {m.tagline}</div>
                   {isCurrent && (
-                    <span style={{
-                      position: 'absolute', top: -9, left: 12,
-                      background: 'var(--accent)', color: '#fff',
-                      fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
-                    }}>
-                      Current plan
+                    <span className="pill pill-accent" style={{ marginTop: 14, display: 'inline-flex' }}>
+                      <IconCheck s={10} sw={2.6} /> Current plan
                     </span>
                   )}
+                </div>
 
-                  <div>
-                    <p style={{ fontSize: 12, fontWeight: 700, color: isCurrent ? 'var(--accent)' : 'var(--t3)', marginBottom: 3 }}>{m.label}</p>
-                    <p style={{ fontSize: 20, fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--t1)', lineHeight: 1 }}>
-                      ${m.price}<span style={{ fontSize: 11, fontWeight: 500, color: 'var(--t3)' }}>/mo</span>
-                    </p>
-                  </div>
-
-                  <div style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.6 }}>
-                    <div>{m.locations === 1 ? '1 location' : `Up to ${m.locations} locations`}</div>
-                    <div>{m.competitors} competitor slots / location</div>
-                  </div>
-
-                  {isCurrent ? (
-                    <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--accent)', paddingTop: 2 }}>
-                      ✓ Your plan
+                {/* Feature list */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 9, fontSize: 13, lineHeight: 1.55, paddingTop: 4 }}>
+                  {f.features.map((feat, fi) => (
+                    <div key={feat} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, color: fi === 0 && feat.startsWith('Everything') ? 'var(--t3)' : 'var(--t2)' }}>
+                      <span style={{ color: 'var(--accent)', marginTop: 1, flexShrink: 0 }}>
+                        <IconCheck s={11} sw={2.4} />
+                      </span>
+                      <span>{feat}</span>
                     </div>
-                  ) : isUpgrade ? (
-                    <a
-                      href={href}
-                      className="btn-press"
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                        padding: '7px 10px',
-                        background: 'var(--accent)', color: '#fff',
-                        borderRadius: 8, fontSize: 11, fontWeight: 700, textDecoration: 'none', border: 'none',
-                        marginTop: 'auto',
-                      }}
-                    >
-                      Upgrade
-                      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-                      </svg>
-                    </a>
+                  ))}
+                  {f.missing.map(feat => (
+                    <div key={feat} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, color: 'var(--t4)' }}>
+                      <span style={{ marginTop: 1, flexShrink: 0 }}><IconX s={10} sw={1.6} /></span>
+                      <span style={{ textDecoration: 'line-through', textDecorationColor: 'var(--line-md)' }}>{feat}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, justifySelf: 'end', alignItems: 'flex-end', paddingTop: 4 }}>
+                  {isCurrent ? (
+                    <button className="btn btn-ghost" style={{ width: 200 }} disabled>
+                      You&apos;re on this plan
+                    </button>
+                  ) : hasStripe ? (
+                    <PlanChangeButton
+                      targetPlan={p}
+                      targetLabel={m.label}
+                      targetPrice={m.price}
+                      variant={isUpgrade ? 'upgrade' : 'downgrade'}
+                      priceDiff={m.price - meta.price}
+                    />
                   ) : (
-                    <a
-                      href={hasStripe ? '/api/billing-portal' : href}
-                      className="btn-press"
-                      style={{
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        padding: '7px 10px',
-                        background: 'var(--surface-2)', border: '1px solid var(--border)',
-                        borderRadius: 8, fontSize: 11, fontWeight: 600, color: 'var(--t2)', textDecoration: 'none',
-                        marginTop: 'auto',
-                      }}
-                    >
-                      Downgrade
-                    </a>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                      <a
+                        href={`/api/create-checkout?plan=${p}`}
+                        className={`btn ${isUpgrade ? 'btn-primary' : 'btn-ghost'}`}
+                        style={{ width: 200, justifyContent: 'center', textDecoration: 'none' }}
+                      >
+                        {isUpgrade ? `Upgrade to ${m.label}` : `Downgrade to ${m.label}`}
+                      </a>
+                      <span className="t-xs c-t3">
+                        {isUpgrade
+                          ? `+$${m.price - meta.price}/mo · prorated`
+                          : `Save $${meta.price - m.price}/mo`}
+                      </span>
+                    </div>
                   )}
                 </div>
-              )
-            })}
-          </div>
-
-          {hasStripe && (
-            <p style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.5 }}>
-              Upgrades and downgrades are processed through the Stripe billing portal. Proration is handled automatically.
-            </p>
-          )}
+              </div>
+            )
+          })}
         </div>
 
-        {/* ── Usage ────────────────────────────────────── */}
-        <div className="card fade-up" style={{ padding: 24, marginBottom: 12, animationDelay: '80ms' }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 16 }}>Plan usage</h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
-                <span style={{ fontSize: 13, color: 'var(--t2)' }}>Locations</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: locationPct >= 100 ? 'var(--err)' : 'var(--t1)' }}>
-                  {usedLocations} / {limits.locations}
-                </span>
-              </div>
-              <div style={{ height: 5, borderRadius: 999, background: 'var(--surface-2)', overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%', borderRadius: 999,
-                  background: locationPct >= 100 ? 'var(--err)' : locationPct >= 80 ? 'var(--warn)' : 'var(--accent)',
-                  width: `${Math.min(locationPct, 100)}%`, transition: 'width 0.3s',
-                }} />
-              </div>
-            </div>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 7 }}>
-                <span style={{ fontSize: 13, color: 'var(--t2)' }}>Competitors tracked</span>
-                <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>
-                  {usedCompetitors} · {limits.competitors} slots / location
-                </span>
-              </div>
-              <div style={{ height: 5, borderRadius: 999, background: 'var(--surface-2)', overflow: 'hidden' }}>
-                <div style={{
-                  height: '100%', borderRadius: 999,
-                  background: competitorPct >= 100 ? 'var(--err)' : 'var(--accent)',
-                  width: `${Math.min(competitorPct, 100)}%`, transition: 'width 0.3s',
-                }} />
-              </div>
-            </div>
+        {/* Help row */}
+        <div style={{
+          padding: '18px 22px', background: 'var(--surface-2)', border: '1px solid var(--line)',
+          borderRadius: 'var(--r-5)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+        }}>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>Need help choosing?</div>
+            <div className="t-xs c-t3">Email a real human. Usually back within an hour.</div>
           </div>
-        </div>
-
-        {/* ── What's included ──────────────────────────── */}
-        <div className="card fade-up" style={{ padding: 24, marginBottom: 12, animationDelay: '120ms' }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 18 }}>What&apos;s included</h2>
-
-          <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--t3)', marginBottom: 10 }}>All plans</p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
-            {[
-              { title: 'AI reply drafts', desc: '3 tone variants per review — Professional, Warm, and Brief.' },
-              { title: 'Urgent review alerts', desc: 'Instant email when a low-rating review comes in.' },
-              { title: 'Weekly digest email', desc: 'Monday summary of reviews and AI action items.' },
-              { title: 'Review request campaigns', desc: 'Email customers asking them to leave a review.' },
-            ].map(({ title, desc }) => (
-              <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                <CheckIcon />
-                <div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{title}</span>
-                  <span style={{ fontSize: 12, color: 'var(--t3)', marginLeft: 6 }}>{desc}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--t3)' }}>Growth &amp; Agency</p>
-            {plan === 'starter' && (
-              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-sub)', border: '1px solid oklch(0.62 0.19 258 / 0.25)', borderRadius: 5, padding: '1px 7px' }}>
-                Upgrade to unlock
-              </span>
-            )}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
-            {[
-              { title: 'Reputation score', desc: 'Composite 0–100 score tracking ratings, response rate, and sentiment.' },
-              { title: 'Sentiment analysis', desc: 'AI reads every review for tone, keywords, and staff shoutouts.' },
-              { title: 'Competitor tracking', desc: `Monitor nearby restaurants and see how you rank.` },
-              { title: 'Monthly PDF report', desc: 'Downloadable report with key metrics for the month.' },
-            ].map(({ title, desc }) => {
-              const unlocked = plan === 'growth' || plan === 'agency'
-              return (
-                <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, opacity: unlocked ? 1 : 0.4 }}>
-                  {unlocked ? <CheckIcon /> : <LockIcon />}
-                  <div>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{title}</span>
-                    <span style={{ fontSize: 12, color: 'var(--t3)', marginLeft: 6 }}>{desc}</span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--t3)' }}>Agency only</p>
-            {plan !== 'agency' && (
-              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-sub)', border: '1px solid oklch(0.62 0.19 258 / 0.25)', borderRadius: 5, padding: '1px 7px' }}>
-                Upgrade to unlock
-              </span>
-            )}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {[
-              { title: 'Custom reply persona', desc: 'Set your tone and voice — every AI draft matches your style.' },
-              { title: 'White-label PDF reports', desc: 'Replace the Replova logo with your own for client-ready reports.' },
-              { title: 'Up to 15 locations', desc: 'Manage multiple locations from one account.' },
-            ].map(({ title, desc }) => {
-              const unlocked = plan === 'agency'
-              return (
-                <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, opacity: unlocked ? 1 : 0.4 }}>
-                  {unlocked ? <CheckIcon /> : <LockIcon />}
-                  <div>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{title}</span>
-                    <span style={{ fontSize: 12, color: 'var(--t3)', marginLeft: 6 }}>{desc}</span>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-
-        {/* ── Help ─────────────────────────────────────── */}
-        <div className="card fade-up" style={{ padding: 24, animationDelay: '160ms' }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 4 }}>Need help?</h2>
-          <p style={{ fontSize: 13, color: 'var(--t2)', lineHeight: 1.65 }}>
-            Questions about billing or plans? Email{' '}
-            <a href="mailto:support@replova.app" style={{ color: 'var(--accent)', fontWeight: 500 }}>support@replova.app</a>
-            {' '}and we&apos;ll get back to you within 24 hours.
-          </p>
+          <a href="mailto:support@replova.app" className="btn btn-ghost btn-sm">
+            support@replova.app <IconExternal s={11} />
+          </a>
         </div>
 
       </div>

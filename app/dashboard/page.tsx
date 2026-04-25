@@ -7,6 +7,7 @@ import ReviewList from './ReviewList'
 import DemoMode from './DemoMode'
 import AutoDismissBanner from './AutoDismissBanner'
 import IntelligencePanel from '@/components/dashboard/IntelligencePanel'
+import StatTile from '@/components/dashboard/StatTile'
 import type { Plan } from '@/lib/planLimits'
 
 type Restaurant = {
@@ -91,7 +92,6 @@ export default async function DashboardPage({
 
   const admin = getSupabaseAdmin()
 
-  // Get all restaurants for this user
   const { data: restaurants } = await admin
     .from('restaurants')
     .select('id, name, active, owner_email, place_id, google_location_name, created_at')
@@ -101,11 +101,9 @@ export default async function DashboardPage({
 
   if (!restaurants || restaurants.length === 0) redirect('/onboard')
 
-  // Resolve active restaurant from cookie
   const activeId = cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value
   const restaurant = restaurants.find(r => r.id === activeId) ?? restaurants[0]
 
-  // Get account plan
   const { data: account } = await admin
     .from('accounts')
     .select('plan')
@@ -113,48 +111,6 @@ export default async function DashboardPage({
     .maybeSingle()
 
   const plan: Plan = (account?.plan as Plan) ?? 'starter'
-
-  if (!restaurant.active) {
-    return (
-      <>
-        <div className="sec-head">
-          <h1 style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.025em', color: 'var(--t1)', marginBottom: 2 }}>
-            {restaurant.name}
-          </h1>
-          <p style={{ fontSize: 13, color: 'var(--t3)' }}>Review Center</p>
-        </div>
-        <div className="page-wrap">
-          <div style={{ border: '1px solid var(--border)', borderRadius: 16, padding: '56px 24px', textAlign: 'center' }} className="fade-up">
-            <div style={{
-              width: 44, height: 44, background: 'var(--surface-1)', borderRadius: 12,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
-            }}>
-              <svg style={{ color: 'var(--t3)' }} width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--t1)', marginBottom: 4 }}>Activate your trial</p>
-            <p style={{ fontSize: 13, color: 'var(--t3)', maxWidth: 280, margin: '0 auto 24px', lineHeight: 1.6 }}>
-              Start your free 30-day trial to get AI suggested replies for every customer review at{' '}
-              <span style={{ color: 'var(--t2)' }}>{restaurant.name}</span>.
-            </p>
-            <a
-              href="/api/create-checkout"
-              className="btn-press"
-              style={{
-                display: 'inline-block', background: 'var(--t1)', color: 'var(--bg)',
-                fontSize: 13, fontWeight: 700, padding: '10px 20px', borderRadius: 999,
-                textDecoration: 'none',
-              }}
-            >
-              Start your free 30-day trial
-            </a>
-            <p style={{ marginTop: 12, fontSize: 12, color: 'var(--t3)' }}>No credit card required · Cancel anytime</p>
-          </div>
-        </div>
-      </>
-    )
-  }
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -244,29 +200,36 @@ export default async function DashboardPage({
 
   return (
     <>
-      {/* Section header */}
-      <div className="sec-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-        <div>
-          <h1 style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.025em', color: 'var(--t1)', marginBottom: 2 }}>
-            {restaurant.name}
-          </h1>
-          <p style={{ fontSize: 13, color: 'var(--t3)' }}>Review Center</p>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span className="dot dot-green pulse-dot" />
-          <span style={{ fontSize: 12, color: 'var(--t3)' }}>Monitoring</span>
+      {/* Page header */}
+      <div className="page-header">
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <div className="t-eyebrow" style={{ marginBottom: 6 }}>
+              <span style={{ color: 'var(--t3)' }}>Workspace</span>
+              {' › '}
+              <span>Reviews</span>
+            </div>
+            <h1 className="t-h1" style={{ marginBottom: 4 }}>{restaurant.name}</h1>
+            <p className="t-sm c-t3">Auto-syncs every 6h</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, paddingTop: 6 }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--t3)' }}>
+              <span className="dot dot-green pulse-dot" />
+              Monitoring
+            </span>
+          </div>
         </div>
       </div>
 
-      <div className="page-wrap" style={{ maxWidth: 1080 }}>
+      <div className="page-body">
         {/* Google Business connection banner */}
         {!restaurant.google_location_name && !params.success && (
-          <div className="banner banner-amber fade-up" style={{ marginBottom: 16 }}>
+          <div className="banner banner-warn fade-up" style={{ marginBottom: 20 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             <span>
-              Connect your Google Business account to sync all reviews and enable direct replies.{' '}
+              Connect your Google Business account to sync reviews and enable direct replies.{' '}
               <a href="/dashboard/settings" style={{ color: 'inherit', fontWeight: 700, textDecoration: 'underline' }}>
                 Go to Settings →
               </a>
@@ -274,9 +237,8 @@ export default async function DashboardPage({
           </div>
         )}
 
-        {/* Success banner */}
         {params.success && (
-          <AutoDismissBanner className="banner banner-green fade-up" delay={4000}>
+          <AutoDismissBanner className="banner banner-pos fade-up" delay={4000} style={{ marginBottom: 20 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
               <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
             </svg>
@@ -288,98 +250,58 @@ export default async function DashboardPage({
           </AutoDismissBanner>
         )}
 
-        {/* Urgent / all-clear banner */}
-        {stats.total > 0 && (
-          <div
-            className={`banner fade-up ${urgentCount > 0 ? 'banner-red' : unrepliedCount > 0 ? 'banner-amber' : 'banner-green'}`}
-            style={{ marginBottom: 16 }}
-          >
-            {urgentCount > 0 ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-              </svg>
-            ) : unrepliedCount > 0 ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
-            ) : (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-              </svg>
-            )}
-            {urgentCount > 0
-              ? `${urgentCount} urgent review${urgentCount > 1 ? 's' : ''} need${urgentCount === 1 ? 's' : ''} immediate attention`
-              : unrepliedCount > 0
-              ? `${unrepliedCount} review${unrepliedCount > 1 ? 's' : ''} waiting for a reply`
-              : 'All caught up — no reviews waiting for a reply'}
+        {/* Urgent banner */}
+        {urgentCount > 0 && (
+          <div className="banner banner-neg fade-up" style={{ marginBottom: 20 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <div>
+              <strong>{urgentCount} negative review{urgentCount > 1 ? 's' : ''} need a reply</strong>
+              <span style={{ color: 'inherit', opacity: 0.8, marginLeft: 8 }}>
+                A reply within 24 hours is the difference between recovery and a permanent 1-star.
+              </span>
+            </div>
           </div>
         )}
 
-        {/* Row 1: Stats strip */}
-        <div className="stats-strip fade-up" style={{ marginBottom: 20 }}>
-          {/* Card 1: Reputation Score */}
-          <div className="stat-card" style={{ position: 'relative', overflow: 'hidden' }}>
-            <div style={{ fontSize: 10, color: 'var(--t3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Replova Score</div>
-            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.05em', color: 'var(--t1)', lineHeight: 1 }}>
-              {repScore?.score != null ? Math.round(repScore.score) : '—'}
-              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--t3)', letterSpacing: 0 }}> /100</span>
-            </div>
-            <div style={{ marginTop: 8 }}>
-              {scoreDelta !== null ? (
-                <span style={{
-                  fontSize: 11, fontWeight: 600, padding: '2px 6px', borderRadius: 5,
-                  color: scoreDelta >= 0 ? 'var(--ok)' : 'var(--err)',
-                  background: scoreDelta >= 0 ? 'var(--ok-sub)' : 'var(--err-sub)',
-                }}>
-                  {scoreDelta >= 0 ? '▲' : '▼'} {Math.abs(scoreDelta)} this week
-                </span>
-              ) : (
-                <span style={{ fontSize: 11, color: 'var(--t3)' }}>syncing…</span>
-              )}
-            </div>
-          </div>
-
-          {/* Card 2: Avg Rating */}
-          <div className="stat-card">
-            <div style={{ fontSize: 10, color: 'var(--t3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Google Rating</div>
-            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.05em', color: '#f59e0b', lineHeight: 1, display: 'flex', alignItems: 'baseline', gap: 3 }}>
-              {displayAvgRating != null ? displayAvgRating.toFixed(1) : '—'}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="#f59e0b" stroke="none" style={{ marginBottom: 1, flexShrink: 0 }}>
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
-            </div>
-            <div style={{ fontSize: 11, marginTop: 8, color: 'var(--t3)' }}>last 90 days</div>
-          </div>
-
-          {/* Card 3: Reviews This Month */}
-          <div className="stat-card">
-            <div style={{ fontSize: 10, color: 'var(--t3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>New Reviews</div>
-            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.05em', color: 'var(--t1)', lineHeight: 1 }}>
-              {repScore?.reviews_this_month ?? stats.total}
-            </div>
-            <div style={{ fontSize: 11, marginTop: 8, color: 'var(--t3)' }}>this month</div>
-          </div>
-
-          {/* Card 4: Need Reply */}
-          <div
-            className="stat-card"
-            style={unrepliedCount > 0 ? { background: 'var(--err-sub)', borderColor: 'rgba(239,68,68,0.18)' } : {}}
-          >
-            <div style={{ fontSize: 10, color: 'var(--t3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Awaiting Reply</div>
-            <div style={{
-              fontSize: 30, fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 1,
-              color: unrepliedCount > 0 ? 'var(--err)' : 'var(--ok)',
-            }}>
-              {unrepliedCount}
-            </div>
-            <div style={{ fontSize: 11, marginTop: 8, color: 'var(--t3)' }}>
-              {unrepliedCount === 0 ? '✓ all caught up' : `need${unrepliedCount === 1 ? 's' : ''} a reply`}
-            </div>
-          </div>
+        {/* Stats strip */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 28 }}>
+          <StatTile
+            label="Replova score"
+            value={repScore?.score != null ? Math.round(repScore.score) : '—'}
+            delta={scoreDelta !== null ? scoreDelta : undefined}
+            sub="vs last week"
+          />
+          <StatTile
+            label="Google rating"
+            value={
+              displayAvgRating != null
+                ? <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 2 }}>
+                    {displayAvgRating.toFixed(1)}
+                    <span style={{ color: 'var(--gold)', fontSize: 20, lineHeight: 1, marginLeft: 1 }}>★</span>
+                  </span>
+                : '—'
+            }
+            sub={`${allRows.length} review${allRows.length !== 1 ? 's' : ''} · last 90 days`}
+          />
+          <StatTile
+            label="New this month"
+            value={repScore?.reviews_this_month ?? stats.total}
+            sub="this month"
+          />
+          <StatTile
+            label="Awaiting reply"
+            value={unrepliedCount}
+            urgent={unrepliedCount > 0}
+            allClear={unrepliedCount === 0}
+            sub={unrepliedCount === 0 ? '✓ All caught up' : `need${unrepliedCount === 1 ? 's' : ''} a reply`}
+          />
         </div>
 
-        {/* Row 2: Review inbox + Intelligence panel */}
-        <div className="intel-grid">
+        {/* Two-column layout */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 320px', gap: 32, alignItems: 'flex-start' }}>
           <div style={{ minWidth: 0 }}>
             {reviews.length === 0 ? (
               <DemoMode />
@@ -396,6 +318,8 @@ export default async function DashboardPage({
           <IntelligencePanel
             score={repScore?.score ?? null}
             scoreDelta={scoreDelta}
+            avgRating={displayAvgRating}
+            reviewsThisMonth={repScore?.reviews_this_month ?? null}
             responseRate={repScore?.response_rate ?? null}
             avgSentiment={repScore?.avg_sentiment ?? null}
             topKeywords={topKeywords}

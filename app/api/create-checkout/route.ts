@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
     customer_email: user.email!,
     metadata: { restaurantId: restaurant.id, ownerEmail: user.email!, plan },
     subscription_data: { trial_period_days: 30 },
-    success_url: `${BASE_URL}/dashboard?success=true`,
+    success_url: `${BASE_URL}/api/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${BASE_URL}/dashboard`,
   })
 

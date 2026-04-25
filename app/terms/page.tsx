@@ -1,176 +1,152 @@
 import type { Metadata } from 'next'
+import LegalLayout from '@/components/LegalLayout'
+import type { LegalSection } from '@/components/LegalLayout'
 
 export const metadata: Metadata = { title: 'Terms of Service — Replova' }
 
+const sections: LegalSection[] = [
+  {
+    heading: 'The thing you signed up for',
+    content: (
+      <p>
+        By accessing or using Replova (&ldquo;the Service&rdquo;), you agree to be bound by these Terms and our{' '}
+        <a href="/privacy" style={{ color: 'var(--t1)', textDecoration: 'underline' }}>Privacy Policy</a>.
+        Replova is a restaurant reputation management platform. Features include AI-generated review reply drafts,
+        sentiment analysis, competitor rating tracking, review request campaigns, weekly digest emails, and reputation scoring.
+      </p>
+    ),
+  },
+  {
+    heading: 'Your account',
+    content: (
+      <p>
+        You are responsible for keeping your sign-in email secure. We don&apos;t use passwords. If your inbox is
+        compromised, that is sufficient access for someone to sign in as you. You are also responsible for reviewing
+        all AI-generated content before posting it publicly.
+      </p>
+    ),
+  },
+  {
+    heading: 'Connected services',
+    content: (
+      <p>
+        When you connect Google Business, we receive read access to reviews on the connected listing(s) and write
+        access to post replies. We use this access only for the features advertised in the product. You can
+        disconnect Google at any time from the Settings page. Use of Google data is subject to Google&apos;s own
+        Terms of Service and API usage policies.
+      </p>
+    ),
+  },
+  {
+    heading: 'Replies we post',
+    content: (
+      <p>
+        AI drafts are suggestions, not statements made by Replova. Replies posted to Google appear under your
+        account; you are responsible for their content. Auto-reply (if enabled) is bounded by the conditions you
+        set in Settings.
+      </p>
+    ),
+  },
+  {
+    heading: 'Plans, billing, refunds',
+    content: (
+      <>
+        <p style={{ marginBottom: 12 }}>
+          Replova offers three monthly plans, each including a <strong style={{ color: 'var(--t1)' }}>30-day free trial</strong>:
+        </p>
+        <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 0, marginBottom: 12 }}>
+          {[
+            { n: 'Starter', d: '$39/month · 1 location · 3 competitor slots' },
+            { n: 'Growth',  d: '$99/month · up to 5 locations · 5 competitor slots · sentiment & scores' },
+            { n: 'Agency',  d: '$199/month · up to 15 locations · 10 competitor slots · custom persona & white-label reports' },
+          ].map(p => (
+            <li key={p.n} style={{ display: 'flex', gap: 8 }}>
+              <strong style={{ color: 'var(--t1)', minWidth: 60 }}>{p.n}</strong>
+              <span>{p.d}</span>
+            </li>
+          ))}
+        </ul>
+        <p>
+          Plans renew monthly. After trial, your card is charged at the start of each month. You may cancel or
+          change your plan at any time via the Billing page. For full details on refunds, see our{' '}
+          <a href="/refunds" style={{ color: 'var(--t1)', textDecoration: 'underline' }}>Refund Policy</a>.
+        </p>
+      </>
+    ),
+  },
+  {
+    heading: 'Acceptable use',
+    content: (
+      <>
+        <p style={{ marginBottom: 10 }}>You agree not to:</p>
+        <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 0, marginBottom: 10 }}>
+          {[
+            'Use the Service for any unlawful purpose or in violation of any applicable regulation',
+            'Post or distribute harmful, defamatory, or misleading content using AI-generated drafts',
+            'Attempt to reverse-engineer, scrape, or otherwise extract data from the Service',
+            'Circumvent any usage limits or plan restrictions',
+            "Violate Google's Terms of Service or Policies while using the Google integration",
+          ].map(item => (
+            <li key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+              <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--t4)', flexShrink: 0, marginTop: 9 }} />
+              {item}
+            </li>
+          ))}
+        </ul>
+        <p>We reserve the right to suspend or terminate accounts that violate these terms without prior notice.</p>
+      </>
+    ),
+  },
+  {
+    heading: 'Data and privacy',
+    content: (
+      <p>
+        We store only the data necessary to provide the Service: your email, restaurant details, review content
+        fetched from Google, and generated reply drafts. We do not sell your data. See our{' '}
+        <a href="/privacy" style={{ color: 'var(--t1)', textDecoration: 'underline' }}>Privacy Policy</a> for full details.
+      </p>
+    ),
+  },
+  {
+    heading: 'Account termination',
+    content: (
+      <p>
+        You may delete your account at any time from Settings → Danger zone. Upon deletion, all associated data —
+        including restaurants, reviews, and reply drafts — is permanently removed. This action cannot be undone.
+        We may also terminate accounts for violation of these Terms.
+      </p>
+    ),
+  },
+  {
+    heading: 'The boring legal bits',
+    content: (
+      <p>
+        Service is provided &ldquo;as is.&rdquo; To the maximum extent permitted by applicable law, we disclaim all
+        warranties, express or implied. We shall not be liable for any indirect, incidental, special, or
+        consequential damages, including lost profits or data. Our total liability for any claim shall not exceed
+        the amount you paid us in the three months prior to the claim. Either party can terminate with 30 days
+        notice. Disputes are resolved in New York.
+      </p>
+    ),
+  },
+  {
+    heading: 'Changes to terms',
+    content: (
+      <p>
+        We may update these Terms from time to time. We will notify you of material changes via email. Continued
+        use of the Service after changes constitutes acceptance of the updated Terms.
+      </p>
+    ),
+  },
+]
+
 export default function TermsPage() {
-  const year = new Date().getFullYear()
-  const updated = 'April 25, 2025'
-
   return (
-    <div className="min-h-dvh bg-white flex flex-col">
-      <header className="border-b border-zinc-200 sticky top-0 bg-white/95 backdrop-blur z-10">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="text-base font-semibold tracking-tight text-zinc-900">Replova</a>
-          <a href="/signin" className="text-sm text-zinc-500 hover:text-zinc-900 transition-colors">Sign in</a>
-        </div>
-      </header>
-
-      <div className="flex-1 max-w-2xl mx-auto px-6 py-14 w-full fade-up">
-        <div className="mb-10">
-          <h1 className="text-3xl font-bold text-zinc-900 tracking-tight mb-2">Terms of Service</h1>
-          <p className="text-zinc-400 text-sm">Last updated: {updated}</p>
-        </div>
-
-        <div className="space-y-8 text-sm text-zinc-600 leading-relaxed">
-
-          <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-2">1. Acceptance of Terms</h2>
-            <p>
-              By accessing or using Replova (&ldquo;the Service&rdquo;), you agree to be bound by these Terms of
-              Service and our <a href="/privacy" className="text-zinc-900 underline underline-offset-2 hover:text-blue-600 transition-colors">Privacy Policy</a>.
-              If you do not agree, do not use the Service.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-2">2. Description of Service</h2>
-            <p className="mb-3">
-              Replova is a restaurant reputation management platform. Features include AI-generated review
-              reply drafts, sentiment analysis, competitor rating tracking, review request campaigns,
-              weekly digest emails, and reputation scoring.
-            </p>
-            <p>
-              We access publicly available business data via the Google Places API and post replies to
-              Google Business Profiles only when you explicitly authorize it. You are responsible for
-              reviewing all AI-generated content before posting it publicly.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-2">3. Subscription and Billing</h2>
-            <p className="mb-3">
-              Replova offers the following monthly subscription plans, each including a{' '}
-              <strong className="text-zinc-800">30-day free trial</strong>:
-            </p>
-            <ul className="list-disc list-inside space-y-1 mb-3">
-              <li><strong className="text-zinc-800">Starter</strong> — $39/month · 1 location · 3 competitor slots</li>
-              <li><strong className="text-zinc-800">Growth</strong> — $99/month · up to 5 locations · 5 competitor slots · sentiment &amp; scores</li>
-              <li><strong className="text-zinc-800">Agency</strong> — $199/month · up to 15 locations · 10 competitor slots · custom persona &amp; white-label reports</li>
-            </ul>
-            <p className="mb-3">
-              You will not be charged during the free trial. After the trial ends, your chosen plan renews
-              automatically each month. You may cancel or change your plan at any time via the Billing page
-              in your dashboard. Cancellations take effect at the end of the current billing period.
-            </p>
-            <p>
-              For full details on cancellations, partial-period charges, and exception handling, see our{' '}
-              <a href="/refunds" className="text-zinc-900 underline underline-offset-2 hover:text-blue-600 transition-colors">
-                Refund Policy
-              </a>.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-2">4. AI-Generated Content</h2>
-            <p>
-              Reply drafts, sentiment summaries, and action items are generated by AI and are suggestions
-              only. Replova does not guarantee their accuracy, tone, or suitability for any specific
-              situation. You are solely responsible for any content you post publicly. Always review
-              AI-generated drafts before publishing them.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-2">5. Google Integration</h2>
-            <p>
-              When you connect your Google Business Profile, you grant Replova permission to read your
-              reviews and, if you enable auto-reply, to post replies on your behalf. You can disconnect
-              Google at any time from the Settings page. Use of Google data is subject to
-              Google&apos;s own Terms of Service and API usage policies.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-2">6. Acceptable Use</h2>
-            <p className="mb-3">You agree not to:</p>
-            <ul className="list-disc list-inside space-y-1">
-              <li>Use the Service for any unlawful purpose or in violation of any applicable regulation</li>
-              <li>Post or distribute harmful, defamatory, or misleading content using AI-generated drafts</li>
-              <li>Attempt to reverse-engineer, scrape, or otherwise extract data from the Service</li>
-              <li>Circumvent any usage limits or plan restrictions</li>
-              <li>Violate Google&apos;s Terms of Service or Policies while using the Google integration</li>
-            </ul>
-            <p className="mt-3">
-              We reserve the right to suspend or terminate accounts that violate these terms without prior notice.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-2">7. Data and Privacy</h2>
-            <p>
-              We store only the data necessary to provide the Service: your email address, restaurant
-              details, review content fetched from Google, and generated reply drafts. We do not sell
-              your data. See our{' '}
-              <a href="/privacy" className="text-zinc-900 underline underline-offset-2 hover:text-blue-600 transition-colors">
-                Privacy Policy
-              </a>{' '}
-              for full details.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-2">8. Account Termination</h2>
-            <p>
-              You may delete your account at any time from the Settings page. Upon deletion, all
-              associated data — including restaurants, reviews, and reply drafts — is permanently removed.
-              This action cannot be undone. We may also terminate accounts for violation of these Terms.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-2">9. Limitation of Liability</h2>
-            <p>
-              Replova is provided &ldquo;as is.&rdquo; To the maximum extent permitted by applicable law, we disclaim
-              all warranties, express or implied. We shall not be liable for any indirect, incidental,
-              special, or consequential damages, including lost profits or data, arising from your use
-              of the Service, even if advised of the possibility of such damages. Our total liability to
-              you for any claim arising under these terms shall not exceed the amount you paid us in the
-              three months prior to the claim.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-2">10. Changes to Terms</h2>
-            <p>
-              We may update these Terms from time to time. We will notify you of material changes via
-              email. Continued use of the Service after changes constitutes acceptance of the updated Terms.
-            </p>
-          </section>
-
-          <section>
-            <h2 className="text-base font-semibold text-zinc-900 mb-2">11. Contact</h2>
-            <p>
-              Questions about these terms? Email us at{' '}
-              <a href="mailto:support@replova.app" className="text-zinc-900 underline underline-offset-2 hover:text-blue-600 transition-colors">
-                support@replova.app
-              </a>. We aim to respond within one business day.
-            </p>
-          </section>
-
-        </div>
-      </div>
-
-      <footer className="border-t border-zinc-200">
-        <div className="max-w-6xl mx-auto px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <span className="text-sm font-semibold text-zinc-900">Replova</span>
-          <div className="flex items-center gap-5">
-            <a href="/privacy" className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors">Privacy</a>
-            <a href="/refunds" className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors">Refunds</a>
-            <a href="mailto:support@replova.app" className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors">Support</a>
-            <span className="text-xs text-zinc-400">© {year} Replova</span>
-          </div>
-        </div>
-      </footer>
-    </div>
+    <LegalLayout
+      page="terms"
+      title="Terms of Service"
+      kicker="Effective April 25, 2025"
+      sections={sections}
+    />
   )
 }

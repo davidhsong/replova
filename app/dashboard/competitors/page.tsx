@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getSupabaseBrowser } from '@/lib/supabase'
+import { IconSearch, IconRefresh, IconTrash } from '@/components/icons'
 
 type Restaurant = { id: string; name: string; competitorLimit: number; plan: string }
 
@@ -35,36 +36,7 @@ type ComparisonData = {
   totalTracked: number
 }
 
-function StarRating({ rating }: { rating: number | null }) {
-  if (rating === null) return <span style={{ color: 'var(--t3)', fontSize: 13 }}>—</span>
-  return (
-    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--amber, #f59e0b)" stroke="none">
-        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-      </svg>
-      <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{rating.toFixed(1)}</span>
-    </span>
-  )
-}
-
-function RankBadge({ rank }: { rank: number }) {
-  const colors: Record<number, string> = {
-    1: '#f59e0b',
-    2: '#9ca3af',
-    3: '#cd7c3e',
-  }
-  const color = colors[rank] ?? 'var(--t3)'
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-      width: 24, height: 24, borderRadius: '50%',
-      background: `${color}22`, border: `1.5px solid ${color}`,
-      fontSize: 11, fontWeight: 800, color,
-    }}>
-      {rank}
-    </span>
-  )
-}
+const MEDAL_COLORS: Record<number, string> = { 1: '#c08725', 2: '#7c7569', 3: '#a06430' }
 
 export default function CompetitorsPage() {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
@@ -85,19 +57,14 @@ export default function CompetitorsPage() {
 
   useEffect(() => {
     async function init() {
-      const supabase = getSupabaseBrowser()
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user } } = await getSupabaseBrowser().auth.getUser()
       if (!user) { setAuthError(true); return }
-
       const res = await fetch('/api/restaurant')
       if (!res.ok) { setAuthError(true); return }
       const r: Restaurant = await res.json()
       setRestaurant(r)
       const loaded = await loadData(r.id)
-      // Auto-discover on first visit when no competitors have been added yet
-      if (loaded.competitorCount === 0) {
-        await runAutoDiscover(r.id, true)
-      }
+      if (loaded.competitorCount === 0) await runAutoDiscover(r.id, true)
     }
     init()
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -136,8 +103,8 @@ export default function CompetitorsPage() {
         } else if (!silent) {
           setAutoDiscoverMsg('No new nearby competitors found.')
         }
-      } else {
-        if (!silent) setAutoDiscoverMsg(data.error ?? 'Auto-discover failed.')
+      } else if (!silent) {
+        setAutoDiscoverMsg(data.error ?? 'Auto-discover failed.')
       }
     } catch {
       if (!silent) setAutoDiscoverMsg('Auto-discover failed — check your connection.')
@@ -210,7 +177,6 @@ export default function CompetitorsPage() {
     }
   }
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function onClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -226,285 +192,271 @@ export default function CompetitorsPage() {
 
   if (authError) {
     return (
-      <div className="page-wrap" style={{ textAlign: 'center', paddingTop: 64 }}>
-        <p style={{ color: 'var(--t3)', fontSize: 14 }}>Please sign in to view this page.</p>
+      <div className="page-body" style={{ textAlign: 'center', paddingTop: 64 }}>
+        <p className="t-sm c-t3">Please sign in to view this page.</p>
       </div>
     )
   }
 
   const yourEntry = comparison?.yourRestaurant
-  const allEntries: Array<{ id: string | 'you'; name: string; avgRating: number | null; totalReviews: number | null; ratingDelta: number | null; rank: number; isYou: boolean }> = comparison
+  const allEntries: Array<{
+    id: string | 'you'
+    name: string
+    avgRating: number | null
+    totalReviews: number | null
+    ratingDelta: number | null
+    rank: number
+    isYou: boolean
+  }> = comparison
     ? [
         { id: 'you', name: yourEntry!.name, avgRating: yourEntry!.avgRating, totalReviews: yourEntry!.totalReviews, ratingDelta: null, rank: yourEntry!.rank, isYou: true },
-        ...comparison.competitors.map(c => ({ ...c, id: c.id, isYou: false })),
+        ...comparison.competitors.map(c => ({ ...c, isYou: false })),
       ].sort((a, b) => a.rank - b.rank)
     : []
 
+  const yourRank = comparison?.yourRestaurant.rank ?? null
+  const totalTracked = comparison?.totalTracked ?? 0
+
   return (
     <>
-      <div className="sec-head">
-        <div>
-          <h1 style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.025em', color: 'var(--t1)', marginBottom: 2 }}>
-            Competitor Tracking
-          </h1>
-          <p style={{ fontSize: 13, color: 'var(--t3)' }}>See how your ratings stack up against nearby restaurants</p>
+      <div className="page-header">
+        <div className="t-eyebrow" style={{ marginBottom: 6 }}>
+          <span style={{ color: 'var(--t3)' }}>Workspace</span>
+          {' › '}
+          <span>Competitors</span>
         </div>
+        <h1 className="t-h1" style={{ marginBottom: 4 }}>Competitors</h1>
+        <p className="t-sm c-t3">
+          {competitors.length} of {competitorLimit} competitor slots used
+        </p>
       </div>
 
-      <div className="page-wrap">
+      <div className="page-body">
 
-        {/* Your position card */}
-        {comparison && (
-          <div className="card fade-up" style={{ padding: '20px 24px', marginBottom: 12, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-            <div style={{
-              width: 52, height: 52, borderRadius: 14,
-              background: 'var(--surface-2)', border: '1.5px solid var(--border)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-            }}>
-              <RankBadge rank={comparison.yourRestaurant.rank} />
+        {/* Rank statement card */}
+        {comparison && yourRank !== null && (
+          <div className="card fade-up" style={{ padding: 32, marginBottom: 24, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, alignItems: 'center' }}>
+            {/* Left: dramatic rank number */}
+            <div>
+              <div className="t-eyebrow" style={{ marginBottom: 14 }}>Your position</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 18, marginBottom: 12, flexWrap: 'wrap' }}>
+                <span className="t-serif" style={{ fontSize: 88, lineHeight: 1, letterSpacing: '-0.04em' }}>#{yourRank}</span>
+                <span style={{ fontSize: 22, fontWeight: 700, color: 'var(--t3)', letterSpacing: '-0.02em', whiteSpace: 'nowrap' }}>
+                  of {totalTracked}
+                </span>
+              </div>
+              {yourEntry?.avgRating !== null && (
+                <p className="t-body c-t2" style={{ lineHeight: 1.6 }}>
+                  Your current rating:{' '}
+                  <strong style={{ color: 'var(--t1)' }}>{yourEntry?.avgRating?.toFixed(1)} ★</strong>
+                  {' · '}{yourEntry?.totalReviews.toLocaleString()} reviews
+                </p>
+              )}
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 2 }}>
-                You are ranked <span style={{ color: 'var(--accent)' }}>#{comparison.yourRestaurant.rank}</span> of {comparison.totalTracked} restaurants you&apos;re tracking
-              </p>
-              <p style={{ fontSize: 13, color: 'var(--t3)' }}>
-                {comparison.yourRestaurant.avgRating !== null
-                  ? `${comparison.yourRestaurant.avgRating.toFixed(1)} ★ · ${comparison.yourRestaurant.totalReviews.toLocaleString()} reviews`
-                  : 'No rating data yet — sync reviews to populate your score'}
-              </p>
+
+            {/* Right: ranked list */}
+            <div style={{ borderLeft: '1px solid var(--line)', paddingLeft: 32 }}>
+              <div className="t-eyebrow" style={{ marginBottom: 16 }}>Set</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {allEntries.map((entry, i) => (
+                  <div key={String(entry.id)} style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '7px 10px', borderRadius: 'var(--r-3)',
+                    background: entry.isYou ? 'var(--accent-sub)' : 'transparent',
+                  }}>
+                    <span className="t-mono tnum" style={{
+                      width: 20, fontSize: 11, fontWeight: 700,
+                      color: MEDAL_COLORS[i + 1] ?? 'var(--t3)',
+                      flexShrink: 0,
+                    }}>
+                      #{i + 1}
+                    </span>
+                    <span style={{
+                      flex: 1, fontSize: 13,
+                      fontWeight: entry.isYou ? 700 : 500,
+                      color: entry.isYou ? 'var(--accent)' : 'var(--t1)',
+                      overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                    }}>
+                      {entry.name}
+                      {entry.isYou && <span style={{ marginLeft: 8, fontSize: 10, fontWeight: 600, opacity: 0.7 }}>YOU</span>}
+                    </span>
+                    {entry.avgRating !== null && (
+                      <span className="tnum" style={{ fontSize: 13, fontWeight: 600, color: 'var(--gold)', flexShrink: 0 }}>
+                        {entry.avgRating.toFixed(1)}★
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Add competitor */}
-        <div className="card fade-up" style={{ padding: 24, marginBottom: 12, position: 'relative', zIndex: 2 }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
-            <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)' }}>Add Competitor</h2>
-            {!atLimit && (
-              <button
-                onClick={() => restaurant && runAutoDiscover(restaurant.id)}
-                disabled={autoDiscovering}
-                className="btn-press"
-                style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
-                  background: 'var(--accent-sub)', color: 'var(--accent-hi)',
-                  border: '1px solid oklch(0.62 0.19 258 / 0.25)',
-                  cursor: autoDiscovering ? 'not-allowed' : 'pointer',
-                  opacity: autoDiscovering ? 0.6 : 1, fontFamily: 'inherit',
-                }}
-              >
-                {autoDiscovering ? (
-                  <>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
-                      <path d="M21 12a9 9 0 11-6.219-8.56"/>
-                    </svg>
-                    Finding…
-                  </>
-                ) : (
-                  <>
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-                    </svg>
-                    Auto-discover nearby
-                  </>
-                )}
-              </button>
-            )}
-          </div>
-          <p style={{ fontSize: 13, color: 'var(--t3)', marginBottom: autoDiscoverMsg ? 10 : 14 }}>
-            <span style={{ fontWeight: 600, color: atLimit ? 'var(--err)' : 'var(--t2)' }}>
-              {competitors.length} / {competitorLimit}
-            </span>{' '}competitor slot{competitorLimit !== 1 ? 's' : ''} used.{' '}
-            {atLimit && (
-              <><span style={{ color: 'var(--err)', fontWeight: 600 }}>Limit reached.</span>{' '}
-              <a href="/dashboard/billing" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Upgrade to add more</a></>
-            )}
-          </p>
-          {autoDiscoverMsg && (
-            <div className="banner banner-green fade-up" style={{ marginBottom: 14 }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-              </svg>
-              {autoDiscoverMsg}
-            </div>
-          )}
+        {/* Two-column: add panel + table */}
+        <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 24, alignItems: 'flex-start' }}>
 
-          <div ref={dropdownRef} style={{ position: 'relative', maxWidth: 440 }}>
-            <div style={{ position: 'relative' }}>
-              <input
-                type="text"
-                placeholder="Search for a competitor restaurant..."
-                value={searchQuery}
-                onChange={handleSearchChange}
-                disabled={atLimit}
-                style={{
-                  width: '100%', padding: '10px 38px 10px 14px', borderRadius: 10,
-                  border: '1px solid var(--border-md)', background: 'var(--surface-2)',
-                  color: 'var(--t1)', fontSize: 13,
-                  outline: 'none', boxSizing: 'border-box',
-                  opacity: atLimit ? 0.5 : 1,
-                }}
-              />
-              {searchLoading && (
-                <div style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)' }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
-                    <path d="M21 12a9 9 0 11-6.219-8.56"/>
-                  </svg>
+          {/* Left: add competitor */}
+          <div className="card" style={{ padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+              <div className="t-eyebrow">Add competitor</div>
+              <span className="t-mono t-xs c-t3 tnum">{competitors.length} / {competitorLimit} slots</span>
+            </div>
+
+            {autoDiscoverMsg && (
+              <div className="banner banner-pos fade-in" style={{ marginBottom: 12 }}>
+                {autoDiscoverMsg}
+              </div>
+            )}
+
+            {error && (
+              <div className="banner banner-neg fade-in" style={{ marginBottom: 12 }}>
+                {error}
+              </div>
+            )}
+
+            {/* Search */}
+            <div ref={dropdownRef} style={{ position: 'relative', marginBottom: 10 }}>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', top: '50%', left: 11, transform: 'translateY(-50%)', color: 'var(--t4)', pointerEvents: 'none' }}>
+                  <IconSearch s={13} />
+                </span>
+                <input
+                  type="text"
+                  placeholder="Search Google Places…"
+                  value={searchQuery}
+                  onChange={handleSearchChange}
+                  disabled={atLimit}
+                  className="field"
+                  style={{ paddingLeft: 32, fontSize: 13, opacity: atLimit ? 0.5 : 1 }}
+                />
+                {searchLoading && (
+                  <span className="spin" style={{ position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)', display: 'inline-flex', color: 'var(--t3)' }}>
+                    <IconRefresh s={13} />
+                  </span>
+                )}
+              </div>
+
+              {showDropdown && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
+                  background: 'var(--surface)', border: '1px solid var(--line)',
+                  borderRadius: 'var(--r-5)', boxShadow: 'var(--shadow-2)', zIndex: 50, overflow: 'hidden',
+                }}>
+                  {searchResults.map((r, i) => {
+                    const alreadyAdded = competitors.some(c => c.googlePlaceId === r.placeId)
+                    const isAdding = addingId === r.placeId
+                    return (
+                      <div key={r.placeId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderTop: i > 0 ? '1px solid var(--line)' : 'none' }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
+                          <div className="t-xs c-t3" style={{ marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {r.address}{r.rating !== null ? ` · ${r.rating.toFixed(1)}★` : ''}
+                          </div>
+                        </div>
+                        {alreadyAdded ? (
+                          <span className="t-xs c-t3">Added</span>
+                        ) : (
+                          <button
+                            onClick={() => handleAdd(r.placeId)}
+                            disabled={isAdding || atLimit}
+                            className="btn btn-ghost btn-sm"
+                          >
+                            {isAdding ? '…' : 'Add'}
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </div>
 
-            {showDropdown && (
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
-                background: 'var(--surface-0)', border: '1px solid var(--border)',
-                borderRadius: 10, boxShadow: '0 8px 24px rgba(0,0,0,0.18)', zIndex: 50,
-                overflow: 'hidden',
-              }}>
-                {searchResults.map((r) => {
-                  const alreadyAdded = competitors.some(c => c.googlePlaceId === r.placeId)
-                  const isAdding = addingId === r.placeId
-                  return (
-                    <button
-                      key={r.placeId}
-                      onClick={() => !alreadyAdded && handleAdd(r.placeId)}
-                      disabled={alreadyAdded || isAdding || atLimit}
-                      style={{
-                        width: '100%', textAlign: 'left', padding: '12px 14px',
-                        background: 'transparent', border: 'none',
-                        borderBottom: '1px solid var(--border)', cursor: alreadyAdded ? 'default' : 'pointer',
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
-                        opacity: alreadyAdded ? 0.5 : 1,
-                        transition: 'background 80ms',
-                      }}
-                      onMouseEnter={e => { if (!alreadyAdded) (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface-2)' }}
-                      onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent' }}
-                    >
-                      <div style={{ minWidth: 0 }}>
-                        <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                          {r.name}
-                        </p>
-                        <p style={{ fontSize: 11, color: 'var(--t3)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{r.address}</p>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                        {r.rating !== null && (
-                          <span style={{ fontSize: 12, color: 'var(--t2)', display: 'flex', alignItems: 'center', gap: 3 }}>
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="var(--amber, #f59e0b)" stroke="none">
-                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-                            </svg>
-                            {r.rating.toFixed(1)}
-                          </span>
-                        )}
-                        {alreadyAdded ? (
-                          <span style={{ fontSize: 11, color: 'var(--t3)', fontWeight: 500 }}>Added</span>
-                        ) : isAdding ? (
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
-                            <path d="M21 12a9 9 0 11-6.219-8.56"/>
-                          </svg>
-                        ) : (
-                          <span style={{
-                            fontSize: 11, fontWeight: 700, color: 'var(--accent)',
-                            background: 'var(--accent-sub)', borderRadius: 6, padding: '3px 8px',
-                          }}>Add</span>
-                        )}
-                      </div>
-                    </button>
-                  )
-                })}
+            <button
+              onClick={() => restaurant && runAutoDiscover(restaurant.id)}
+              disabled={autoDiscovering || atLimit}
+              className="btn btn-ghost btn-sm"
+              style={{ width: '100%' }}
+            >
+              <span className={autoDiscovering ? 'spin' : undefined} style={{ display: 'inline-flex' }}>
+                <IconRefresh s={11} />
+              </span>
+              {autoDiscovering ? 'Finding…' : 'Auto-discover nearby'}
+            </button>
+
+            <p className="t-xs c-t3" style={{ marginTop: 12, lineHeight: 1.5 }}>
+              We'll surface similar restaurants within a mile. You decide which to track.
+            </p>
+
+            {atLimit && (
+              <div className="banner banner-warn" style={{ marginTop: 12 }}>
+                Limit reached.{' '}
+                <a href="/dashboard/billing" style={{ color: 'inherit', fontWeight: 700, textDecoration: 'underline' }}>Upgrade to add more →</a>
               </div>
             )}
           </div>
 
-          {error && (
-            <p style={{ marginTop: 10, fontSize: 13, color: 'var(--red, #ef4444)' }}>{error}</p>
-          )}
-        </div>
-
-        {/* Comparison table */}
-        {allEntries.length > 0 && (
-          <div className="card fade-up" style={{ overflow: 'hidden' }}>
-            <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid var(--border)' }}>
-              <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)' }}>Comparison</h2>
-            </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          {/* Right: comparison table or empty state */}
+          {allEntries.length > 0 ? (
+            <div className="card" style={{ overflow: 'hidden' }}>
+              <table className="dtable">
                 <thead>
-                  <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                    {['Rank', 'Restaurant', 'Rating', 'Reviews', 'vs. You'].map(col => (
-                      <th key={col} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 600, color: 'var(--t3)', textTransform: 'uppercase', letterSpacing: '0.06em', whiteSpace: 'nowrap' }}>
-                        {col}
-                      </th>
-                    ))}
-                    <th style={{ padding: '10px 16px', width: 32 }} />
+                  <tr>
+                    <th style={{ width: 60 }}>Rank</th>
+                    <th>Restaurant</th>
+                    <th style={{ width: 90, textAlign: 'right' }}>Rating</th>
+                    <th style={{ width: 90, textAlign: 'right' }}>Reviews</th>
+                    <th style={{ width: 110, textAlign: 'right' }}>vs. You</th>
+                    <th style={{ width: 44 }} />
                   </tr>
                 </thead>
                 <tbody>
                   {allEntries.map((entry, i) => {
-                    const isYou = entry.isYou
                     const delta = entry.ratingDelta
-                    const isBetter = delta !== null && delta > 0
-                    const isWorse = delta !== null && delta < 0
+                    const isAhead = delta !== null && delta > 0
+                    const isBehind = delta !== null && delta < 0
                     return (
-                      <tr
-                        key={entry.id}
-                        style={{
-                          borderBottom: i < allEntries.length - 1 ? '1px solid var(--border)' : undefined,
-                          background: isYou ? 'var(--accent-sub)' : 'transparent',
-                        }}
-                      >
-                        <td style={{ padding: '12px 16px' }}>
-                          <RankBadge rank={entry.rank} />
-                        </td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <span style={{ fontWeight: isYou ? 700 : 500, color: 'var(--t1)' }}>
-                            {entry.name}
+                      <tr key={String(entry.id)} style={{ background: entry.isYou ? 'var(--accent-sub)' : undefined }}>
+                        <td>
+                          <span className="t-mono tnum" style={{ fontWeight: 700, fontSize: 12, color: MEDAL_COLORS[i + 1] ?? 'var(--t3)' }}>
+                            #{i + 1}
                           </span>
-                          {isYou && (
-                            <span style={{ marginLeft: 8, fontSize: 11, color: 'var(--accent)', fontWeight: 600, background: 'var(--accent-sub)', border: '1px solid var(--accent)', borderRadius: 5, padding: '1px 6px' }}>
-                              You
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontWeight: entry.isYou ? 700 : 500, color: entry.isYou ? 'var(--accent)' : 'var(--t1)' }}>
+                              {entry.name}
                             </span>
-                          )}
+                            {entry.isYou && <span className="pill pill-accent" style={{ height: 18 }}>You</span>}
+                          </div>
                         </td>
-                        <td style={{ padding: '12px 16px' }}>
-                          <StarRating rating={entry.avgRating} />
+                        <td className="tnum" style={{ textAlign: 'right', fontWeight: 600 }}>
+                          {entry.avgRating !== null
+                            ? <>{entry.avgRating.toFixed(1)} <span style={{ color: 'var(--gold)' }}>★</span></>
+                            : <span className="c-t3">—</span>
+                          }
                         </td>
-                        <td style={{ padding: '12px 16px', color: 'var(--t2)' }}>
+                        <td className="tnum c-t2" style={{ textAlign: 'right' }}>
                           {entry.totalReviews !== null ? entry.totalReviews.toLocaleString() : '—'}
                         </td>
-                        <td style={{ padding: '12px 16px' }}>
-                          {isYou ? (
-                            <span style={{ color: 'var(--t3)', fontSize: 12 }}>—</span>
-                          ) : delta === null ? (
-                            <span style={{ color: 'var(--t3)', fontSize: 12 }}>—</span>
+                        <td className="tnum" style={{ textAlign: 'right' }}>
+                          {entry.isYou || delta === null ? (
+                            <span className="c-t3">—</span>
                           ) : (
-                            <span style={{
-                              fontSize: 12, fontWeight: 700,
-                              color: isBetter ? 'var(--red, #ef4444)' : isWorse ? 'var(--green, #22c55e)' : 'var(--t3)',
-                            }}>
-                              {isBetter ? '+' : ''}{delta.toFixed(2)}
+                            <span style={{ fontWeight: 600, color: isAhead ? 'var(--neg)' : isBehind ? 'var(--pos)' : 'var(--t3)' }}>
+                              {isAhead ? '+' : ''}{delta.toFixed(2)}
                             </span>
                           )}
                         </td>
-                        <td style={{ padding: '12px 16px' }}>
-                          {!isYou && (
+                        <td style={{ textAlign: 'right' }}>
+                          {!entry.isYou && (
                             <button
                               onClick={() => handleRemove(entry.id as string)}
                               disabled={removingId === entry.id}
+                              className="btn btn-quiet btn-sm"
+                              style={{ padding: '0 6px', opacity: removingId === entry.id ? 0.4 : 1 }}
                               title="Remove competitor"
-                              style={{
-                                background: 'none', border: 'none', cursor: 'pointer',
-                                color: 'var(--t3)', padding: 4, borderRadius: 6,
-                                opacity: removingId === entry.id ? 0.4 : 1,
-                                display: 'flex', alignItems: 'center',
-                                transition: 'color 80ms',
-                              }}
-                              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--red, #ef4444)' }}
-                              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--t3)' }}
                             >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/>
-                              </svg>
+                              <IconTrash s={13} />
                             </button>
                           )}
                         </td>
@@ -514,25 +466,15 @@ export default function CompetitorsPage() {
                 </tbody>
               </table>
             </div>
-          </div>
-        )}
-
-        {/* Empty state — shown when no competitors added yet */}
-        {competitors.length === 0 && comparison !== null && (
-          <div className="card fade-up" style={{ padding: '48px 24px', textAlign: 'center' }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px' }}>
-              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-            <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--t2)', marginBottom: 4 }}>No competitors tracked yet</p>
-            <p style={{ fontSize: 13, color: 'var(--t3)' }}>Search for nearby restaurants above, or use auto-discover to find them automatically.</p>
-          </div>
-        )}
+          ) : (
+            <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
+              <p className="t-serif t-italic c-t3" style={{ fontSize: 18, marginBottom: 6 }}>No competitors tracked yet.</p>
+              <p className="t-xs c-t3">Search above, or use auto-discover to find nearby restaurants.</p>
+            </div>
+          )}
+        </div>
 
       </div>
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
     </>
   )
 }

@@ -7,6 +7,7 @@ interface GenerateRepliesParams {
   author: string
   rating: number
   reviewText: string
+  persona?: string | null
 }
 
 interface ReplyVariants {
@@ -26,6 +27,7 @@ export async function generateReplies(params: GenerateRepliesParams): Promise<Re
   const author = sanitize(params.author, 100)
   const rating = Math.min(5, Math.max(0, Math.round(params.rating)))
   const reviewText = sanitize(params.reviewText, 2000)
+  const personaLine = params.persona ? `\nWrite in this voice: ${sanitize(params.persona, 300)}` : ''
 
   const message = await client.messages.create({
     model: 'claude-sonnet-4-20250514',
@@ -48,6 +50,7 @@ Rules:
 - Be concise but thoughtful — avoid filler phrases
 - Avoid generic openers like "Thank you for your feedback!" without any substance
 - Each response should feel like it was written by a high-quality, attentive business owner
+- Never offer discounts or mention competitor names${personaLine}
 
 Return ONLY a valid JSON object with exactly these three keys:
 {

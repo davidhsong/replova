@@ -11,6 +11,14 @@ interface Props {
   onReplied?: () => void
 }
 
+const statusStyle: React.CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 6,
+  height: 28, padding: '0 12px',
+  borderRadius: 'var(--r-pill)',
+  fontSize: 12, fontWeight: 500,
+  whiteSpace: 'nowrap', cursor: 'default', pointerEvents: 'none',
+}
+
 export default function PostReplyButton({ replyText, reviewId, onReplied }: Props) {
   const [state, setState] = useState<State>('idle')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
@@ -35,7 +43,6 @@ export default function PostReplyButton({ replyText, reviewId, onReplied }: Prop
           return
         }
 
-        // Google not connected — fall back to copy + open
         if (data.code === 'NOT_CONNECTED' || data.code === 'NO_LOCATION') {
           await copyToClipboard(replyText)
           window.open('https://business.google.com/reviews', '_blank', 'noopener,noreferrer')
@@ -53,7 +60,6 @@ export default function PostReplyButton({ replyText, reviewId, onReplied }: Prop
         setTimeout(() => { setState('idle'); setErrorMsg(null) }, 4000)
       }
     } else {
-      // Demo mode — copy + open browser
       await copyToClipboard(replyText)
       window.open('https://business.google.com/reviews', '_blank', 'noopener,noreferrer')
       setState('done')
@@ -63,11 +69,11 @@ export default function PostReplyButton({ replyText, reviewId, onReplied }: Prop
 
   if (state === 'done') {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-950 text-emerald-400 border border-emerald-900 whitespace-nowrap">
-        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+      <span style={{ ...statusStyle, background: 'var(--pos-sub)', color: 'var(--pos)', border: '1px solid var(--pos-line)' }}>
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M20 6L9 17l-5-5"/>
         </svg>
-        {reviewId ? 'Posted to Google' : 'Copied & opened'}
+        {reviewId ? 'Posted' : 'Copied'}
       </span>
     )
   }
@@ -77,7 +83,7 @@ export default function PostReplyButton({ replyText, reviewId, onReplied }: Prop
       <span
         role="alert"
         title={errorMsg ?? 'Error'}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg bg-red-950 text-red-400 border border-red-900 whitespace-nowrap max-w-50 truncate"
+        style={{ ...statusStyle, background: 'var(--neg-sub)', color: 'var(--neg)', border: '1px solid var(--neg-line)', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis' }}
       >
         {errorMsg ?? 'Error posting'}
       </span>
@@ -88,20 +94,18 @@ export default function PostReplyButton({ replyText, reviewId, onReplied }: Prop
     <button
       onClick={handleClick}
       disabled={state === 'posting'}
-      className="btn-press inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-colors bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+      className="btn btn-sm btn-primary btn-press"
     >
       {state === 'posting' ? (
-        <>
-          <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        <span className="spin" style={{ display: 'inline-flex' }}>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 12a9 9 0 11-6.219-8.56"/>
           </svg>
-          Posting…
-        </>
+        </span>
       ) : (
         <>
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
           </svg>
           Reply on Google
         </>

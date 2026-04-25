@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
+import { Fragment, useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { getSupabaseBrowser } from '@/lib/supabase'
+import Link from 'next/link'
 
 type Step = 'search' | 'confirm' | 'email' | 'success'
 type Plan = 'starter' | 'growth' | 'agency'
@@ -13,35 +14,59 @@ interface PlaceResult {
   address: string
 }
 
-function StepIndicator({ current }: { current: Step }) {
-  const steps: Step[] = ['search', 'confirm', 'email', 'success']
-  const labels = ['Find your business', 'Confirm', 'Your email', 'Done']
-  const idx = steps.indexOf(current)
-
+function Logo({ size = 20 }: { size?: number }) {
+  const box = size + 6;
   return (
-    <div className="flex items-center gap-0 mb-8">
-      {steps.slice(0, 3).map((s, i) => (
-        <div key={s} className="flex items-center">
-          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold transition-colors ${
-            i < idx
-              ? 'bg-blue-600 text-white'
-              : i === idx
-              ? 'bg-zinc-900 text-white'
-              : 'bg-zinc-800 text-zinc-600'
-          }`}>
-            {i < idx ? (
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            ) : (
-              i + 1
-            )}
+    <div style={{
+      width: box, height: box,
+      background: 'var(--accent)', borderRadius: Math.round(box * 0.35),
+      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+    }}>
+      <svg width={size * 0.58} height={size * 0.58} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+      </svg>
+    </div>
+  );
+}
+
+const STEP_LABELS: Record<Step, string> = {
+  search: 'Find restaurant',
+  confirm: 'Confirm',
+  email: 'Your email',
+  success: 'Done',
+}
+const STEP_ORDER: Step[] = ['search', 'confirm', 'email']
+
+function StepDots({ current }: { current: Step }) {
+  const idx = STEP_ORDER.indexOf(current)
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 48 }}>
+      {STEP_ORDER.map((s, i) => (
+        <Fragment key={s}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{
+              width: 24, height: 24, borderRadius: '50%',
+              border: '1px solid',
+              borderColor: i <= idx ? 'var(--accent)' : 'var(--line-md)',
+              background: i < idx ? 'var(--accent)' : i === idx ? 'var(--surface)' : 'transparent',
+              color: i < idx ? '#fff' : i === idx ? 'var(--accent)' : 'var(--t3)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 600, flexShrink: 0,
+            }}>
+              {i < idx ? (
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
+              ) : i + 1}
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 600, color: i === idx ? 'var(--t1)' : 'var(--t3)', letterSpacing: '0.01em' }}>
+              {STEP_LABELS[s]}
+            </span>
           </div>
-          <span className={`ml-2 text-xs font-medium mr-4 ${i === idx ? 'text-zinc-100' : 'text-zinc-600'}`}>
-            {labels[i]}
-          </span>
-          {i < 2 && <div className={`w-6 h-px mr-4 ${i < idx ? 'bg-blue-600' : 'bg-zinc-800'}`} />}
-        </div>
+          {i < STEP_ORDER.length - 1 && (
+            <div style={{ flex: 1, height: 1, background: i < idx ? 'var(--accent)' : 'var(--line)', margin: '0 16px' }} />
+          )}
+        </Fragment>
       ))}
     </div>
   )
@@ -52,6 +77,16 @@ function resolvePlan(raw: string | null): Plan {
   return 'growth'
 }
 
+function Spinner() {
+  return (
+    <span className="spin" style={{ display: 'inline-flex' }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 12a9 9 0 11-6.219-8.56"/>
+      </svg>
+    </span>
+  )
+}
+
 function OnboardPageContent() {
   const searchParams = useSearchParams()
   const plan = resolvePlan(searchParams.get('plan'))
@@ -60,20 +95,17 @@ function OnboardPageContent() {
   const [step, setStep] = useState<Step>('search')
   const [sessionEmail, setSessionEmail] = useState<string | null>(null)
 
-  // Step 1: search
   const [restaurantName, setRestaurantName] = useState('')
   const [city, setCity] = useState('')
   const [searching, setSearching] = useState(false)
   const [searchError, setSearchError] = useState<string | null>(null)
   const [result, setResult] = useState<PlaceResult | null>(null)
 
-  // Step 3: email (only used for non-add mode)
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [successEmail, setSuccessEmail] = useState('')
 
-  // In add mode, detect existing session on mount
   useEffect(() => {
     if (!addMode) return
     void (async () => {
@@ -95,7 +127,6 @@ function OnboardPageContent() {
       const data = await res.json()
 
       if (!res.ok) throw new Error(data.error ?? 'Search failed')
-
       if (!data.found) {
         setSearchError(`We couldn't find "${restaurantName}" in ${city}. Try a different spelling or city.`)
         return
@@ -111,7 +142,6 @@ function OnboardPageContent() {
   }
 
   async function handleConfirm() {
-    // In add mode with an active session, create the restaurant directly
     if (addMode && sessionEmail) {
       await createRestaurant(sessionEmail)
       return
@@ -128,12 +158,7 @@ function OnboardPageContent() {
       const res = await fetch('/api/restaurants/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: result.name,
-          email: ownerEmail,
-          placeId: result.placeId,
-          plan,
-        }),
+        body: JSON.stringify({ name: result.name, email: ownerEmail, placeId: result.placeId, plan }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed to add location.')
@@ -167,22 +192,36 @@ function OnboardPageContent() {
     await createRestaurant(email)
   }
 
+  const headings: Record<Step, string> = {
+    search: addMode ? 'Add a new location.' : 'Find your restaurant.',
+    confirm: 'Is this your business?',
+    email: 'Where should we send the replies?',
+    success: '',
+  }
+
+  const subheadings: Record<Step, string> = {
+    search: addMode ? 'Search for the location you want to add.' : 'We use Google Places to make sure we sync from the right listing.',
+    confirm: 'Verify we found the right listing.',
+    email: "We'll send you AI suggested replies whenever new reviews come in.",
+    success: '',
+  }
+
   if (step === 'success') {
     return (
-      <div className="min-h-dvh bg-zinc-950 flex items-center justify-center px-6">
-        <div className="max-w-sm w-full text-center fade-up">
-          <div className="w-14 h-14 rounded-2xl bg-emerald-950 border border-emerald-900 flex items-center justify-center mx-auto mb-6">
-            <svg className="w-6 h-6 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      <div style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+        <div style={{ maxWidth: 400, width: '100%', textAlign: 'center' }} className="fade-up">
+          <div style={{ width: 56, height: 56, borderRadius: 14, background: 'var(--pos-sub)', border: '1px solid var(--pos-line)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px', color: 'var(--pos)' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M20 6L9 17l-5-5"/>
             </svg>
           </div>
-          <h1 className="text-xl font-semibold text-zinc-100 mb-2">You&apos;re all set</h1>
-          <p className="text-zinc-400 text-sm leading-relaxed">
+          <h1 style={{ fontSize: 24, fontWeight: 700, letterSpacing: '-0.02em', marginBottom: 10 }}>You&apos;re all set</h1>
+          <p className="t-sm c-t2" style={{ lineHeight: 1.65 }}>
             We sent a sign-in link to{' '}
-            <span className="text-zinc-200 font-medium">{successEmail}</span>.{' '}
+            <strong style={{ color: 'var(--t1)' }}>{successEmail}</strong>.{' '}
             Click it to access your dashboard.
           </p>
-          <p className="text-zinc-600 text-xs mt-4">
+          <p className="t-xs c-t4" style={{ marginTop: 16 }}>
             You&apos;ll receive suggested replies as new reviews come in.
           </p>
         </div>
@@ -191,213 +230,190 @@ function OnboardPageContent() {
   }
 
   return (
-    <div className="min-h-dvh bg-zinc-950 flex flex-col">
+    <div style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+
       {/* Nav */}
-      <header className="border-b border-zinc-800">
-        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-          <a href="/" className="text-base font-semibold text-zinc-100 tracking-tight">
-            Replova
-          </a>
-          <a href="/signin" className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors">
-            Sign in
+      <header style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
+        <div style={{ maxWidth: 880, margin: '0 auto', padding: '0 32px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+            <Logo size={18} />
+          </Link>
+          <a href="/signin" className="t-xs c-t3" style={{ textDecoration: 'none', fontSize: 12 }}>
+            Already have an account?{' '}
+            <span style={{ color: 'var(--t1)', fontWeight: 600, textDecoration: 'underline', marginLeft: 4 }}>Sign in</span>
           </a>
         </div>
       </header>
 
-      <div className="flex-1 flex items-center justify-center px-6 py-12">
-        <div className="w-full max-w-md fade-up">
+      <main style={{ flex: 1, maxWidth: 880, width: '100%', margin: '0 auto', padding: '56px 32px' }}>
 
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold text-zinc-100 tracking-tight mb-1">
-              {step === 'search' && (addMode ? 'Add a new location' : 'Start your free trial')}
-              {step === 'confirm' && 'Is this your business?'}
-              {step === 'email' && 'Where should we send the replies?'}
-            </h1>
-            <p className="text-zinc-500 text-sm">
-              {step === 'search' && (addMode ? 'Search for the location you want to add.' : '30 days free. No credit card required.')}
-              {step === 'confirm' && 'Verify we found the right listing.'}
-              {step === 'email' && "We'll send you AI suggested replies whenever new reviews come in."}
-            </p>
-          </div>
+        <div className="t-eyebrow" style={{ marginBottom: 12 }}>
+          Step {STEP_ORDER.indexOf(step) + 1} of {STEP_ORDER.length}
+        </div>
+        <h1 className="t-serif" style={{ fontSize: 44, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: 8 }}>
+          {headings[step]}
+        </h1>
+        <p style={{ fontSize: 15, color: 'var(--t2)', marginBottom: 40, maxWidth: 560, lineHeight: 1.6 }}>
+          {subheadings[step]}
+        </p>
 
-          <StepIndicator current={step} />
+        <StepDots current={step} />
 
-          {/* Step 1: Search */}
-          {step === 'search' && (
-            <form onSubmit={handleSearch} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider" htmlFor="rname">
-                  Business name
-                </label>
-                <input
-                  id="rname"
-                  type="text"
-                  required
-                  value={restaurantName}
-                  onChange={e => setRestaurantName(e.target.value)}
-                  className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="Bella Napoli"
-                  autoFocus
-                />
+        {/* Step 1: Search */}
+        {step === 'search' && (
+          <form onSubmit={handleSearch} className="fade-up" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <div>
+              <label className="t-eyebrow" style={{ display: 'block', marginBottom: 8 }} htmlFor="rname">
+                Business name
+              </label>
+              <input
+                id="rname"
+                type="text"
+                required
+                value={restaurantName}
+                onChange={e => setRestaurantName(e.target.value)}
+                className="field field-lg"
+                placeholder="Bella Napoli"
+                autoFocus
+              />
+            </div>
+            <div>
+              <label className="t-eyebrow" style={{ display: 'block', marginBottom: 8 }} htmlFor="city">
+                City
+              </label>
+              <input
+                id="city"
+                type="text"
+                required
+                value={city}
+                onChange={e => setCity(e.target.value)}
+                className="field field-lg"
+                placeholder="New York"
+              />
+            </div>
+
+            {searchError && (
+              <div style={{ padding: '10px 12px', background: 'var(--neg-sub)', border: '1px solid var(--neg-line)', borderRadius: 8, fontSize: 13, color: 'var(--neg)' }}>
+                {searchError}
               </div>
+            )}
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider" htmlFor="city">
-                  City
-                </label>
-                <input
-                  id="city"
-                  type="text"
-                  required
-                  value={city}
-                  onChange={e => setCity(e.target.value)}
-                  className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="New York"
-                />
-              </div>
-
-              {searchError && (
-                <div className="text-sm text-red-400 bg-red-950/50 border border-red-900 rounded-xl px-4 py-3">
-                  {searchError}
-                </div>
-              )}
-
+            <div style={{ marginTop: 4, paddingTop: 24, borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end' }}>
               <button
                 type="submit"
                 disabled={searching || !restaurantName.trim() || !city.trim()}
-                className="btn-press mt-1 bg-zinc-100 text-zinc-900 text-sm font-semibold py-3 rounded-full hover:bg-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="btn btn-primary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
               >
-                {searching ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Searching…
-                  </>
-                ) : (
-                  'Find my business'
-                )}
+                {searching ? <><Spinner /> Searching…</> : 'Find my business'}
               </button>
-            </form>
-          )}
+            </div>
+          </form>
+        )}
 
-          {/* Step 2: Confirm */}
-          {step === 'confirm' && result && (
-            <div className="flex flex-col gap-4">
-              <div className="rounded-2xl border border-zinc-700 bg-zinc-900 p-5">
-                <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center shrink-0">
-                    <svg className="w-5 h-5 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-zinc-100">{result.name}</p>
-                    <p className="text-xs text-zinc-500 mt-0.5 leading-relaxed">{result.address}</p>
-                  </div>
+        {/* Step 2: Confirm */}
+        {step === 'confirm' && result && (
+          <div className="fade-up" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div className="card" style={{ padding: 20 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'var(--surface-2)', border: '1px solid var(--line)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--t3)' }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                </div>
+                <div>
+                  <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>{result.name}</p>
+                  <p className="t-xs c-t3" style={{ lineHeight: 1.5 }}>{result.address}</p>
                 </div>
               </div>
+            </div>
 
+            {submitError && (
+              <div style={{ padding: '10px 12px', background: 'var(--neg-sub)', border: '1px solid var(--neg-line)', borderRadius: 8, fontSize: 13, color: 'var(--neg)' }}>
+                {submitError}
+              </div>
+            )}
+
+            <div style={{ paddingTop: 24, borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between' }}>
+              <button
+                type="button"
+                className="btn btn-quiet"
+                onClick={() => { setStep('search'); setResult(null); setSearchError(null) }}
+              >
+                ← Search again
+              </button>
               <button
                 onClick={handleConfirm}
                 disabled={submitting}
-                className="btn-press bg-zinc-100 text-zinc-900 text-sm font-semibold py-3 rounded-full hover:bg-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="btn btn-primary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
               >
-                {submitting ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Adding…
-                  </>
-                ) : addMode && sessionEmail ? 'Add this location' : 'Yes, this is my business'}
-              </button>
-              {submitError && (
-                <div className="text-sm text-red-400 bg-red-950/50 border border-red-900 rounded-xl px-4 py-3">
-                  {submitError}
-                </div>
-              )}
-              <button
-                onClick={() => { setStep('search'); setResult(null); setSearchError(null) }}
-                className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors py-1"
-              >
-                That&apos;s not it — search again
+                {submitting
+                  ? <><Spinner /> Adding…</>
+                  : addMode && sessionEmail ? 'Add this location' : 'Yes, this is my business'
+                }
               </button>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Step 3: Email */}
-          {step === 'email' && (
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              {result && (
-                <div className="flex items-center gap-2 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-xl">
-                  <svg className="w-3.5 h-3.5 text-zinc-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
-                  </svg>
-                  <span className="text-xs text-zinc-500 truncate">{result.name}</span>
-                </div>
-              )}
-
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wider" htmlFor="email">
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  required
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  placeholder="you@restaurant.com"
-                  autoFocus
-                />
-                <p className="text-xs text-zinc-600">Suggested replies will be sent here whenever new reviews come in.</p>
+        {/* Step 3: Email */}
+        {step === 'email' && (
+          <form onSubmit={handleSubmit} className="fade-up" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {result && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 12px', background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 8 }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                <span className="t-xs c-t3" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{result.name}</span>
               </div>
+            )}
 
-              {submitError && (
-                <div className="text-sm text-red-400 bg-red-950/50 border border-red-900 rounded-xl px-4 py-3">
-                  {submitError}
-                </div>
-              )}
+            <div>
+              <label className="t-eyebrow" style={{ display: 'block', marginBottom: 8 }} htmlFor="email">
+                Email address
+              </label>
+              <input
+                id="email"
+                type="email"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="field field-lg"
+                placeholder="you@restaurant.com"
+                autoFocus
+              />
+              <p className="t-xs c-t4" style={{ marginTop: 6 }}>Suggested replies will be sent here whenever new reviews come in.</p>
+            </div>
 
+            {submitError && (
+              <div style={{ padding: '10px 12px', background: 'var(--neg-sub)', border: '1px solid var(--neg-line)', borderRadius: 8, fontSize: 13, color: 'var(--neg)' }}>
+                {submitError}
+              </div>
+            )}
+
+            <div style={{ marginTop: 4, paddingTop: 24, borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between' }}>
+              <button type="button" className="btn btn-quiet" onClick={() => setStep('confirm')}>
+                ← Back
+              </button>
               <button
                 type="submit"
                 disabled={submitting || !email.trim()}
-                className="btn-press mt-1 bg-zinc-100 text-zinc-900 text-sm font-semibold py-3 rounded-full hover:bg-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="btn btn-primary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
               >
-                {submitting ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    Setting up…
-                  </>
-                ) : (
-                  'Start free trial'
-                )}
+                {submitting ? <><Spinner /> Setting up…</> : 'Start free trial'}
               </button>
+            </div>
+          </form>
+        )}
 
-              <button
-                type="button"
-                onClick={() => setStep('confirm')}
-                className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors py-1"
-              >
-                Back
-              </button>
-            </form>
-          )}
-
-          <p className="mt-6 text-center text-xs text-zinc-700">
-            No credit card required · Cancel anytime
-          </p>
-        </div>
-      </div>
+        <p className="t-xs c-t4" style={{ marginTop: 32, textAlign: 'center' }}>
+          No credit card required · Cancel anytime
+        </p>
+      </main>
     </div>
   )
 }
