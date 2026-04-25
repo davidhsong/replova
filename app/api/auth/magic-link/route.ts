@@ -2,6 +2,13 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { BASE_URL } from '@/lib/baseUrl'
 
+function getAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
+
 // Use anon key so signInWithOtp routes through Supabase's email delivery,
 // not admin.generateLink which returns the raw token to the caller.
 function getPublicClient() {
@@ -18,9 +25,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Email is required' }, { status: 400 })
   }
 
+  const normalizedEmail = email.trim().toLowerCase()
+
+  // Only send a magic link to users who already have an account.
+  const { data: account } = await getAdminClient()
+    .from('accounts')
+    .select('owner_email')
+    .eq('owner_email', normalizedEmail)
+    .maybeSingle()
+
+  if (!account) {
+    return NextResponse.json(
+      { error: 'No account found for this email. Please sign up first.' },
+      { status: 404 }
+    )
+  }
+
   const { error } = await getPublicClient().auth.signInWithOtp({
-    email: email.trim().toLowerCase(),
-    options: { emailRedirectTo: redirectTo ?? `${BASE_URL}/auth/callback` },
+    email: normalizedEmail,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: redirectTo ?? `${BASE_URL}/auth/callback`,
+    },
   })
 
   if (error) {

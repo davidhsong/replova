@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { getSupabaseBrowser } from '@/lib/supabase'
 
 type State = 'idle' | 'loading' | 'sent'
 
@@ -15,15 +14,18 @@ export default function SignInPage() {
     setState('loading')
     setError(null)
 
-    const { error: otpError } = await getSupabaseBrowser().auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+    const res = await fetch('/api/auth/magic-link', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: email.trim().toLowerCase(),
+        redirectTo: `${window.location.origin}/auth/callback`,
+      }),
     })
 
-    if (otpError) {
-      setError(otpError.message)
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setError(data.error ?? 'Something went wrong. Please try again.')
       setState('idle')
     } else {
       setState('sent')
