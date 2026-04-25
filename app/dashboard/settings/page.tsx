@@ -110,6 +110,10 @@ export default function SettingsPage() {
   const [savedPersona, setSavedPersona] = useState('')
   const [regenerating, setRegenerating] = useState(false)
 
+  const [cuisineType, setCuisineType] = useState('')
+  const [savingCuisine, setSavingCuisine] = useState(false)
+  const [cuisineResult, setCuisineResult] = useState<{ ok: boolean; msg: string } | null>(null)
+
   const [reportLogoUrl, setReportLogoUrl] = useState('')
   const [savingLogo, setSavingLogo] = useState(false)
   const [logoResult, setLogoResult] = useState<{ ok: boolean; msg: string } | null>(null)
@@ -135,6 +139,7 @@ export default function SettingsPage() {
             negative_threshold: data.negative_threshold ?? 3,
           })
           setSavedPersona(persona)
+          setCuisineType(data.cuisine_type ?? '')
           setReportLogoUrl(data.report_logo_url ?? '')
         }
         setReplySettingsLoaded(true)
@@ -242,6 +247,27 @@ export default function SettingsPage() {
       setSyncResult(err instanceof Error ? err.message : 'Sync failed. Try again.')
     } finally {
       setSyncing(false)
+    }
+  }
+
+  async function handleSaveCuisine() {
+    setSavingCuisine(true)
+    setCuisineResult(null)
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cuisine_type: cuisineType || null }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Save failed')
+      }
+      setCuisineResult({ ok: true, msg: 'Saved.' })
+    } catch (err) {
+      setCuisineResult({ ok: false, msg: err instanceof Error ? err.message : 'Save failed.' })
+    } finally {
+      setSavingCuisine(false)
     }
   }
 
@@ -445,6 +471,57 @@ export default function SettingsPage() {
               </a>
             </div>
           )}
+        </section>
+
+        {/* Restaurant profile */}
+        <section style={{ marginBottom: 52 }}>
+          <SectionHeader kicker="Restaurant" title="Profile" sub="Helps auto-discover competitors that serve the same cuisine." />
+          <Row label="Cuisine type" hint="What kind of food do you serve?">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <select
+                value={cuisineType}
+                onChange={e => setCuisineType(e.target.value)}
+                className="field"
+                style={{ maxWidth: 260 }}
+              >
+                <option value="">— Select cuisine —</option>
+                <option value="American">American</option>
+                <option value="Italian">Italian</option>
+                <option value="Mexican">Mexican</option>
+                <option value="Chinese">Chinese</option>
+                <option value="Japanese">Japanese</option>
+                <option value="Thai">Thai</option>
+                <option value="Indian">Indian</option>
+                <option value="Mediterranean">Mediterranean</option>
+                <option value="French">French</option>
+                <option value="Greek">Greek</option>
+                <option value="Korean">Korean</option>
+                <option value="Vietnamese">Vietnamese</option>
+                <option value="Middle Eastern">Middle Eastern</option>
+                <option value="Spanish">Spanish</option>
+                <option value="BBQ">BBQ / Smokehouse</option>
+                <option value="Seafood">Seafood</option>
+                <option value="Pizza">Pizza</option>
+                <option value="Burgers">Burgers</option>
+                <option value="Sushi">Sushi</option>
+                <option value="Steakhouse">Steakhouse</option>
+                <option value="Cafe">Cafe / Coffee Shop</option>
+                <option value="Bakery">Bakery</option>
+                <option value="Bar">Bar &amp; Grill</option>
+                <option value="Fast Food">Fast Food</option>
+                <option value="Sandwiches">Sandwiches / Deli</option>
+                <option value="Vegetarian">Vegetarian / Vegan</option>
+              </select>
+              <button onClick={handleSaveCuisine} disabled={savingCuisine} className="btn btn-primary btn-sm">
+                {savingCuisine ? 'Saving…' : 'Save'}
+              </button>
+              {cuisineResult && (
+                <span style={{ fontSize: 12, fontWeight: 500, color: cuisineResult.ok ? 'var(--pos)' : 'var(--neg)' }}>
+                  {cuisineResult.msg}
+                </span>
+              )}
+            </div>
+          </Row>
         </section>
 
         {/* Reply settings */}

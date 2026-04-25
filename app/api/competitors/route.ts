@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   const admin = getSupabaseAdmin()
   const { data: competitors } = await admin
     .from('competitors')
-    .select('id, name, google_place_id, address, created_at')
+    .select('id, name, google_place_id, address, website, price_level, cuisine_tags, source, created_at')
     .eq('restaurant_id', restaurantId)
     .eq('active', true)
     .order('created_at', { ascending: true })
@@ -56,6 +56,10 @@ export async function GET(req: NextRequest) {
       name: c.name,
       googlePlaceId: c.google_place_id,
       address: c.address,
+      website: c.website ?? null,
+      priceLevel: c.price_level ?? null,
+      cuisineTags: c.cuisine_tags ?? [],
+      source: (c.source ?? 'manual') as 'manual' | 'auto',
       latestSnapshot: c.latestSnapshot,
     }))
   )
@@ -117,10 +121,21 @@ export async function DELETE(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const admin = getSupabaseAdmin()
+
+  // Bulk clear: ?all=true&restaurantId=...
+  if (req.nextUrl.searchParams.get('all') === 'true') {
+    const restaurantId = req.nextUrl.searchParams.get('restaurantId')
+    if (!restaurantId) return NextResponse.json({ error: 'Missing restaurantId' }, { status: 400 })
+    const owned = await getAuthedRestaurant(user, restaurantId)
+    if (!owned) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    await admin.from('competitors').update({ active: false }).eq('restaurant_id', restaurantId).eq('active', true)
+    return NextResponse.json({ success: true })
+  }
+
+  // Single delete: ?competitorId=...
   const competitorId = req.nextUrl.searchParams.get('competitorId')
   if (!competitorId) return NextResponse.json({ error: 'Missing competitorId' }, { status: 400 })
-
-  const admin = getSupabaseAdmin()
 
   const { data: competitor } = await admin
     .from('competitors')

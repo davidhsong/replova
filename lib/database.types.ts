@@ -24,6 +24,7 @@ export interface Restaurant {
   place_id: string | null
   owner_email: string
   active: boolean
+  cuisine_type: string | null
   report_logo_url: string | null   // Agency white-label reports (migration 005)
   google_access_token: string | null
   google_refresh_token: string | null
@@ -121,6 +122,9 @@ export interface Competitor {
   name: string
   google_place_id: string
   address: string | null
+  website: string | null
+  price_level: number | null
+  cuisine_tags: string[] | null
   active: boolean
   created_at: string
 }

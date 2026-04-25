@@ -6,6 +6,8 @@ export interface PlaceSearchResult {
   address: string
   rating: number | null
   totalRatings: number | null
+  priceLevel: number | null
+  types: string[]
 }
 
 interface FindPlaceResult {
@@ -50,12 +52,16 @@ export async function searchNearbyPlaces(query: string): Promise<PlaceSearchResu
     formatted_address: string
     rating?: number
     user_ratings_total?: number
+    price_level?: number
+    types?: string[]
   }) => ({
     placeId: r.place_id,
     name: r.name,
     address: r.formatted_address,
     rating: r.rating ?? null,
     totalRatings: r.user_ratings_total ?? null,
+    priceLevel: r.price_level ?? null,
+    types: r.types ?? [],
   }))
 }
 
@@ -115,16 +121,27 @@ export async function findPlaceId(
   }
 }
 
-const GENERIC_PLACE_TYPES = new Set([
+export const GENERIC_PLACE_TYPES = new Set([
   'restaurant', 'food', 'establishment', 'point_of_interest',
   'store', 'premise', 'geocode',
 ])
 
 export async function findNearbyCompetitors(
   restaurantPlaceId: string,
-  excludePlaceId: string
+  excludePlaceId: string,
+  cuisine?: string | null
 ): Promise<PlaceSearchResult[]> {
-  // Step 1: get the restaurant's coordinates AND cuisine types
+  type NearbyResult = {
+    place_id: string
+    name: string
+    vicinity: string
+    rating?: number
+    user_ratings_total?: number
+    price_level?: number
+    types?: string[]
+  }
+
+  // Step 1: get the restaurant's coordinates and its own cuisine types
   const detailParams = new URLSearchParams({
     place_id: restaurantPlaceId,
     fields: 'geometry,types',
@@ -139,49 +156,61 @@ export async function findNearbyCompetitors(
   const { lat, lng } = detailData.result?.geometry?.location ?? {}
   if (lat == null || lng == null) return []
 
-  const cuisineTypes = new Set<string>(
+  const restaurantTypes = new Set<string>(
     ((detailData.result?.types ?? []) as string[]).filter(t => !GENERIC_PLACE_TYPES.has(t))
   )
 
-  // Step 2: find nearby restaurants within 2 km
-  const nearbyParams = new URLSearchParams({
-    location: `${lat},${lng}`,
-    radius: '2000',
-    type: 'restaurant',
-    key: API_KEY!,
-  })
-  const nearbyRes = await fetch(
-    `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${nearbyParams}`
-  )
-  const nearbyData = await nearbyRes.json()
-  if (nearbyData.status !== 'OK' && nearbyData.status !== 'ZERO_RESULTS') return []
-
-  type NearbyResult = {
-    place_id: string
-    name: string
-    vicinity: string
-    rating?: number
-    user_ratings_total?: number
-    types?: string[]
+  // Helper: run a Nearby Search, exclude own place, return raw results
+  async function nearbySearch(keyword?: string): Promise<NearbyResult[]> {
+    const params = new URLSearchParams({
+      location: `${lat},${lng}`,
+      radius: '2000',
+      type: 'restaurant',
+      key: API_KEY!,
+    })
+    if (keyword) params.set('keyword', keyword)
+    const res = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?${params}`)
+    const data = await res.json()
+    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') return []
+    return ((data.results ?? []) as NearbyResult[]).filter(r => r.place_id !== excludePlaceId)
   }
 
-  const candidates: NearbyResult[] = (nearbyData.results ?? [])
-    .filter((r: NearbyResult) => r.place_id !== excludePlaceId)
+  let candidates: NearbyResult[] = []
 
-  // Sort same-cuisine types first, then by rating descending
-  candidates.sort((a, b) => {
-    const aMatch = cuisineTypes.size > 0 && (a.types ?? []).some(t => cuisineTypes.has(t)) ? 1 : 0
-    const bMatch = cuisineTypes.size > 0 && (b.types ?? []).some(t => cuisineTypes.has(t)) ? 1 : 0
-    if (bMatch !== aMatch) return bMatch - aMatch
-    return (b.rating ?? 0) - (a.rating ?? 0)
-  })
+  if (cuisine) {
+    // Primary: cuisine-keyword search (Google biases to that type)
+    candidates = await nearbySearch(cuisine)
 
-  return candidates.slice(0, 8).map(r => ({
+    // Fallback: general search filtered by matching Google place types
+    if (candidates.length === 0) {
+      const all = await nearbySearch()
+      candidates = restaurantTypes.size > 0
+        ? all.filter(r => (r.types ?? []).some(t => restaurantTypes.has(t)))
+        : all
+      // If type filtering also yields nothing, accept any nearby restaurant
+      if (candidates.length === 0) candidates = all
+    }
+  } else {
+    candidates = await nearbySearch()
+    // Sort same-cuisine types first, then by rating
+    candidates.sort((a, b) => {
+      const aMatch = restaurantTypes.size > 0 && (a.types ?? []).some(t => restaurantTypes.has(t)) ? 1 : 0
+      const bMatch = restaurantTypes.size > 0 && (b.types ?? []).some(t => restaurantTypes.has(t)) ? 1 : 0
+      if (bMatch !== aMatch) return bMatch - aMatch
+      return (b.rating ?? 0) - (a.rating ?? 0)
+    })
+  }
+
+  candidates.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+
+  return candidates.slice(0, 20).map(r => ({
     placeId: r.place_id,
     name: r.name,
     address: r.vicinity,
     rating: r.rating ?? null,
     totalRatings: r.user_ratings_total ?? null,
+    priceLevel: r.price_level ?? null,
+    types: r.types ?? [],
   }))
 }
 

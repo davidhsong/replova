@@ -13,6 +13,10 @@ type Props = {
   reviewsThisMonth?: number | null
   responseRate: number | null
   avgSentiment: number | null
+  ratingScore: number | null
+  volumeScore: number | null
+  responseScore: number | null
+  sentimentScore: number | null
   topKeywords: string[]
   staffShoutouts: string[]
   hasCompetitors: boolean
@@ -85,31 +89,25 @@ function PanelLink({ href, label, description, isExternal = false }: {
     : <Link href={href} style={shared}>{inner}</Link>
 }
 
-function deriveSubScores(
-  avgRating: number | null,
-  reviewsThisMonth: number | null,
-  responseRate: number | null,
-  avgSentiment: number | null,
-) {
-  return {
-    ratingScore:    avgRating        !== null ? Math.round(((avgRating - 1) / 4) * 100) : null,
-    volumeScore:    reviewsThisMonth !== null ? Math.min(Math.round((reviewsThisMonth / 20) * 100), 100) : null,
-    responseScore:  responseRate     !== null ? Math.round(responseRate * 100) : null,
-    sentimentScore: avgSentiment     !== null ? Math.round(avgSentiment * 100) : null,
-  }
-}
-
 export default function IntelligencePanel({
   score, scoreDelta,
   avgRating, reviewsThisMonth,
   responseRate, avgSentiment,
+  ratingScore, volumeScore, responseScore, sentimentScore,
   topKeywords, staffShoutouts,
   hasCompetitors, restaurantId,
   plan, sentimentSeries,
 }: Props) {
   const isStarter = plan === 'starter'
-  const sub = deriveSubScores(avgRating ?? null, reviewsThisMonth ?? null, responseRate, avgSentiment)
   const reportMonth = new Date().toISOString().slice(0, 7)
+
+  // Use stored breakdown scores when available; otherwise derive with correct formulas
+  const bars = {
+    rating:    ratingScore    ?? (avgRating        != null ? Math.min(100, Math.round(((avgRating - 1) / 4) * 100))                    : null),
+    volume:    volumeScore    ?? (reviewsThisMonth != null ? Math.min(100, Math.round((reviewsThisMonth / 20) * 100))                   : null),
+    response:  responseScore  ?? (responseRate     != null ? Math.round(responseRate * 100)                                             : null),
+    sentiment: sentimentScore ?? (avgSentiment     != null ? Math.round(((avgSentiment + 1) / 2) * 100)                                : null),
+  }
 
   return (
     <aside style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -140,10 +138,10 @@ export default function IntelligencePanel({
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {([
-              { l: 'Rating',        v: avgRating        != null ? `${avgRating.toFixed(1)}★`              : '—', s: sub.ratingScore,    w: 35 },
-              { l: 'Volume',        v: reviewsThisMonth != null ? `${reviewsThisMonth}/mo`                : '—', s: sub.volumeScore,    w: 20 },
-              { l: 'Response rate', v: responseRate     != null ? `${Math.round(responseRate * 100)}%`    : '—', s: sub.responseScore,  w: 25 },
-              { l: 'Sentiment',     v: avgSentiment     != null ? `+${Math.round(avgSentiment * 100)}`    : '—', s: sub.sentimentScore, w: 20 },
+              { l: 'Rating',        v: avgRating        != null ? `${avgRating.toFixed(1)}★`          : '—', s: bars.rating,    w: 35 },
+              { l: 'Volume',        v: reviewsThisMonth != null ? `${reviewsThisMonth}/mo`             : '—', s: bars.volume,    w: 20 },
+              { l: 'Response rate', v: responseRate     != null ? `${Math.round(responseRate * 100)}%` : '—', s: bars.response,  w: 25 },
+              { l: 'Sentiment',     v: avgSentiment     != null ? `${Math.round(((avgSentiment + 1) / 2) * 100)}%` : '—', s: bars.sentiment, w: 20 },
             ] as const).map(r => (
               <div key={r.l}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>

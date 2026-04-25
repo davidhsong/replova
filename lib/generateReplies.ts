@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { recordUsage } from './apiBudget'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -73,6 +74,7 @@ Review: "${reviewText}"`,
     ],
   })
 
+  recordUsage('claude-sonnet-4-20250514', 'reply_draft', message.usage.input_tokens, message.usage.output_tokens)
   const raw = message.content[0].type === 'text' ? message.content[0].text : ''
 
   let parsed: ReplyVariants

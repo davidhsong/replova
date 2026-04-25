@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabase'
-import { getPlaceRatingSnapshot } from '@/lib/places'
+import { getPlaceRatingSnapshot, GENERIC_PLACE_TYPES } from '@/lib/places'
 
 export type CompetitorComparison = {
   yourRestaurant: {
@@ -20,23 +20,13 @@ export type CompetitorComparison = {
   totalTracked: number
 }
 
-export async function addCompetitor(restaurantId: string, placeId: string): Promise<void> {
+export async function addCompetitor(restaurantId: string, placeId: string, source: 'manual' | 'auto' = 'manual'): Promise<void> {
   const admin = getSupabaseAdmin()
 
-  const { count } = await admin
-    .from('competitors')
-    .select('id', { count: 'exact', head: true })
-    .eq('restaurant_id', restaurantId)
-    .eq('active', true)
-
-  if ((count ?? 0) >= 3) {
-    throw new Error('Maximum of 3 competitors allowed')
-  }
-
-  // Fetch full details: name, address, rating, total ratings
+  // Fetch full details: name, address, rating, website, price level, cuisine types
   const params = new URLSearchParams({
     place_id: placeId,
-    fields: 'name,formatted_address,rating,user_ratings_total',
+    fields: 'name,formatted_address,rating,user_ratings_total,website,price_level,types',
     key: process.env.GOOGLE_PLACES_API_KEY!,
   })
   const res = await fetch(
@@ -53,11 +43,27 @@ export async function addCompetitor(restaurantId: string, placeId: string): Prom
   const address: string = result.formatted_address ?? ''
   const rating: number | null = result.rating ?? null
   const totalRatings: number | null = result.user_ratings_total ?? null
+  const website: string | null = result.website ?? null
+  const priceLevel: number | null = result.price_level ?? null
+  const cuisineTags: string[] = ((result.types ?? []) as string[])
+    .filter((t: string) => !GENERIC_PLACE_TYPES.has(t))
+    .map((t: string) => t.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()))
+    .slice(0, 4)
 
   const { data: competitor, error } = await admin
     .from('competitors')
     .upsert(
-      { restaurant_id: restaurantId, google_place_id: placeId, name, address, active: true },
+      {
+        restaurant_id: restaurantId,
+        google_place_id: placeId,
+        name,
+        address,
+        website,
+        price_level: priceLevel,
+        cuisine_tags: cuisineTags,
+        source,
+        active: true,
+      },
       { onConflict: 'restaurant_id,google_place_id' }
     )
     .select('id')

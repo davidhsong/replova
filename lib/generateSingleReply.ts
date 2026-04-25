@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { recordUsage } from './apiBudget'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -44,6 +45,7 @@ Never offer discounts or mention competitor names.${personaLine ? `\n${personaLi
     ],
   })
 
+  recordUsage('claude-sonnet-4-6', 'auto_reply', message.usage.input_tokens, message.usage.output_tokens)
   const text = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
   if (!text) throw new Error('Claude returned empty reply')
   return text

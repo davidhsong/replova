@@ -54,7 +54,7 @@ export async function GET() {
       .single(),
     admin
       .from('restaurants')
-      .select('report_logo_url')
+      .select('report_logo_url, cuisine_type')
       .eq('id', ctx.restaurantId)
       .single(),
   ])
@@ -67,6 +67,7 @@ export async function GET() {
   return NextResponse.json({
     ...(settingsData ?? { restaurant_id: ctx.restaurantId }),
     report_logo_url: restaurantResult.data?.report_logo_url ?? null,
+    cuisine_type: restaurantResult.data?.cuisine_type ?? null,
   })
 }
 
@@ -88,12 +89,22 @@ export async function PATCH(req: NextRequest) {
 
   const plan: Plan = (account?.plan as Plan) ?? 'starter'
 
-  // Gate: persona requires Agency plan
-  if ('reply_persona' in body && plan !== 'agency') {
+  // Gate: persona requires Agency plan (only block if a non-empty value is being set)
+  if ('reply_persona' in body && body.reply_persona && plan !== 'agency') {
     return NextResponse.json(
       { error: 'Custom reply persona requires Agency plan.' },
       { status: 403 }
     )
+  }
+
+  // cuisine_type saves directly to the restaurants table
+  if ('cuisine_type' in body) {
+    await admin
+      .from('restaurants')
+      .update({ cuisine_type: body.cuisine_type ?? null })
+      .eq('id', ctx.restaurantId)
+    const otherKeys = Object.keys(body).filter(k => k !== 'cuisine_type')
+    if (otherKeys.length === 0) return NextResponse.json({ success: true })
   }
 
   // Gate: report_logo_url requires Agency plan — update restaurants table separately

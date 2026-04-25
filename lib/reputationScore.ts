@@ -116,6 +116,10 @@ export async function saveReputationSnapshot(restaurantId: string): Promise<Repu
       reviews_this_month: data.reviewsThisMonth,
       response_rate: data.responseRate,
       avg_sentiment: data.avgSentiment,
+      rating_score: data.breakdown.ratingScore,
+      volume_score: data.breakdown.volumeScore,
+      response_score: data.breakdown.responseScore,
+      sentiment_score: data.breakdown.sentimentScore,
       score_date: today,
     },
     { onConflict: 'restaurant_id,score_date' }

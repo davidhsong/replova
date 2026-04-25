@@ -4,6 +4,9 @@ import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { findNearbyCompetitors } from '@/lib/places'
 import { addCompetitor } from '@/lib/competitors'
+import { discoverCompetitorsWithClaude } from '@/lib/discoverCompetitors'
+import { getPlanLimits } from '@/lib/planLimits'
+import type { Plan } from '@/lib/planLimits'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -17,54 +20,85 @@ export async function POST(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
-  // Verify ownership
+  // Verify ownership, get cuisine and name for Claude context
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id, place_id')
+    .select('id, name, place_id, cuisine_type')
     .eq('id', restaurantId)
     .eq('owner_email', user.email)
-    .single()
+    .single<{ id: string; name: string; place_id: string; cuisine_type: string | null }>()
 
   if (!restaurant) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (!restaurant.place_id) {
+    return NextResponse.json({ error: 'Restaurant has no Google Place ID. Please reconnect your Google Business profile.' }, { status: 400 })
+  }
 
-  // Check how many slots are left (max 3)
+  // Use plan-based competitor limit
+  const { data: account } = await admin
+    .from('accounts')
+    .select('plan')
+    .eq('owner_email', user.email!)
+    .maybeSingle()
+  const plan: Plan = (account?.plan as Plan) ?? 'starter'
+  const slotsTotal = getPlanLimits(plan).competitors
+
   const { count: existingCount } = await admin
     .from('competitors')
     .select('id', { count: 'exact', head: true })
     .eq('restaurant_id', restaurantId)
     .eq('active', true)
 
-  const slotsLeft = 3 - (existingCount ?? 0)
+  const slotsLeft = slotsTotal - (existingCount ?? 0)
   if (slotsLeft <= 0) {
-    return NextResponse.json({ added: 0, message: 'Already at the 3-competitor limit.' })
+    return NextResponse.json({ added: 0, message: 'Already at the competitor limit for your plan.' })
   }
 
-  // Get existing competitor place IDs to avoid re-adding
+  // Get existing place IDs to avoid re-adding
   const { data: existing } = await admin
     .from('competitors')
     .select('google_place_id')
     .eq('restaurant_id', restaurantId)
     .eq('active', true)
-
   const alreadyTracked = new Set((existing ?? []).map(c => c.google_place_id))
 
-  const nearby = await findNearbyCompetitors(restaurant.place_id, restaurant.place_id)
+  // 1. Get up to 20 nearby candidates from Google Places
+  const candidates = await findNearbyCompetitors(
+    restaurant.place_id,
+    restaurant.place_id,
+    restaurant.cuisine_type
+  )
 
-  const toAdd = nearby
-    .filter(r => !alreadyTracked.has(r.placeId))
-    .slice(0, slotsLeft)
+  const fresh = candidates.filter(c => !alreadyTracked.has(c.placeId))
+  if (fresh.length === 0) {
+    return NextResponse.json({ added: 0, message: 'No new nearby competitors found.' })
+  }
 
+  // 2. Use Claude to intelligently rank and select the best competitors
+  const selected = await discoverCompetitorsWithClaude(
+    { name: restaurant.name, cuisineType: restaurant.cuisine_type },
+    fresh,
+    slotsLeft
+  )
+
+  // 3. Add selected competitors (full details fetched per place by addCompetitor)
   let added = 0
+  let direct = 0
   const errors: string[] = []
 
-  for (const place of toAdd) {
+  for (const pick of selected) {
     try {
-      await addCompetitor(restaurantId, place.placeId)
+      await addCompetitor(restaurantId, pick.placeId, 'auto')
       added++
+      if (pick.competitorType === 'direct') direct++
     } catch (err) {
       errors.push(err instanceof Error ? err.message : String(err))
     }
   }
 
-  return NextResponse.json({ added, errors: errors.length > 0 ? errors : undefined })
+  return NextResponse.json({
+    added,
+    direct,
+    indirect: added - direct,
+    errors: errors.length > 0 ? errors : undefined,
+  })
 }

@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { recordUsage } from '@/lib/apiBudget'
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -52,6 +53,7 @@ export async function analyzeSentiment(
       ],
     })
 
+    recordUsage('claude-haiku-4-5-20251001', 'sentiment', message.usage.input_tokens, message.usage.output_tokens)
     const raw = message.content[0].type === 'text' ? message.content[0].text : ''
     const cleaned = raw
       .replace(/^```json\s*/i, '')

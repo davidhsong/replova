@@ -50,6 +50,10 @@ type ReputationScore = {
   reviews_this_month: number | null
   response_rate: number | null
   avg_sentiment: number | null
+  rating_score: number | null
+  volume_score: number | null
+  response_score: number | null
+  sentiment_score: number | null
   score_date: string
 }
 
@@ -126,7 +130,7 @@ export default async function DashboardPage({
   ] = await Promise.all([
     admin
       .from('reputation_scores')
-      .select('score, avg_rating, total_reviews, reviews_this_month, response_rate, avg_sentiment, score_date')
+      .select('score, avg_rating, total_reviews, reviews_this_month, response_rate, avg_sentiment, rating_score, volume_score, response_score, sentiment_score, score_date')
       .eq('restaurant_id', restaurant.id)
       .order('score_date', { ascending: false })
       .limit(1)
@@ -322,6 +326,10 @@ export default async function DashboardPage({
             reviewsThisMonth={repScore?.reviews_this_month ?? null}
             responseRate={repScore?.response_rate ?? null}
             avgSentiment={repScore?.avg_sentiment ?? null}
+            ratingScore={repScore?.rating_score ?? null}
+            volumeScore={repScore?.volume_score ?? null}
+            responseScore={repScore?.response_score ?? null}
+            sentimentScore={repScore?.sentiment_score ?? null}
             topKeywords={topKeywords}
             staffShoutouts={staffShoutouts}
             hasCompetitors={hasCompetitors}
