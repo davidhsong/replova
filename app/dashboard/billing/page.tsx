@@ -1,14 +1,31 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
+import Stripe from 'stripe'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { PLAN_LIMITS } from '@/lib/planLimits'
+import type { Plan } from '@/lib/planLimits'
 
-type Restaurant = {
-  id: string
-  name: string
-  active: boolean
+function getStripe() {
+  return new Stripe(process.env.STRIPE_SECRET_KEY!)
+}
+
+type Account = {
+  plan: Plan
   stripe_customer_id: string | null
   created_at: string
+}
+
+const PLAN_META: Record<Plan, { label: string; price: number; locations: number; competitors: number }> = {
+  starter: { label: 'Starter', price: 39, locations: 1, competitors: 3 },
+  growth:  { label: 'Growth',  price: 99, locations: 5, competitors: 5 },
+  agency:  { label: 'Agency',  price: 199, locations: 15, competitors: 10 },
+}
+
+const UPGRADE_TIERS: Record<Plan, Plan[]> = {
+  starter: ['growth', 'agency'],
+  growth:  ['agency'],
+  agency:  [],
 }
 
 export default async function BillingPage() {
@@ -18,21 +35,89 @@ export default async function BillingPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/signin')
 
-  const { data: restaurant } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin()
+
+  // plan and stripe_customer_id now live on accounts
+  const { data: account } = await admin
+    .from('accounts')
+    .select('plan, stripe_customer_id, created_at')
+    .eq('owner_email', user.email!)
+    .single<Account>()
+
+  // Get first restaurant for trial start date + active status
+  const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id, name, active, stripe_customer_id, created_at')
-    .eq('owner_email', user.email)
-    .single<Restaurant>()
+    .select('id, name, active, created_at')
+    .eq('owner_email', user.email!)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
 
   if (!restaurant) redirect('/onboard')
+
+  // Location and competitor usage counts
+  const { count: locationCount } = await admin
+    .from('restaurants')
+    .select('id', { count: 'exact', head: true })
+    .eq('owner_email', user.email!)
+
+  // Count competitors across all locations for this user
+  const { data: restaurantIds } = await admin
+    .from('restaurants')
+    .select('id')
+    .eq('owner_email', user.email!)
+
+  const ids = (restaurantIds ?? []).map(r => r.id)
+  const { count: competitorCount } = ids.length > 0
+    ? await admin
+        .from('competitors')
+        .select('id', { count: 'exact', head: true })
+        .in('restaurant_id', ids)
+        .eq('active', true)
+    : { count: 0 }
+
+  const plan = (account?.plan ?? 'starter') as Plan
+  const meta = PLAN_META[plan]
+  const limits = PLAN_LIMITS[plan]
 
   const trialStart = new Date(restaurant.created_at)
   const trialEnd = new Date(trialStart)
   trialEnd.setDate(trialEnd.getDate() + 30)
   const now = new Date()
-  const inTrial = restaurant.active && !restaurant.stripe_customer_id && now < trialEnd
+  const inTrial = restaurant.active && !account?.stripe_customer_id && now < trialEnd
   const daysLeft = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
   const trialProgress = Math.round(((30 - daysLeft) / 30) * 100)
+
+  // Fetch live renewal date from Stripe
+  let renewalDate: Date | null = null
+  let trialEndsViaStripe: Date | null = null
+  if (account?.stripe_customer_id) {
+    try {
+      const subs = await getStripe().subscriptions.list({
+        customer: account.stripe_customer_id,
+        status: 'all',
+        limit: 1,
+      })
+      const sub = subs.data[0]
+      if (sub) {
+        if (sub.status === 'trialing' && sub.trial_end) {
+          trialEndsViaStripe = new Date(sub.trial_end * 1000)
+        } else {
+          const periodEnd = (sub as unknown as { current_period_end: number }).current_period_end
+          if (periodEnd) renewalDate = new Date(periodEnd * 1000)
+        }
+      }
+    } catch {
+      // non-fatal — just won't show renewal date
+    }
+  }
+
+  const upgrades = UPGRADE_TIERS[plan]
+
+  const usedLocations = locationCount ?? 0
+  const usedCompetitors = competitorCount ?? 0
+  const locationPct = Math.round((usedLocations / limits.locations) * 100)
+  const competitorPct = Math.round((usedCompetitors / (limits.competitors * Math.max(usedLocations, 1))) * 100)
 
   return (
     <>
@@ -59,7 +144,9 @@ export default async function BillingPage() {
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16, marginBottom: 20, flexWrap: 'wrap' }}>
             <div>
               <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 4 }}>Subscription</h2>
-              <p style={{ fontSize: 13, color: 'var(--t3)' }}>Replova Monthly · $99 / month</p>
+              <p style={{ fontSize: 13, color: 'var(--t3)' }}>
+                Replova {meta.label} · ${meta.price} / month
+              </p>
             </div>
             {restaurant.active ? (
               <span className="badge badge-green" style={{ padding: '4px 12px', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -99,8 +186,40 @@ export default async function BillingPage() {
             </div>
           )}
 
+          {/* Renewal / trial-end date */}
+          {(renewalDate || trialEndsViaStripe) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, padding: '10px 14px', background: 'var(--surface-0)', border: '1px solid var(--border)', borderRadius: 10 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              {trialEndsViaStripe ? (
+                <span style={{ fontSize: 12, color: 'var(--t2)' }}>
+                  Free trial ends — first charge on{' '}
+                  <strong style={{ color: 'var(--t1)' }}>
+                    {trialEndsViaStripe.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                  </strong>
+                  {' '}at{' '}
+                  <strong style={{ color: 'var(--t1)' }}>
+                    {trialEndsViaStripe.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}
+                  </strong>
+                </span>
+              ) : renewalDate ? (
+                <span style={{ fontSize: 12, color: 'var(--t2)' }}>
+                  Renews on{' '}
+                  <strong style={{ color: 'var(--t1)' }}>
+                    {renewalDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+                  </strong>
+                  {' '}at{' '}
+                  <strong style={{ color: 'var(--t1)' }}>
+                    {renewalDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short' })}
+                  </strong>
+                </span>
+              ) : null}
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            {restaurant.stripe_customer_id ? (
+            {account?.stripe_customer_id ? (
               <a
                 href="/api/billing-portal"
                 className="btn-press"
@@ -149,105 +268,209 @@ export default async function BillingPage() {
           </div>
         </div>
 
-        {/* What's included */}
+        {/* Plan details */}
         <div className="card fade-up" style={{ padding: 24, marginBottom: 12, animationDelay: '40ms' }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 18 }}>What&apos;s included</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            {[
-              {
-                icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-                  </svg>
-                ),
-                color: 'var(--accent)',
-                bg: 'var(--accent-sub)',
-                title: 'AI reply drafts',
-                desc: '3 tone options per review: Professional, Warm, Brief.',
-              },
-              {
-                icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-                  </svg>
-                ),
-                color: 'var(--err)',
-                bg: 'var(--err-sub)',
-                title: 'Urgent alerts',
-                desc: 'Low-rating reviews flagged instantly with email alerts.',
-              },
-              {
-                icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
-                  </svg>
-                ),
-                color: 'var(--warn)',
-                bg: 'var(--warn-sub)',
-                title: 'Weekly digest',
-                desc: 'Monday morning summary of reviews and action items.',
-              },
-              {
-                icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-                  </svg>
-                ),
-                color: 'var(--ok)',
-                bg: 'var(--ok-sub)',
-                title: 'Auto-detect replied',
-                desc: 'Marks reviews complete when you reply on Google.',
-              },
-              {
-                icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-                  </svg>
-                ),
-                color: 'var(--accent)',
-                bg: 'var(--accent-sub)',
-                title: 'Competitor tracking',
-                desc: 'Monitor up to 3 nearby restaurants\' ratings.',
-              },
-              {
-                icon: (
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-                  </svg>
-                ),
-                color: 'var(--ok)',
-                bg: 'var(--ok-sub)',
-                title: 'Saves 5+ hrs/week',
-                desc: 'Stop copy-pasting replies — AI handles the heavy lifting.',
-              },
-            ].map(({ icon, color, bg, title, desc }) => (
-              <div key={title} style={{
-                display: 'flex', gap: 12, padding: 14,
-                background: 'var(--surface-0)', borderRadius: 12, border: '1px solid var(--border)',
-              }}>
-                <div style={{
-                  width: 32, height: 32, background: bg, borderRadius: 9,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                  color, border: `1px solid ${color}22`,
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 16 }}>Your plan</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginBottom: 18 }}>
+            {(['starter', 'growth', 'agency'] as Plan[]).map((p) => {
+              const m = PLAN_META[p]
+              const isCurrent = p === plan
+              return (
+                <div key={p} style={{
+                  padding: 14, borderRadius: 12,
+                  border: isCurrent ? '2px solid var(--accent)' : '1px solid var(--border)',
+                  background: isCurrent ? 'var(--accent-sub)' : 'var(--surface-0)',
+                  position: 'relative',
                 }}>
-                  {icon}
+                  {isCurrent && (
+                    <span style={{
+                      position: 'absolute', top: -9, left: 10,
+                      background: 'var(--accent)', color: '#fff',
+                      fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 999,
+                    }}>
+                      Current
+                    </span>
+                  )}
+                  <p style={{ fontSize: 12, fontWeight: 700, color: isCurrent ? 'var(--accent)' : 'var(--t3)', marginBottom: 4 }}>{m.label}</p>
+                  <p style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', marginBottom: 6 }}>${m.price}<span style={{ fontSize: 11, fontWeight: 500, color: 'var(--t3)' }}>/mo</span></p>
+                  <p style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.5 }}>
+                    {m.locations === 1 ? '1 location' : `Up to ${m.locations} locations`}<br />
+                    {m.competitors} competitor slots
+                  </p>
                 </div>
+              )
+            })}
+          </div>
+
+          {/* Usage rows */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 16 }}>
+            {/* Locations usage */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, color: 'var(--t2)' }}>Locations</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)' }}>
+                  {usedLocations} of {limits.locations} used
+                </span>
+              </div>
+              <div style={{ height: 4, borderRadius: 999, background: 'var(--surface-2)', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 999,
+                  background: locationPct >= 100 ? 'var(--err)' : locationPct >= 80 ? 'var(--warn)' : 'var(--accent)',
+                  width: `${Math.min(locationPct, 100)}%`, transition: 'width 0.3s',
+                }} />
+              </div>
+            </div>
+
+            {/* Competitor slots usage */}
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 12, color: 'var(--t2)' }}>Competitor slots</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)' }}>
+                  {usedCompetitors} tracked · {limits.competitors} per location
+                </span>
+              </div>
+              <div style={{ height: 4, borderRadius: 999, background: 'var(--surface-2)', overflow: 'hidden' }}>
+                <div style={{
+                  height: '100%', borderRadius: 999,
+                  background: competitorPct >= 100 ? 'var(--err)' : 'var(--accent)',
+                  width: `${Math.min(competitorPct, 100)}%`, transition: 'width 0.3s',
+                }} />
+              </div>
+            </div>
+          </div>
+
+          {/* Upgrade CTAs — only shown when no active Stripe subscription */}
+          {!account?.stripe_customer_id && upgrades.length > 0 && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {upgrades.map((up) => (
+                <a
+                  key={up}
+                  href={`/api/create-checkout?plan=${up}`}
+                  className="btn-press"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px',
+                    background: 'var(--accent)', color: '#fff',
+                    borderRadius: 10, fontSize: 12, fontWeight: 600, textDecoration: 'none', border: 'none',
+                  }}
+                >
+                  Upgrade to {PLAN_META[up].label}
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M17 8l4 4m0 0l-4 4m4-4H3"/>
+                  </svg>
+                </a>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* What's included — plan-aware */}
+        <div className="card fade-up" style={{ padding: 24, marginBottom: 12, animationDelay: '80ms' }}>
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 18 }}>What&apos;s included on your plan</h2>
+
+          {/* All plans */}
+          <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--t3)', marginBottom: 10 }}>All plans</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+            {[
+              { title: 'AI reply drafts', desc: '3 tone variants per review — Professional, Warm, and Brief.' },
+              { title: 'Urgent review alerts', desc: 'Instant email when a low-rating review comes in.' },
+              { title: 'Weekly digest email', desc: 'Monday morning summary of reviews and AI action items.' },
+              { title: 'Auto-detect replied', desc: 'Automatically marks reviews done when you reply on Google.' },
+              { title: 'Review request campaigns', desc: 'Email customers asking them to leave a review.' },
+            ].map(({ title, desc }) => (
+              <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 1, flexShrink: 0 }}>
+                  <path d="M20 6L9 17l-5-5"/>
+                </svg>
                 <div>
-                  <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 3 }}>{title}</p>
-                  <p style={{ fontSize: 12, color: 'var(--t3)', lineHeight: 1.55 }}>{desc}</p>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{title}</span>
+                  <span style={{ fontSize: 12, color: 'var(--t3)', marginLeft: 6 }}>{desc}</span>
                 </div>
               </div>
             ))}
           </div>
+
+          {/* Growth+ */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--t3)' }}>Growth &amp; Agency</p>
+            {plan === 'starter' && (
+              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-sub)', border: '1px solid oklch(0.62 0.19 258 / 0.25)', borderRadius: 5, padding: '1px 7px' }}>
+                Upgrade to unlock
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+            {[
+              { title: 'Reputation score', desc: 'Composite 0–100 score tracking your ratings, response rate, and sentiment over time.' },
+              { title: 'Sentiment analysis', desc: 'AI reads every review for tone, top keywords, and staff shoutouts.' },
+              { title: 'Competitor tracking', desc: `Monitor up to ${plan === 'starter' ? 5 : meta.competitors} nearby restaurants and see how you rank.` },
+              { title: 'Monthly PDF report', desc: 'Downloadable report with your key metrics for the month.' },
+            ].map(({ title, desc }) => {
+              const unlocked = plan === 'growth' || plan === 'agency'
+              return (
+                <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, opacity: unlocked ? 1 : 0.45 }}>
+                  {unlocked ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 1, flexShrink: 0 }}>
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 1, flexShrink: 0 }}>
+                      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                    </svg>
+                  )}
+                  <div>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{title}</span>
+                    <span style={{ fontSize: 12, color: 'var(--t3)', marginLeft: 6 }}>{desc}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Agency only */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <p style={{ fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--t3)' }}>Agency only</p>
+            {plan !== 'agency' && (
+              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-sub)', border: '1px solid oklch(0.62 0.19 258 / 0.25)', borderRadius: 5, padding: '1px 7px' }}>
+                Upgrade to unlock
+              </span>
+            )}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {[
+              { title: 'Custom reply persona', desc: 'Tell the AI your tone and voice — every draft matches your style.' },
+              { title: 'White-label PDF reports', desc: 'Replace the Replova logo with your own for client-ready reports.' },
+              { title: 'Up to 15 locations', desc: 'Manage multiple restaurant locations from one account.' },
+              { title: '10 competitor slots per location', desc: 'Track a wider competitive set at each location.' },
+            ].map(({ title, desc }) => {
+              const unlocked = plan === 'agency'
+              return (
+                <div key={title} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, opacity: unlocked ? 1 : 0.45 }}>
+                  {unlocked ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 1, flexShrink: 0 }}>
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginTop: 1, flexShrink: 0 }}>
+                      <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                    </svg>
+                  )}
+                  <div>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)' }}>{title}</span>
+                    <span style={{ fontSize: 12, color: 'var(--t3)', marginLeft: 6 }}>{desc}</span>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         {/* Plan pricing */}
-        <div className="card fade-up" style={{ padding: 24, marginBottom: 12, animationDelay: '80ms' }}>
+        <div className="card fade-up" style={{ padding: 24, marginBottom: 12, animationDelay: '120ms' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
             <div>
               <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 4 }}>Plan pricing</h2>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                <span style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--t1)' }}>$99</span>
+                <span style={{ fontSize: 32, fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--t1)' }}>${meta.price}</span>
                 <span style={{ fontSize: 14, color: 'var(--t2)', fontWeight: 500 }}>/month</span>
               </div>
               <p style={{ fontSize: 12, color: 'var(--t3)', marginTop: 4 }}>Billed monthly · Cancel anytime · No contracts</p>
@@ -264,7 +487,7 @@ export default async function BillingPage() {
         </div>
 
         {/* Help */}
-        <div className="card fade-up" style={{ padding: 24, animationDelay: '120ms' }}>
+        <div className="card fade-up" style={{ padding: 24, animationDelay: '160ms' }}>
           <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 4 }}>Need help?</h2>
           <p style={{ fontSize: 13, color: 'var(--t2)', lineHeight: 1.65 }}>
             Questions about billing? Email us at{' '}

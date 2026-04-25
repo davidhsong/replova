@@ -6,8 +6,25 @@ import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { BASE_URL } from '@/lib/baseUrl'
 
+type Plan = 'starter' | 'growth' | 'agency'
+
 function getStripe() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!)
+}
+
+function getPriceId(plan: Plan): string {
+  if (plan === 'starter') {
+    return process.env.STRIPE_PRICE_ID_STARTER || process.env.STRIPE_PRICE_ID!
+  }
+  if (plan === 'agency') {
+    return process.env.STRIPE_PRICE_ID_AGENCY || process.env.STRIPE_PRICE_ID!
+  }
+  return process.env.STRIPE_PRICE_ID_GROWTH || process.env.STRIPE_PRICE_ID!
+}
+
+function resolvePlan(raw: string | null): Plan {
+  if (raw === 'starter' || raw === 'agency') return raw
+  return 'growth'
 }
 
 export async function GET(req: NextRequest) {
@@ -17,19 +34,34 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/onboard')
 
-  const { data: restaurant } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin()
+
+  // Get the first restaurant for this user (just need the id)
+  const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id')
+    .select('id, owner_email')
     .eq('owner_email', user.email)
-    .single()
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
 
   if (!restaurant) redirect('/onboard')
 
+  // Get the account for plan info
+  const { data: account } = await admin
+    .from('accounts')
+    .select('plan')
+    .eq('owner_email', user.email!)
+    .maybeSingle()
+
+  const queryPlan = req.nextUrl.searchParams.get('plan')
+  const plan: Plan = queryPlan ? resolvePlan(queryPlan) : resolvePlan(account?.plan ?? null)
+
   const session = await getStripe().checkout.sessions.create({
     mode: 'subscription',
-    line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
+    line_items: [{ price: getPriceId(plan), quantity: 1 }],
     customer_email: user.email!,
-    metadata: { restaurantId: restaurant.id },
+    metadata: { restaurantId: restaurant.id, ownerEmail: user.email!, plan },
     subscription_data: { trial_period_days: 30 },
     success_url: `${BASE_URL}/dashboard?success=true`,
     cancel_url: `${BASE_URL}/dashboard`,

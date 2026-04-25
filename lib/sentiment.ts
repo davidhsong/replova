@@ -107,21 +107,31 @@ export async function analyzeAndSaveReview(reviewId: string): Promise<SentimentR
   return result
 }
 
-export async function batchAnalyzePendingReviews(
-  restaurantId?: string
-): Promise<{ processed: number; errors: number }> {
+export async function batchAnalyzePendingReviews(): Promise<{ processed: number; errors: number }> {
   const admin = getSupabaseAdmin()
 
-  let query = admin
+  // Only analyze reviews for growth/agency accounts
+  const { data: allRestaurants } = await admin
+    .from('restaurants')
+    .select('id, owner_email')
+
+  const emails = [...new Set((allRestaurants ?? []).map(r => r.owner_email))]
+  const { data: eligibleAccounts } = emails.length > 0
+    ? await admin.from('accounts').select('owner_email').in('plan', ['growth', 'agency']).in('owner_email', emails)
+    : { data: [] }
+
+  const eligibleEmails = new Set(eligibleAccounts?.map(a => a.owner_email) ?? [])
+  const eligibleIds = (allRestaurants ?? [])
+    .filter(r => eligibleEmails.has(r.owner_email))
+    .map(r => r.id)
+
+  if (eligibleIds.length === 0) return { processed: 0, errors: 0 }
+
+  const { data: reviews, error } = await admin
     .from('reviews')
     .select('id, review_text, rating')
     .is('sentiment_score', null)
-
-  if (restaurantId) {
-    query = query.eq('restaurant_id', restaurantId)
-  }
-
-  const { data: reviews, error } = await query
+    .in('restaurant_id', eligibleIds)
 
   if (error) throw error
 

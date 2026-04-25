@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { getSupabaseBrowser } from '@/lib/supabase'
 
-type Restaurant = { id: string; name: string }
+type Restaurant = { id: string; name: string; competitorLimit: number; plan: string }
 
 type SearchResult = {
   placeId: string
@@ -78,6 +78,8 @@ export default function CompetitorsPage() {
   const [showDropdown, setShowDropdown] = useState(false)
   const [authError, setAuthError] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [autoDiscovering, setAutoDiscovering] = useState(false)
+  const [autoDiscoverMsg, setAutoDiscoverMsg] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -91,18 +93,57 @@ export default function CompetitorsPage() {
       if (!res.ok) { setAuthError(true); return }
       const r: Restaurant = await res.json()
       setRestaurant(r)
-      await loadData(r.id)
+      const loaded = await loadData(r.id)
+      // Auto-discover on first visit when no competitors have been added yet
+      if (loaded.competitorCount === 0) {
+        await runAutoDiscover(r.id, true)
+      }
     }
     init()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function loadData(restaurantId: string) {
+  async function loadData(restaurantId: string): Promise<{ competitorCount: number }> {
     const [compRes, cmpRes] = await Promise.all([
       fetch(`/api/competitors?restaurantId=${restaurantId}`),
       fetch(`/api/competitors/comparison?restaurantId=${restaurantId}`),
     ])
-    if (compRes.ok) setCompetitors(await compRes.json())
+    let count = 0
+    if (compRes.ok) {
+      const list: Competitor[] = await compRes.json()
+      setCompetitors(list)
+      count = list.length
+    }
     if (cmpRes.ok) setComparison(await cmpRes.json())
+    return { competitorCount: count }
+  }
+
+  async function runAutoDiscover(restaurantId: string, silent = false) {
+    if (autoDiscovering) return
+    setAutoDiscovering(true)
+    if (!silent) setAutoDiscoverMsg(null)
+    try {
+      const res = await fetch('/api/competitors/auto-discover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ restaurantId }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        await loadData(restaurantId)
+        if (data.added > 0) {
+          setAutoDiscoverMsg(`Found and added ${data.added} nearby competitor${data.added !== 1 ? 's' : ''} automatically.`)
+        } else if (!silent) {
+          setAutoDiscoverMsg('No new nearby competitors found.')
+        }
+      } else {
+        if (!silent) setAutoDiscoverMsg(data.error ?? 'Auto-discover failed.')
+      }
+    } catch {
+      if (!silent) setAutoDiscoverMsg('Auto-discover failed — check your connection.')
+    } finally {
+      setAutoDiscovering(false)
+    }
   }
 
   const doSearch = useCallback(async (q: string) => {
@@ -180,7 +221,8 @@ export default function CompetitorsPage() {
     return () => document.removeEventListener('mousedown', onClickOutside)
   }, [])
 
-  const atLimit = competitors.length >= 3
+  const competitorLimit = restaurant?.competitorLimit ?? 3
+  const atLimit = competitors.length >= competitorLimit
 
   if (authError) {
     return (
@@ -235,12 +277,58 @@ export default function CompetitorsPage() {
         )}
 
         {/* Add competitor */}
-        <div className="card fade-up" style={{ padding: 24, marginBottom: 12 }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 4 }}>Add Competitor</h2>
-          <p style={{ fontSize: 13, color: 'var(--t3)', marginBottom: 14 }}>
-            Track up to 3 competitors.{' '}
-            {atLimit && <span style={{ color: 'var(--red, #ef4444)', fontWeight: 600 }}>You&apos;ve reached the maximum.</span>}
+        <div className="card fade-up" style={{ padding: 24, marginBottom: 12, position: 'relative', zIndex: 2 }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 4, flexWrap: 'wrap' }}>
+            <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)' }}>Add Competitor</h2>
+            {!atLimit && (
+              <button
+                onClick={() => restaurant && runAutoDiscover(restaurant.id)}
+                disabled={autoDiscovering}
+                className="btn-press"
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6,
+                  padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 600,
+                  background: 'var(--accent-sub)', color: 'var(--accent-hi)',
+                  border: '1px solid oklch(0.62 0.19 258 / 0.25)',
+                  cursor: autoDiscovering ? 'not-allowed' : 'pointer',
+                  opacity: autoDiscovering ? 0.6 : 1, fontFamily: 'inherit',
+                }}
+              >
+                {autoDiscovering ? (
+                  <>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
+                      <path d="M21 12a9 9 0 11-6.219-8.56"/>
+                    </svg>
+                    Finding…
+                  </>
+                ) : (
+                  <>
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    Auto-discover nearby
+                  </>
+                )}
+              </button>
+            )}
+          </div>
+          <p style={{ fontSize: 13, color: 'var(--t3)', marginBottom: autoDiscoverMsg ? 10 : 14 }}>
+            <span style={{ fontWeight: 600, color: atLimit ? 'var(--err)' : 'var(--t2)' }}>
+              {competitors.length} / {competitorLimit}
+            </span>{' '}competitor slot{competitorLimit !== 1 ? 's' : ''} used.{' '}
+            {atLimit && (
+              <><span style={{ color: 'var(--err)', fontWeight: 600 }}>Limit reached.</span>{' '}
+              <a href="/dashboard/billing" style={{ color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Upgrade to add more</a></>
+            )}
           </p>
+          {autoDiscoverMsg && (
+            <div className="banner banner-green fade-up" style={{ marginBottom: 14 }}>
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              {autoDiscoverMsg}
+            </div>
+          )}
 
           <div ref={dropdownRef} style={{ position: 'relative', maxWidth: 440 }}>
             <div style={{ position: 'relative' }}>
@@ -429,14 +517,14 @@ export default function CompetitorsPage() {
           </div>
         )}
 
-        {/* Empty state */}
-        {allEntries.length === 0 && comparison && (
+        {/* Empty state — shown when no competitors added yet */}
+        {competitors.length === 0 && comparison !== null && (
           <div className="card fade-up" style={{ padding: '48px 24px', textAlign: 'center' }}>
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ margin: '0 auto 12px' }}>
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
             <p style={{ fontSize: 14, fontWeight: 600, color: 'var(--t2)', marginBottom: 4 }}>No competitors tracked yet</p>
-            <p style={{ fontSize: 13, color: 'var(--t3)' }}>Search for nearby restaurants above to start comparing.</p>
+            <p style={{ fontSize: 13, color: 'var(--t3)' }}>Search for nearby restaurants above, or use auto-discover to find them automatically.</p>
           </div>
         )}
 

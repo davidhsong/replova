@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     try {
       const result = await syncRestaurantReviews(restaurant.id)
       totalNewReviews += result.newlyStored
-      await batchAnalyzePendingReviews(restaurant.id)
+      await batchAnalyzePendingReviews()
       synced++
     } catch (err) {
       const msg = `${restaurant.name} (${restaurant.id}): ${err instanceof Error ? err.message : String(err)}`

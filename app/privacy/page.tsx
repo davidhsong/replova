@@ -109,6 +109,7 @@ export default function PrivacyPage() {
           <span className="text-sm font-semibold text-zinc-900">Replova</span>
           <div className="flex items-center gap-5">
             <a href="/terms" className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors">Terms</a>
+            <a href="/refunds" className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors">Refunds</a>
             <a href="mailto:support@replova.app" className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors">Support</a>
             <span className="text-xs text-zinc-400">© {year} Replova</span>
           </div>

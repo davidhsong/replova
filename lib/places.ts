@@ -115,6 +115,76 @@ export async function findPlaceId(
   }
 }
 
+const GENERIC_PLACE_TYPES = new Set([
+  'restaurant', 'food', 'establishment', 'point_of_interest',
+  'store', 'premise', 'geocode',
+])
+
+export async function findNearbyCompetitors(
+  restaurantPlaceId: string,
+  excludePlaceId: string
+): Promise<PlaceSearchResult[]> {
+  // Step 1: get the restaurant's coordinates AND cuisine types
+  const detailParams = new URLSearchParams({
+    place_id: restaurantPlaceId,
+    fields: 'geometry,types',
+    key: API_KEY!,
+  })
+  const detailRes = await fetch(
+    `https://maps.googleapis.com/maps/api/place/details/json?${detailParams}`
+  )
+  const detailData = await detailRes.json()
+  if (detailData.status !== 'OK') return []
+
+  const { lat, lng } = detailData.result?.geometry?.location ?? {}
+  if (lat == null || lng == null) return []
+
+  const cuisineTypes = new Set<string>(
+    ((detailData.result?.types ?? []) as string[]).filter(t => !GENERIC_PLACE_TYPES.has(t))
+  )
+
+  // Step 2: find nearby restaurants within 2 km
+  const nearbyParams = new URLSearchParams({
+    location: `${lat},${lng}`,
+    radius: '2000',
+    type: 'restaurant',
+    key: API_KEY!,
+  })
+  const nearbyRes = await fetch(
+    `https://maps.googleapis.com/maps/api/place/nearbysearch/json?${nearbyParams}`
+  )
+  const nearbyData = await nearbyRes.json()
+  if (nearbyData.status !== 'OK' && nearbyData.status !== 'ZERO_RESULTS') return []
+
+  type NearbyResult = {
+    place_id: string
+    name: string
+    vicinity: string
+    rating?: number
+    user_ratings_total?: number
+    types?: string[]
+  }
+
+  const candidates: NearbyResult[] = (nearbyData.results ?? [])
+    .filter((r: NearbyResult) => r.place_id !== excludePlaceId)
+
+  // Sort same-cuisine types first, then by rating descending
+  candidates.sort((a, b) => {
+    const aMatch = cuisineTypes.size > 0 && (a.types ?? []).some(t => cuisineTypes.has(t)) ? 1 : 0
+    const bMatch = cuisineTypes.size > 0 && (b.types ?? []).some(t => cuisineTypes.has(t)) ? 1 : 0
+    if (bMatch !== aMatch) return bMatch - aMatch
+    return (b.rating ?? 0) - (a.rating ?? 0)
+  })
+
+  return candidates.slice(0, 8).map(r => ({
+    placeId: r.place_id,
+    name: r.name,
+    address: r.vicinity,
+    rating: r.rating ?? null,
+    totalRatings: r.user_ratings_total ?? null,
+  }))
+}
+
 export async function getPlaceReviews(placeId: string): Promise<PlaceReviewsResult> {
   const params = new URLSearchParams({
     place_id: placeId,

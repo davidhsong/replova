@@ -1,6 +1,18 @@
 // Auto-generated types for the Replova Supabase schema.
 // Covers both pre-existing tables (restaurants, reviews) and tables
-// added in migration 001_core_schema.sql.
+// added in migrations 001–005.
+
+// ─────────────────────────────────────────────────────────────
+// Accounts table (migration 005) — one row per user/owner_email
+// ─────────────────────────────────────────────────────────────
+
+export interface Account {
+  id: string
+  owner_email: string
+  plan: 'starter' | 'growth' | 'agency'
+  stripe_customer_id: string | null
+  created_at: string
+}
 
 // ─────────────────────────────────────────────────────────────
 // Existing tables
@@ -12,7 +24,7 @@ export interface Restaurant {
   place_id: string | null
   owner_email: string
   active: boolean
-  stripe_customer_id: string | null
+  report_logo_url: string | null   // Agency white-label reports (migration 005)
   google_access_token: string | null
   google_refresh_token: string | null
   google_token_expires_at: number | null  // Unix ms
@@ -129,6 +141,11 @@ export interface CompetitorSnapshot {
 export type Database = {
   public: {
     Tables: {
+      accounts: {
+        Row: Account
+        Insert: Omit<Account, 'id' | 'created_at'>
+        Update: Partial<Omit<Account, 'id' | 'created_at'>>
+      }
       restaurants: {
         Row: Restaurant
         Insert: Omit<Restaurant, 'id' | 'created_at'>

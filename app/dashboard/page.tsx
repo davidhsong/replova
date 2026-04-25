@@ -2,18 +2,19 @@ import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { ACTIVE_LOCATION_COOKIE } from '@/lib/activeLocation'
 import ReviewList from './ReviewList'
 import DemoMode from './DemoMode'
 import AutoDismissBanner from './AutoDismissBanner'
 import IntelligencePanel from '@/components/dashboard/IntelligencePanel'
+import type { Plan } from '@/lib/planLimits'
 
 type Restaurant = {
   id: string
   name: string
   active: boolean
   owner_email: string
-  place_id: string
-  stripe_customer_id: string | null
+  place_id: string | null
   google_location_name: string | null
   created_at: string
 }
@@ -90,13 +91,28 @@ export default async function DashboardPage({
 
   const admin = getSupabaseAdmin()
 
-  const { data: restaurant } = await admin
+  // Get all restaurants for this user
+  const { data: restaurants } = await admin
     .from('restaurants')
-    .select('id, name, active, owner_email, place_id, stripe_customer_id, google_location_name, created_at')
+    .select('id, name, active, owner_email, place_id, google_location_name, created_at')
     .eq('owner_email', user.email)
-    .single<Restaurant>()
+    .order('created_at', { ascending: true })
+    .returns<Restaurant[]>()
 
-  if (!restaurant) redirect('/onboard')
+  if (!restaurants || restaurants.length === 0) redirect('/onboard')
+
+  // Resolve active restaurant from cookie
+  const activeId = cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value
+  const restaurant = restaurants.find(r => r.id === activeId) ?? restaurants[0]
+
+  // Get account plan
+  const { data: account } = await admin
+    .from('accounts')
+    .select('plan')
+    .eq('owner_email', user.email!)
+    .maybeSingle()
+
+  const plan: Plan = (account?.plan as Plan) ?? 'starter'
 
   if (!restaurant.active) {
     return (
@@ -386,6 +402,7 @@ export default async function DashboardPage({
             staffShoutouts={staffShoutouts}
             hasCompetitors={hasCompetitors}
             restaurantId={restaurant.id}
+            plan={plan}
           />
         </div>
       </div>

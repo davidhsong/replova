@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { getSupabaseBrowser } from '@/lib/supabase'
 
 type Step = 'search' | 'confirm' | 'email' | 'success'
+type Plan = 'starter' | 'growth' | 'agency'
 
 interface PlaceResult {
   placeId: string
@@ -45,8 +47,18 @@ function StepIndicator({ current }: { current: Step }) {
   )
 }
 
-export default function OnboardPage() {
+function resolvePlan(raw: string | null): Plan {
+  if (raw === 'starter' || raw === 'agency') return raw
+  return 'growth'
+}
+
+function OnboardPageContent() {
+  const searchParams = useSearchParams()
+  const plan = resolvePlan(searchParams.get('plan'))
+  const addMode = searchParams.get('add') === 'true'
+
   const [step, setStep] = useState<Step>('search')
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null)
 
   // Step 1: search
   const [restaurantName, setRestaurantName] = useState('')
@@ -55,11 +67,21 @@ export default function OnboardPage() {
   const [searchError, setSearchError] = useState<string | null>(null)
   const [result, setResult] = useState<PlaceResult | null>(null)
 
-  // Step 3: email
+  // Step 3: email (only used for non-add mode)
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [successEmail, setSuccessEmail] = useState('')
+
+  // In add mode, detect existing session on mount
+  useEffect(() => {
+    if (!addMode) return
+    void (async () => {
+      const { data } = await getSupabaseBrowser().auth.getUser()
+      if (data.user?.email) setSessionEmail(data.user.email)
+    })()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault()
@@ -89,11 +111,15 @@ export default function OnboardPage() {
   }
 
   async function handleConfirm() {
+    // In add mode with an active session, create the restaurant directly
+    if (addMode && sessionEmail) {
+      await createRestaurant(sessionEmail)
+      return
+    }
     setStep('email')
   }
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function createRestaurant(ownerEmail: string) {
     if (!result) return
     setSubmitting(true)
     setSubmitError(null)
@@ -104,30 +130,41 @@ export default function OnboardPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: result.name,
-          email,
+          email: ownerEmail,
           placeId: result.placeId,
+          plan,
         }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Failed to create account.')
+      if (!res.ok) throw new Error(data.error ?? 'Failed to add location.')
+
+      if (addMode) {
+        window.location.href = '/dashboard'
+        return
+      }
 
       const redirectTo = data.alreadyExists
         ? `${window.location.origin}/auth/callback?next=%2Fdashboard`
         : `${window.location.origin}/auth/callback?next=%2Fdashboard%3Fsuccess%3D1`
 
       const { error: otpError } = await getSupabaseBrowser().auth.signInWithOtp({
-        email,
+        email: ownerEmail,
         options: { emailRedirectTo: redirectTo },
       })
       if (otpError) throw new Error(otpError.message)
 
-      setSuccessEmail(email)
+      setSuccessEmail(ownerEmail)
       setStep('success')
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : 'Something went wrong.')
     } finally {
       setSubmitting(false)
     }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    await createRestaurant(email)
   }
 
   if (step === 'success') {
@@ -172,12 +209,12 @@ export default function OnboardPage() {
 
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-zinc-100 tracking-tight mb-1">
-              {step === 'search' && 'Start your free trial'}
+              {step === 'search' && (addMode ? 'Add a new location' : 'Start your free trial')}
               {step === 'confirm' && 'Is this your business?'}
               {step === 'email' && 'Where should we send the replies?'}
             </h1>
             <p className="text-zinc-500 text-sm">
-              {step === 'search' && '30 days free. No credit card required.'}
+              {step === 'search' && (addMode ? 'Search for the location you want to add.' : '30 days free. No credit card required.')}
               {step === 'confirm' && 'Verify we found the right listing.'}
               {step === 'email' && "We'll send you AI suggested replies whenever new reviews come in."}
             </p>
@@ -265,10 +302,24 @@ export default function OnboardPage() {
 
               <button
                 onClick={handleConfirm}
-                className="btn-press bg-zinc-100 text-zinc-900 text-sm font-semibold py-3 rounded-full hover:bg-white transition-colors"
+                disabled={submitting}
+                className="btn-press bg-zinc-100 text-zinc-900 text-sm font-semibold py-3 rounded-full hover:bg-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Yes, this is my business
+                {submitting ? (
+                  <>
+                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                    </svg>
+                    Adding…
+                  </>
+                ) : addMode && sessionEmail ? 'Add this location' : 'Yes, this is my business'}
               </button>
+              {submitError && (
+                <div className="text-sm text-red-400 bg-red-950/50 border border-red-900 rounded-xl px-4 py-3">
+                  {submitError}
+                </div>
+              )}
               <button
                 onClick={() => { setStep('search'); setResult(null); setSearchError(null) }}
                 className="text-sm text-zinc-500 hover:text-zinc-300 transition-colors py-1"
@@ -348,5 +399,13 @@ export default function OnboardPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function OnboardPage() {
+  return (
+    <Suspense>
+      <OnboardPageContent />
+    </Suspense>
   )
 }

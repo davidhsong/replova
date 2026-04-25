@@ -148,13 +148,22 @@ export async function batchSaveAllScores(): Promise<{ updated: number; errors: n
 
   const { data: restaurants } = await admin
     .from('restaurants')
-    .select('id')
+    .select('id, owner_email')
     .eq('active', true)
+
+  // Only compute scores for growth/agency accounts
+  const emails = [...new Set((restaurants ?? []).map(r => r.owner_email))]
+  const { data: eligibleAccounts } = emails.length > 0
+    ? await admin.from('accounts').select('owner_email').in('plan', ['growth', 'agency']).in('owner_email', emails)
+    : { data: [] }
+
+  const eligibleEmails = new Set(eligibleAccounts?.map(a => a.owner_email) ?? [])
+  const eligible = (restaurants ?? []).filter(r => eligibleEmails.has(r.owner_email))
 
   let updated = 0
   let errors = 0
 
-  for (const restaurant of restaurants ?? []) {
+  for (const restaurant of eligible) {
     try {
       await saveReputationSnapshot(restaurant.id)
       updated++

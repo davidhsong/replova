@@ -27,6 +27,7 @@ function SectionCard({ title, description, children, delay = 0 }: {
 export default function SettingsPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
+  const [plan, setPlan] = useState<string>('starter')
 
   const [googleStatus, setGoogleStatus] = useState<GoogleStatus>('loading')
   const [googleNotice, setGoogleNotice] = useState<string | null>(null)
@@ -49,6 +50,10 @@ export default function SettingsPage() {
   const [savingReplySettings, setSavingReplySettings] = useState(false)
   const [replySettingsResult, setReplySettingsResult] = useState<{ ok: boolean; msg: string } | null>(null)
 
+  const [reportLogoUrl, setReportLogoUrl] = useState('')
+  const [savingLogo, setSavingLogo] = useState(false)
+  const [logoResult, setLogoResult] = useState<{ ok: boolean; msg: string } | null>(null)
+
   useEffect(() => {
     ;(async () => {
       const { data } = await getSupabaseBrowser().auth.getUser()
@@ -68,6 +73,7 @@ export default function SettingsPage() {
             notify_negative_reviews: data.notify_negative_reviews ?? true,
             negative_threshold: data.negative_threshold ?? 3,
           })
+          setReportLogoUrl(data.report_logo_url ?? '')
         }
         setReplySettingsLoaded(true)
       })
@@ -99,6 +105,7 @@ export default function SettingsPage() {
     fetch('/api/restaurant')
       .then(r => r.json())
       .then(data => {
+        if (data.plan) setPlan(data.plan)
         if (data.googleConnected) setGoogleStatus('connected')
         else if (data.googleTokenOnly) {
           setGoogleStatus('token_only')
@@ -144,6 +151,27 @@ export default function SettingsPage() {
       setGoogleNoticeType('error')
     } finally {
       setSavingLocation(false)
+    }
+  }
+
+  async function handleSaveLogo() {
+    setSavingLogo(true)
+    setLogoResult(null)
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ report_logo_url: reportLogoUrl }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? 'Save failed')
+      }
+      setLogoResult({ ok: true, msg: 'Logo URL saved.' })
+    } catch (err) {
+      setLogoResult({ ok: false, msg: err instanceof Error ? err.message : 'Save failed.' })
+    } finally {
+      setSavingLogo(false)
     }
   }
 
@@ -401,19 +429,51 @@ export default function SettingsPage() {
 
               {/* Reply persona */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--t3)' }}>
-                  Your reply voice / persona
-                </label>
-                <textarea
-                  rows={3}
-                  maxLength={300}
-                  value={replySettings.reply_persona}
-                  onChange={e => setReplySettings(s => ({ ...s, reply_persona: e.target.value }))}
-                  placeholder="Describe your restaurant's tone, e.g. 'We're casual and friendly. Use first names. Keep it brief and genuine.'"
-                  className="field-input"
-                  style={{ resize: 'vertical', lineHeight: 1.6 }}
-                />
-                <p style={{ fontSize: 11, color: 'var(--t3)', textAlign: 'right' }}>{replySettings.reply_persona.length}/300</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--t3)' }}>
+                    Your reply voice / persona
+                  </label>
+                  {plan !== 'agency' && (
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-sub)', border: '1px solid oklch(0.62 0.19 258 / 0.25)', borderRadius: 5, padding: '2px 6px', letterSpacing: '0.04em' }}>
+                      <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                      </svg>
+                      AGENCY
+                    </span>
+                  )}
+                </div>
+                {plan !== 'agency' ? (
+                  <div style={{ position: 'relative' }}>
+                    <textarea
+                      rows={3}
+                      disabled
+                      value=""
+                      placeholder="Custom reply personas are available on the Agency plan."
+                      className="field-input"
+                      style={{ resize: 'none', lineHeight: 1.6, opacity: 0.45, cursor: 'not-allowed' }}
+                    />
+                    <div style={{ marginTop: 6, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="var(--t3)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+                      </svg>
+                      <span style={{ fontSize: 11, color: 'var(--t3)' }}>Agency plan required. </span>
+                      <a href="/dashboard/billing" style={{ fontSize: 11, color: 'var(--accent)', fontWeight: 600, textDecoration: 'none' }}>Upgrade</a>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <textarea
+                      rows={3}
+                      maxLength={300}
+                      value={replySettings.reply_persona}
+                      onChange={e => setReplySettings(s => ({ ...s, reply_persona: e.target.value }))}
+                      placeholder="Describe your restaurant's tone, e.g. 'We're casual and friendly. Use first names. Keep it brief and genuine.'"
+                      className="field-input"
+                      style={{ resize: 'vertical', lineHeight: 1.6 }}
+                    />
+                    <p style={{ fontSize: 11, color: 'var(--t3)', textAlign: 'right' }}>{replySettings.reply_persona.length}/300</p>
+                  </>
+                )}
               </div>
 
               {/* Negative review alerts toggle */}
@@ -485,6 +545,50 @@ export default function SettingsPage() {
             </div>
           )}
         </SectionCard>
+
+        {/* Report branding — agency only */}
+        {plan === 'agency' && (
+          <SectionCard
+            title="Report branding"
+            description="Customize PDF reports with your logo. Reports will show your brand name instead of Replova."
+            delay={80}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <label style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: 'var(--t3)' }}>
+                  Logo URL
+                </label>
+                <input
+                  type="url"
+                  value={reportLogoUrl}
+                  onChange={e => setReportLogoUrl(e.target.value)}
+                  placeholder="https://example.com/logo.png"
+                  className="field-input"
+                />
+                <p style={{ fontSize: 11, color: 'var(--t3)' }}>Must be a publicly accessible image URL (PNG, JPG, SVG).</p>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button
+                  onClick={handleSaveLogo}
+                  disabled={savingLogo}
+                  className="btn-press"
+                  style={{
+                    padding: '9px 18px', background: 'var(--surface-2)', border: '1px solid var(--border-md)',
+                    borderRadius: 'var(--radius-m)', fontSize: 13, fontWeight: 600, color: 'var(--t1)',
+                    cursor: 'pointer', fontFamily: 'inherit', opacity: savingLogo ? 0.5 : 1,
+                  }}
+                >
+                  {savingLogo ? 'Saving…' : 'Save logo URL'}
+                </button>
+                {logoResult && (
+                  <p style={{ fontSize: 12, fontWeight: 500, color: logoResult.ok ? 'var(--ok)' : 'var(--err)' }}>
+                    {logoResult.msg}
+                  </p>
+                )}
+              </div>
+            </div>
+          </SectionCard>
+        )}
 
         {/* Account */}
         <SectionCard title="Account" delay={80}>

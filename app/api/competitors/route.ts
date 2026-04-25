@@ -3,11 +3,13 @@ import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { addCompetitor } from '@/lib/competitors'
+import { getPlanLimits } from '@/lib/planLimits'
+import type { Plan } from '@/lib/planLimits'
 
 async function getAuthedRestaurant(user: { email?: string }, restaurantId: string) {
   const { data } = await getSupabaseAdmin()
     .from('restaurants')
-    .select('id')
+    .select('id, owner_email')
     .eq('id', restaurantId)
     .eq('owner_email', user.email)
     .single()
@@ -48,7 +50,15 @@ export async function GET(req: NextRequest) {
     })
   )
 
-  return NextResponse.json(enriched)
+  return NextResponse.json(
+    enriched.map(c => ({
+      id: c.id,
+      name: c.name,
+      googlePlaceId: c.google_place_id,
+      address: c.address,
+      latestSnapshot: c.latestSnapshot,
+    }))
+  )
 }
 
 export async function POST(req: NextRequest) {
@@ -65,6 +75,31 @@ export async function POST(req: NextRequest) {
 
   const owned = await getAuthedRestaurant(user, restaurantId)
   if (!owned) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  const admin = getSupabaseAdmin()
+
+  // Enforce competitor slot limit for this plan
+  const { data: account } = await admin
+    .from('accounts')
+    .select('plan')
+    .eq('owner_email', user.email!)
+    .maybeSingle()
+
+  const plan: Plan = (account?.plan as Plan) ?? 'starter'
+  const limits = getPlanLimits(plan)
+
+  const { count: currentCount } = await admin
+    .from('competitors')
+    .select('id', { count: 'exact', head: true })
+    .eq('restaurant_id', restaurantId)
+    .eq('active', true)
+
+  if ((currentCount ?? 0) >= limits.competitors) {
+    return NextResponse.json(
+      { error: 'Competitor limit reached for your plan. Upgrade to track more competitors.' },
+      { status: 400 }
+    )
+  }
 
   try {
     await addCompetitor(restaurantId, placeId)
@@ -87,7 +122,6 @@ export async function DELETE(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
-  // Verify ownership via competitors → restaurants join
   const { data: competitor } = await admin
     .from('competitors')
     .select('id, restaurant_id')

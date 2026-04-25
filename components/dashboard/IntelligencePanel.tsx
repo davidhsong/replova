@@ -9,6 +9,7 @@ type Props = {
   staffShoutouts: string[]
   hasCompetitors: boolean
   restaurantId: string
+  plan?: string
 }
 
 function getSentimentDisplay(val: number | null): { label: string; color: string; bg: string } {
@@ -97,6 +98,37 @@ function ScoreGauge({ score }: { score: number | null }) {
   )
 }
 
+function UpgradeCard({ title, sub }: { title: string; sub: string }) {
+  return (
+    <a
+      href="/dashboard/billing"
+      style={{
+        display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center',
+        padding: '20px 16px', gap: 8, textDecoration: 'none',
+        background: 'var(--surface-1)', border: '1px solid var(--border)',
+        borderRadius: 16, boxShadow: 'var(--card-shadow)',
+      }}
+    >
+      <div style={{
+        width: 36, height: 36, borderRadius: 10,
+        background: 'var(--accent-sub)', border: '1px solid oklch(0.62 0.19 258 / 0.25)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+        </svg>
+      </div>
+      <div>
+        <p style={{ fontSize: 13, fontWeight: 700, color: 'var(--t1)', marginBottom: 2 }}>{title}</p>
+        <p style={{ fontSize: 11, color: 'var(--t3)', lineHeight: 1.5 }}>{sub}</p>
+      </div>
+      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--accent)', background: 'var(--accent-sub)', borderRadius: 6, padding: '3px 10px' }}>
+        Upgrade to Growth
+      </span>
+    </a>
+  )
+}
+
 export default function IntelligencePanel({
   score,
   scoreDelta,
@@ -106,7 +138,9 @@ export default function IntelligencePanel({
   staffShoutouts,
   hasCompetitors,
   restaurantId,
+  plan,
 }: Props) {
+  const isStarter = plan === 'starter'
   const sentiment = getSentimentDisplay(avgSentiment)
 
   const cardStyle: React.CSSProperties = {
@@ -132,57 +166,69 @@ export default function IntelligencePanel({
     <aside style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
       {/* Score card */}
-      <div style={{ ...cardStyle, padding: '20px 20px 16px' }}>
-        <div style={{ ...sectionLabel, marginBottom: 8 }}>Reputation Score</div>
-        <ScoreGauge score={score} />
+      {isStarter ? (
+        <UpgradeCard
+          title="Reputation Score"
+          sub="Track your composite score over time. Available on Growth and above."
+        />
+      ) : (
+        <div style={{ ...cardStyle, padding: '20px 20px 16px' }}>
+          <div style={{ ...sectionLabel, marginBottom: 8 }}>Reputation Score</div>
+          <ScoreGauge score={score} />
 
-        {scoreDelta !== null && (
-          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
-            <span style={{
-              fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
-              color: scoreDelta >= 0 ? 'var(--ok)' : 'var(--err)',
-              background: scoreDelta >= 0 ? 'var(--ok-sub)' : 'var(--err-sub)',
-              border: `1px solid ${scoreDelta >= 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
-            }}>
-              {scoreDelta >= 0 ? '▲' : '▼'} {Math.abs(scoreDelta)} this week
-            </span>
-          </div>
-        )}
-
-        {/* Metrics */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
-          {responseRatePct !== null && (
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                <span style={{ fontSize: 12, color: 'var(--t2)' }}>Response rate</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)' }}>{responseRatePct}%</span>
-              </div>
-              <div style={{ height: 3, borderRadius: 99, background: 'var(--surface-2)' }}>
-                <div style={{
-                  height: '100%', borderRadius: 99, width: `${responseRatePct}%`,
-                  background: responseRatePct >= 70 ? 'var(--ok)' : responseRatePct >= 40 ? 'var(--warn)' : 'var(--err)',
-                  transition: 'width 0.5s cubic-bezier(0.16,1,0.3,1)',
-                }} />
-              </div>
-            </div>
-          )}
-
-          {avgSentiment !== null && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: 12, color: 'var(--t2)' }}>Avg sentiment</span>
+          {scoreDelta !== null && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 4 }}>
               <span style={{
-                fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 5,
-                color: sentiment.color, background: sentiment.bg,
+                fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6,
+                color: scoreDelta >= 0 ? 'var(--ok)' : 'var(--err)',
+                background: scoreDelta >= 0 ? 'var(--ok-sub)' : 'var(--err-sub)',
+                border: `1px solid ${scoreDelta >= 0 ? 'rgba(34,197,94,0.2)' : 'rgba(239,68,68,0.2)'}`,
               }}>
-                {sentiment.label}
+                {scoreDelta >= 0 ? '▲' : '▼'} {Math.abs(scoreDelta)} this week
               </span>
             </div>
           )}
+
+          {/* Metrics */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 16 }}>
+            {responseRatePct !== null && (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <span style={{ fontSize: 12, color: 'var(--t2)' }}>Response rate</span>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)' }}>{responseRatePct}%</span>
+                </div>
+                <div style={{ height: 3, borderRadius: 99, background: 'var(--surface-2)' }}>
+                  <div style={{
+                    height: '100%', borderRadius: 99, width: `${responseRatePct}%`,
+                    background: responseRatePct >= 70 ? 'var(--ok)' : responseRatePct >= 40 ? 'var(--warn)' : 'var(--err)',
+                    transition: 'width 0.5s cubic-bezier(0.16,1,0.3,1)',
+                  }} />
+                </div>
+              </div>
+            )}
+
+            {avgSentiment !== null && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 12, color: 'var(--t2)' }}>Avg sentiment</span>
+                <span style={{
+                  fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 5,
+                  color: sentiment.color, background: sentiment.bg,
+                }}>
+                  {sentiment.label}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Keywords */}
-      {topKeywords.length > 0 && (
+      {isStarter ? (
+        <UpgradeCard
+          title="Sentiment Analysis"
+          sub="See what customers mention most and track sentiment trends. Available on Growth and above."
+        />
+      ) : topKeywords.length > 0 ? (
         <div style={cardStyle}>
           <div style={sectionLabel}>Customers mention:</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
@@ -202,7 +248,7 @@ export default function IntelligencePanel({
             ))}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Staff shoutouts */}
       {staffShoutouts.length > 0 && (

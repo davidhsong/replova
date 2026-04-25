@@ -3,12 +3,18 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import SignOutButton from './SignOutButton'
+import LocationSwitcherClient from '@/components/dashboard/LocationSwitcherClient'
+
+type Location = { id: string; name: string }
 
 interface Props {
   restaurantName: string
   displayName: string
   initials: string
   avatarUrl?: string
+  locations: Location[]
+  activeLocationId: string
+  locationLimit: number
 }
 
 const NAV_GROUPS = [
@@ -84,7 +90,7 @@ const NAV_GROUPS = [
   },
 ]
 
-export default function DashboardSidebar({ restaurantName, displayName, initials, avatarUrl }: Props) {
+export default function DashboardSidebar({ restaurantName, displayName, initials, avatarUrl, locations, activeLocationId, locationLimit }: Props) {
   const pathname = usePathname()
 
   function isActive(item: { href: string; exact: boolean }) {
@@ -127,6 +133,14 @@ export default function DashboardSidebar({ restaurantName, displayName, initials
           </span>
         </Link>
       </div>
+
+      {/* Location switcher */}
+      <LocationSwitcherClient
+        locations={locations}
+        activeLocationId={activeLocationId}
+        locationLimit={locationLimit}
+        currentCount={locations.length}
+      />
 
       {/* Nav groups */}
       <div className="sidebar-body">

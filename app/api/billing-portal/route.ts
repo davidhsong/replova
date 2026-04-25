@@ -17,16 +17,17 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/signin')
 
-  const { data: restaurant } = await getSupabaseAdmin()
-    .from('restaurants')
+  // stripe_customer_id lives on the accounts table now
+  const { data: account } = await getSupabaseAdmin()
+    .from('accounts')
     .select('stripe_customer_id')
-    .eq('owner_email', user.email)
-    .single()
+    .eq('owner_email', user.email!)
+    .maybeSingle()
 
-  if (!restaurant?.stripe_customer_id) redirect('/dashboard')
+  if (!account?.stripe_customer_id) redirect('/dashboard')
 
   const session = await getStripe().billingPortal.sessions.create({
-    customer: restaurant.stripe_customer_id,
+    customer: account.stripe_customer_id,
     return_url: `${BASE_URL}/dashboard/billing`,
   })
 

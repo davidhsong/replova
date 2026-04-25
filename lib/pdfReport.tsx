@@ -429,10 +429,11 @@ export async function buildReportData(restaurantId: string, month: Date): Promis
   }
 }
 
-function Footer({ month }: { month: string }) {
+function Footer({ month, brandName }: { month: string; brandName?: string }) {
+  const brand = brandName ?? 'Replova'
   return (
     <View style={styles.footer} fixed>
-      <Text style={styles.footerText}>Replova Reputation Report · {month} · Confidential</Text>
+      <Text style={styles.footerText}>{brand} Reputation Report · {month} · Confidential</Text>
       <Text style={styles.footerText} render={({ pageNumber, totalPages }) => `${pageNumber} / ${totalPages}`} />
     </View>
   )
@@ -445,7 +446,10 @@ function StarRating({ rating, negative }: { rating: number; negative?: boolean }
   )
 }
 
-function ReportDocument({ data }: { data: MonthlyReportData }) {
+type ReportBranding = { logoUrl?: string; brandName?: string }
+
+function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?: ReportBranding }) {
+  const brandName = branding?.brandName
   const trendText = data.scoreDelta !== null
     ? data.scoreDelta > 0
       ? `Your score improved by ${data.scoreDelta.toFixed(1)} points vs last month`
@@ -460,7 +464,7 @@ function ReportDocument({ data }: { data: MonthlyReportData }) {
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.headerTitle}>Reputation Report</Text>
+            <Text style={styles.headerTitle}>{brandName ? `${brandName} — ` : ''}Reputation Report</Text>
             <Text style={styles.headerSub}>{data.restaurantName}</Text>
           </View>
           <View style={styles.headerRight}>
@@ -520,7 +524,7 @@ function ReportDocument({ data }: { data: MonthlyReportData }) {
           )}
         </View>
 
-        <Footer month={data.month} />
+        <Footer month={data.month} brandName={brandName} />
       </Page>
 
       {/* PAGE 2 — Review Highlights */}
@@ -585,7 +589,7 @@ function ReportDocument({ data }: { data: MonthlyReportData }) {
           )}
         </View>
 
-        <Footer month={data.month} />
+        <Footer month={data.month} brandName={brandName} />
       </Page>
 
       {/* PAGE 3 — Competitive Position (only if competitors exist) */}
@@ -639,16 +643,19 @@ function ReportDocument({ data }: { data: MonthlyReportData }) {
             )}
           </View>
 
-          <Footer month={data.month} />
+          <Footer month={data.month} brandName={brandName} />
         </Page>
       )}
     </Document>
   )
 }
 
-export async function generatePdfBuffer(data: MonthlyReportData): Promise<Buffer> {
+export async function generatePdfBuffer(
+  data: MonthlyReportData,
+  branding?: ReportBranding
+): Promise<Buffer> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const element = React.createElement(ReportDocument, { data }) as unknown as ReactElement<DocumentProps, JSXElementConstructor<DocumentProps>>
+  const element = React.createElement(ReportDocument, { data, branding }) as unknown as ReactElement<DocumentProps, JSXElementConstructor<DocumentProps>>
   const buffer = await renderToBuffer(element)
   return Buffer.from(buffer)
 }

@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { analyzeAndSaveReview } from '@/lib/sentiment'
+import type { Plan } from '@/lib/planLimits'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -16,13 +17,28 @@ export async function POST(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
+  // Verify restaurant ownership and check plan
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id')
+    .select('id, owner_email')
     .eq('owner_email', user.email)
     .single()
 
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
+
+  const { data: account } = await admin
+    .from('accounts')
+    .select('plan')
+    .eq('owner_email', user.email!)
+    .maybeSingle()
+
+  const plan: Plan = (account?.plan as Plan) ?? 'starter'
+  if (plan === 'starter') {
+    return NextResponse.json(
+      { error: 'Sentiment analysis requires Growth plan or higher.' },
+      { status: 403 }
+    )
+  }
 
   const { data: review } = await admin
     .from('reviews')
