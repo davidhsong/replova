@@ -300,57 +300,64 @@ export default async function DashboardPage({
         )}
 
         {/* Row 1: Stats strip */}
-        <div className="stats-strip fade-up" style={{ marginBottom: 24 }}>
+        <div className="stats-strip fade-up" style={{ marginBottom: 20 }}>
           {/* Card 1: Reputation Score */}
-          <div className="stat-card">
-            <div style={{ fontSize: 11, color: 'var(--t3)', fontWeight: 500, marginBottom: 6 }}>Replova Score</div>
-            <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--t1)', lineHeight: 1 }}>
-              {repScore?.score != null ? repScore.score : '—'}
-              <span style={{ fontSize: 14, fontWeight: 500, color: 'var(--t3)' }}> / 100</span>
+          <div className="stat-card" style={{ position: 'relative', overflow: 'hidden' }}>
+            <div style={{ fontSize: 10, color: 'var(--t3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Replova Score</div>
+            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.05em', color: 'var(--t1)', lineHeight: 1 }}>
+              {repScore?.score != null ? Math.round(repScore.score) : '—'}
+              <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--t3)', letterSpacing: 0 }}> /100</span>
             </div>
-            {scoreDelta !== null && (
-              <div style={{
-                fontSize: 12, marginTop: 6, fontWeight: 500,
-                color: scoreDelta >= 0 ? 'var(--ok)' : 'var(--err)',
-              }}>
-                {scoreDelta >= 0 ? '▲' : '▼'} {Math.abs(scoreDelta)} this week
-              </div>
-            )}
-            {scoreDelta === null && (
-              <div style={{ fontSize: 12, marginTop: 6, color: 'var(--t3)' }}>—</div>
-            )}
+            <div style={{ marginTop: 8 }}>
+              {scoreDelta !== null ? (
+                <span style={{
+                  fontSize: 11, fontWeight: 600, padding: '2px 6px', borderRadius: 5,
+                  color: scoreDelta >= 0 ? 'var(--ok)' : 'var(--err)',
+                  background: scoreDelta >= 0 ? 'var(--ok-sub)' : 'var(--err-sub)',
+                }}>
+                  {scoreDelta >= 0 ? '▲' : '▼'} {Math.abs(scoreDelta)} this week
+                </span>
+              ) : (
+                <span style={{ fontSize: 11, color: 'var(--t3)' }}>syncing…</span>
+              )}
+            </div>
           </div>
 
           {/* Card 2: Avg Rating */}
           <div className="stat-card">
-            <div style={{ fontSize: 11, color: 'var(--t3)', fontWeight: 500, marginBottom: 6 }}>Google Rating</div>
-            <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.04em', color: '#f59e0b', lineHeight: 1 }}>
+            <div style={{ fontSize: 10, color: 'var(--t3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Google Rating</div>
+            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.05em', color: '#f59e0b', lineHeight: 1, display: 'flex', alignItems: 'baseline', gap: 3 }}>
               {displayAvgRating != null ? displayAvgRating.toFixed(1) : '—'}
-              <span style={{ fontSize: 16, marginLeft: 2 }}>★</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#f59e0b" stroke="none" style={{ marginBottom: 1, flexShrink: 0 }}>
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
             </div>
-            <div style={{ fontSize: 12, marginTop: 6, color: 'var(--t3)' }}>based on last 90 days</div>
+            <div style={{ fontSize: 11, marginTop: 8, color: 'var(--t3)' }}>last 90 days</div>
           </div>
 
           {/* Card 3: Reviews This Month */}
           <div className="stat-card">
-            <div style={{ fontSize: 11, color: 'var(--t3)', fontWeight: 500, marginBottom: 6 }}>New Reviews</div>
-            <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.04em', color: 'var(--t1)', lineHeight: 1 }}>
-              {repScore?.reviews_this_month ?? '—'}
+            <div style={{ fontSize: 10, color: 'var(--t3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>New Reviews</div>
+            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.05em', color: 'var(--t1)', lineHeight: 1 }}>
+              {repScore?.reviews_this_month ?? stats.total}
             </div>
-            <div style={{ fontSize: 12, marginTop: 6, color: 'var(--t3)' }}>this month</div>
+            <div style={{ fontSize: 11, marginTop: 8, color: 'var(--t3)' }}>this month</div>
           </div>
 
           {/* Card 4: Need Reply */}
-          <div className="stat-card" style={unrepliedCount > 0 ? { background: 'var(--err-sub)', borderColor: 'rgba(239,68,68,0.2)' } : {}}>
-            <div style={{ fontSize: 11, color: 'var(--t3)', fontWeight: 500, marginBottom: 6 }}>Awaiting Reply</div>
+          <div
+            className="stat-card"
+            style={unrepliedCount > 0 ? { background: 'var(--err-sub)', borderColor: 'rgba(239,68,68,0.18)' } : {}}
+          >
+            <div style={{ fontSize: 10, color: 'var(--t3)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 8 }}>Awaiting Reply</div>
             <div style={{
-              fontSize: 28, fontWeight: 800, letterSpacing: '-0.04em', lineHeight: 1,
+              fontSize: 30, fontWeight: 800, letterSpacing: '-0.05em', lineHeight: 1,
               color: unrepliedCount > 0 ? 'var(--err)' : 'var(--ok)',
             }}>
               {unrepliedCount}
             </div>
-            <div style={{ fontSize: 12, marginTop: 6, color: 'var(--t3)' }}>
-              {unrepliedCount === 0 ? 'all caught up' : `need${unrepliedCount === 1 ? 's' : ''} a reply`}
+            <div style={{ fontSize: 11, marginTop: 8, color: 'var(--t3)' }}>
+              {unrepliedCount === 0 ? '✓ all caught up' : `need${unrepliedCount === 1 ? 's' : ''} a reply`}
             </div>
           </div>
         </div>

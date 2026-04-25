@@ -30,7 +30,7 @@ export default async function BillingPage() {
   const trialEnd = new Date(trialStart)
   trialEnd.setDate(trialEnd.getDate() + 30)
   const now = new Date()
-  const inTrial = restaurant.active && now < trialEnd
+  const inTrial = restaurant.active && !restaurant.stripe_customer_id && now < trialEnd
   const daysLeft = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
   const trialProgress = Math.round(((30 - daysLeft) / 30) * 100)
 
@@ -151,23 +151,84 @@ export default async function BillingPage() {
 
         {/* What's included */}
         <div className="card fade-up" style={{ padding: 24, marginBottom: 12, animationDelay: '40ms' }}>
-          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 20 }}>What&apos;s included</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+          <h2 style={{ fontSize: 14, fontWeight: 700, color: 'var(--t1)', marginBottom: 18 }}>What&apos;s included</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {[
-              { icon: '✦', title: 'AI reply drafts', desc: '3 tone options generated per review: Professional, Warm, and Brief.' },
-              { icon: '🔔', title: 'Urgent alerts', desc: 'Low-rating reviews are flagged and surfaced at the top for immediate action.' },
-              { icon: '📧', title: 'Weekly digest', desc: 'Every Monday morning, a summary of reviews that need your attention.' },
-              { icon: '✓', title: 'Auto-detect replied', desc: "Replova detects when you've already replied on Google and marks it complete." },
-              { icon: '🔍', title: 'Review dashboard', desc: 'Search, filter, and track all your reviews and reply status in one place.' },
-              { icon: '⚡', title: 'Saves 5+ hrs/week', desc: 'Stop copying and pasting replies manually — let AI do the heavy lifting.' },
-            ].map(({ icon, title, desc }) => (
+              {
+                icon: (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+                  </svg>
+                ),
+                color: 'var(--accent)',
+                bg: 'var(--accent-sub)',
+                title: 'AI reply drafts',
+                desc: '3 tone options per review: Professional, Warm, Brief.',
+              },
+              {
+                icon: (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                ),
+                color: 'var(--err)',
+                bg: 'var(--err-sub)',
+                title: 'Urgent alerts',
+                desc: 'Low-rating reviews flagged instantly with email alerts.',
+              },
+              {
+                icon: (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                ),
+                color: 'var(--warn)',
+                bg: 'var(--warn-sub)',
+                title: 'Weekly digest',
+                desc: 'Monday morning summary of reviews and action items.',
+              },
+              {
+                icon: (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                ),
+                color: 'var(--ok)',
+                bg: 'var(--ok-sub)',
+                title: 'Auto-detect replied',
+                desc: 'Marks reviews complete when you reply on Google.',
+              },
+              {
+                icon: (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                  </svg>
+                ),
+                color: 'var(--accent)',
+                bg: 'var(--accent-sub)',
+                title: 'Competitor tracking',
+                desc: 'Monitor up to 3 nearby restaurants\' ratings.',
+              },
+              {
+                icon: (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                ),
+                color: 'var(--ok)',
+                bg: 'var(--ok-sub)',
+                title: 'Saves 5+ hrs/week',
+                desc: 'Stop copy-pasting replies — AI handles the heavy lifting.',
+              },
+            ].map(({ icon, color, bg, title, desc }) => (
               <div key={title} style={{
                 display: 'flex', gap: 12, padding: 14,
                 background: 'var(--surface-0)', borderRadius: 12, border: '1px solid var(--border)',
               }}>
                 <div style={{
-                  width: 32, height: 32, background: 'var(--surface-2)', borderRadius: 9,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, flexShrink: 0,
+                  width: 32, height: 32, background: bg, borderRadius: 9,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                  color, border: `1px solid ${color}22`,
                 }}>
                   {icon}
                 </div>

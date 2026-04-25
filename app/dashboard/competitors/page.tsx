@@ -155,8 +155,15 @@ export default function CompetitorsPage() {
     if (!restaurant) return
     setRemovingId(competitorId)
     try {
-      await fetch(`/api/competitors?competitorId=${competitorId}`, { method: 'DELETE' })
-      await loadData(restaurant.id)
+      const res = await fetch(`/api/competitors?competitorId=${competitorId}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}))
+        setError(d.error ?? 'Failed to remove competitor')
+      } else {
+        await loadData(restaurant.id)
+      }
+    } catch {
+      setError('Failed to remove competitor')
     } finally {
       setRemovingId(null)
     }

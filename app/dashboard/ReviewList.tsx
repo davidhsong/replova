@@ -54,12 +54,25 @@ function isOverdue(createdAt: string): boolean {
 
 function Stars({ rating }: { rating: number }) {
   return (
-    <span style={{ fontSize: 11, letterSpacing: 1 }}>
+    <span style={{ display: 'flex', gap: 1 }}>
       {Array.from({ length: 5 }, (_, i) => (
-        <span key={i} style={{ color: i < rating ? '#f59e0b' : 'var(--border-hi)' }}>★</span>
+        <svg key={i} width="11" height="11" viewBox="0 0 24 24"
+          fill={i < rating ? '#f59e0b' : 'none'}
+          stroke={i < rating ? '#f59e0b' : 'var(--border-hi)'}
+          strokeWidth="1.5"
+        >
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
       ))}
     </span>
   )
+}
+
+function ratingBorderColor(rating: number | null): string {
+  if (rating === null) return 'transparent'
+  if (rating <= 2) return 'var(--err)'
+  if (rating === 3) return 'var(--warn)'
+  return 'var(--ok)'
 }
 
 function ReviewRow({
@@ -89,18 +102,19 @@ function ReviewRow({
     e.stopPropagation()
     setToggling(true)
     onToggle()
-    await fetch('/api/reviews/mark-replied', {
+    const res = await fetch('/api/reviews/mark-replied', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reviewId: review.id, completed: !isReplied }),
     })
+    if (!res.ok) onToggle()
     setToggling(false)
   }
 
   return (
     <div
       className={`review-row fade-up ${open ? 'open' : ''} ${isReplied ? 'replied' : ''}`}
-      style={{ animationDelay: `${index * 40}ms` }}
+      style={{ animationDelay: `${index * 40}ms`, borderLeft: `3px solid ${isReplied ? 'var(--border)' : ratingBorderColor(review.rating)}` }}
     >
       {/* Row header */}
       <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -343,24 +357,37 @@ export default function ReviewList({
 
   return (
     <div>
-      {/* Stats — needs reply / urgent update optimistically via local state */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 20 }}>
+      {/* Stats */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 18 }}>
         {[
-          { label: 'Needs reply',   value: localNeedsReply,                           color: 'var(--t1)',  danger: false },
-          { label: 'Avg rating',    value: stats.avgRating ? `★ ${stats.avgRating.toFixed(1)}` : '—', color: '#f59e0b', danger: false },
-          { label: 'Response rate', value: `${responseRate}%`,                         color: 'var(--t1)',  danger: false },
-          { label: 'Urgent',        value: localUrgent,                               color: localUrgent > 0 ? 'var(--err)' : 'var(--t3)', danger: localUrgent > 0 },
+          { label: 'Needs reply',   value: String(localNeedsReply),  color: 'var(--t1)',  danger: false },
+          {
+            label: 'Avg rating',
+            value: stats.avgRating ? stats.avgRating.toFixed(1) : '—',
+            color: '#f59e0b',
+            danger: false,
+            suffix: stats.avgRating ? (
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="#f59e0b" stroke="none" style={{ marginLeft: 2 }}>
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+            ) : null,
+          },
+          { label: 'Response rate', value: `${responseRate}%`,        color: responseRate >= 70 ? 'var(--ok)' : responseRate >= 40 ? 'var(--warn)' : 'var(--t1)', danger: false },
+          { label: 'Urgent',        value: String(localUrgent),       color: localUrgent > 0 ? 'var(--err)' : 'var(--t3)', danger: localUrgent > 0 },
         ].map((s, i) => (
           <div
             key={i}
             className="stat-card fade-up"
             style={{
-              animationDelay: `${i * 40}ms`,
-              ...(s.danger ? { background: 'var(--err-sub)', borderColor: 'rgba(239,68,68,0.2)' } : {}),
+              animationDelay: `${i * 35}ms`,
+              ...(s.danger ? { background: 'var(--err-sub)', borderColor: 'rgba(239,68,68,0.18)' } : {}),
             }}
           >
-            <div style={{ fontSize: 11, color: 'var(--t3)', marginBottom: 6, fontWeight: 500 }}>{s.label}</div>
-            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-0.04em', color: s.color, lineHeight: 1 }}>{s.value}</div>
+            <div style={{ fontSize: 10, color: 'var(--t3)', marginBottom: 7, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em' }}>{s.label}</div>
+            <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-0.04em', color: s.color, lineHeight: 1, display: 'flex', alignItems: 'center' }}>
+              {s.value}
+              {'suffix' in s && s.suffix}
+            </div>
           </div>
         ))}
       </div>

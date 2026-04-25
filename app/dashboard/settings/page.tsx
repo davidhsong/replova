@@ -376,20 +376,10 @@ export default function SettingsPage() {
                   role="switch"
                   aria-checked={replySettings.auto_reply_enabled}
                   onClick={() => setReplySettings(s => ({ ...s, auto_reply_enabled: !s.auto_reply_enabled }))}
-                  className="btn-press"
-                  style={{
-                    flexShrink: 0, width: 40, height: 22, borderRadius: 11,
-                    background: replySettings.auto_reply_enabled ? 'var(--ok)' : 'var(--border-md)',
-                    border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.15s',
-                  }}
+                  className="toggle-track btn-press"
+                  style={{ background: replySettings.auto_reply_enabled ? 'var(--ok)' : 'var(--border-md)' }}
                 >
-                  <span style={{
-                    display: 'block', width: 16, height: 16, borderRadius: '50%', background: '#fff',
-                    position: 'absolute', top: 3,
-                    left: replySettings.auto_reply_enabled ? 21 : 3,
-                    transition: 'left 0.15s',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                  }} />
+                  <span className="toggle-thumb" style={{ left: replySettings.auto_reply_enabled ? 21 : 3 }} />
                 </button>
               </div>
 
@@ -404,11 +394,8 @@ export default function SettingsPage() {
                   max={24}
                   value={replySettings.auto_reply_delay_hours}
                   onChange={e => setReplySettings(s => ({ ...s, auto_reply_delay_hours: Math.min(24, Math.max(1, Number(e.target.value))) }))}
-                  style={{
-                    width: 100, background: 'var(--surface-0)', border: '1px solid var(--border-md)',
-                    borderRadius: 'var(--radius-m)', padding: '9px 12px', fontSize: 13,
-                    color: 'var(--t1)', fontFamily: 'inherit',
-                  }}
+                  className="field-input"
+                  style={{ width: 100 }}
                 />
               </div>
 
@@ -423,12 +410,8 @@ export default function SettingsPage() {
                   value={replySettings.reply_persona}
                   onChange={e => setReplySettings(s => ({ ...s, reply_persona: e.target.value }))}
                   placeholder="Describe your restaurant's tone, e.g. 'We're casual and friendly. Use first names. Keep it brief and genuine.'"
-                  style={{
-                    width: '100%', background: 'var(--surface-0)', border: '1px solid var(--border-md)',
-                    borderRadius: 'var(--radius-m)', padding: '9px 12px', fontSize: 13,
-                    color: 'var(--t1)', fontFamily: 'inherit', resize: 'vertical', lineHeight: 1.6,
-                    boxSizing: 'border-box',
-                  }}
+                  className="field-input"
+                  style={{ resize: 'vertical', lineHeight: 1.6 }}
                 />
                 <p style={{ fontSize: 11, color: 'var(--t3)', textAlign: 'right' }}>{replySettings.reply_persona.length}/300</p>
               </div>
@@ -443,20 +426,10 @@ export default function SettingsPage() {
                   role="switch"
                   aria-checked={replySettings.notify_negative_reviews}
                   onClick={() => setReplySettings(s => ({ ...s, notify_negative_reviews: !s.notify_negative_reviews }))}
-                  className="btn-press"
-                  style={{
-                    flexShrink: 0, width: 40, height: 22, borderRadius: 11,
-                    background: replySettings.notify_negative_reviews ? 'var(--ok)' : 'var(--border-md)',
-                    border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.15s',
-                  }}
+                  className="toggle-track btn-press"
+                  style={{ background: replySettings.notify_negative_reviews ? 'var(--ok)' : 'var(--border-md)' }}
                 >
-                  <span style={{
-                    display: 'block', width: 16, height: 16, borderRadius: '50%', background: '#fff',
-                    position: 'absolute', top: 3,
-                    left: replySettings.notify_negative_reviews ? 21 : 3,
-                    transition: 'left 0.15s',
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
-                  }} />
+                  <span className="toggle-thumb" style={{ left: replySettings.notify_negative_reviews ? 21 : 3 }} />
                 </button>
               </div>
 
