@@ -2,8 +2,6 @@ import Anthropic from '@anthropic-ai/sdk'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { recordUsage } from '@/lib/apiBudget'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
 export interface SentimentResult {
   score: number
   label: 'positive' | 'neutral' | 'negative'
@@ -28,6 +26,7 @@ export async function analyzeSentiment(
   reviewText: string,
   rating: number
 ): Promise<SentimentResult> {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   if (!reviewText || !reviewText.trim()) {
     return fallbackFromRating(rating)
   }

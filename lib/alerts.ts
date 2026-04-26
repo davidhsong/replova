@@ -3,8 +3,6 @@ import { getSupabaseAdmin } from '@/lib/supabase'
 import { generateReplies } from '@/lib/generateReplies'
 import { BASE_URL } from '@/lib/baseUrl'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -219,6 +217,7 @@ export async function sendNegativeReviewAlert(reviewId: string): Promise<void> {
     reviewId,
   })
 
+  const resend = new Resend(process.env.RESEND_API_KEY)
   const { error: sendError } = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL ?? 'alerts@replova.com',
     to: restaurant.owner_email,

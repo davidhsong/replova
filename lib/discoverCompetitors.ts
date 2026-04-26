@@ -3,8 +3,6 @@ import type { PlaceSearchResult } from './places'
 import { GENERIC_PLACE_TYPES } from './places'
 import { recordUsage } from './apiBudget'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
 export interface DiscoveredCompetitor {
   placeId: string
   reason: string
@@ -40,6 +38,7 @@ export async function discoverCompetitorsWithClaude(
     category: formatTypes(c.types),
   }))
 
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   let claudeResults: DiscoveredCompetitor[] = []
 
   const cuisineContext = restaurant.cuisineType

@@ -1,8 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { recordUsage } from './apiBudget'
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
 interface GenerateSingleReplyParams {
   restaurantName: string
   author: string
@@ -18,6 +16,7 @@ function sanitize(value: string, maxLen: number): string {
 }
 
 export async function generateSingleReply(params: GenerateSingleReplyParams): Promise<string> {
+  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   const restaurantName = sanitize(params.restaurantName, 200)
   const author = sanitize(params.author, 100)
   const rating = Math.min(5, Math.max(1, Math.round(params.rating)))

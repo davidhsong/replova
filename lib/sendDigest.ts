@@ -3,9 +3,6 @@ import { Resend } from 'resend'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { BASE_URL } from '@/lib/baseUrl'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
 export interface DigestData {
   restaurantName: string
   weekStart: Date
@@ -67,6 +64,7 @@ async function generateActionItems(opts: {
   topKeywords: string[]
   unrepliedCount: number
 }): Promise<string[]> {
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   try {
     const message = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
@@ -500,6 +498,7 @@ export async function sendWeeklyDigest(restaurant: {
 
   const html = buildHtml(data)
 
+  const resend = new Resend(process.env.RESEND_API_KEY)
   const { error } = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL ?? 'Replova <onboarding@resend.dev>',
     to: restaurant.owner_email,
