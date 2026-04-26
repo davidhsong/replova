@@ -30,10 +30,11 @@ export default function SignInPage() {
 
   useEffect(() => {
     if (!window.location.hash.includes('access_token')) return
-    const supabase = getSupabaseBrowser()
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) router.replace('/dashboard')
-    })
+    void (async () => {
+      const supabase = getSupabaseBrowser()
+      const { data } = await supabase.auth.getSession()
+      if (data.session) router.replace('/dashboard')
+    })()
   }, [router])
 
   async function handleSubmit(e: React.FormEvent) {
