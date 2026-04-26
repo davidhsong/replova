@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export type LegalSection = { heading: string; content: ReactNode }
 
@@ -13,11 +14,13 @@ const TABS: { key: Page; label: string; href: string }[] = [
 
 function Logo() {
   return (
-    <div style={{ width: 26, height: 26, background: 'var(--accent)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-      </svg>
-    </div>
+    <Image
+      src="/replova-logo.png"
+      alt="Replova"
+      width={26}
+      height={26}
+      style={{ borderRadius: 9, flexShrink: 0 }}
+    />
   )
 }
 

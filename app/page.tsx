@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
@@ -10,15 +11,13 @@ export const metadata: Metadata = {
 function Logo({ size = 20 }: { size?: number }) {
   const box = size + 6;
   return (
-    <div style={{
-      width: box, height: box,
-      background: 'var(--accent)', borderRadius: Math.round(box * 0.35),
-      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-    }}>
-      <svg width={size * 0.58} height={size * 0.58} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-      </svg>
-    </div>
+    <Image
+      src="/replova-logo.png"
+      alt="Replova"
+      width={box}
+      height={box}
+      style={{ borderRadius: Math.round(box * 0.35), flexShrink: 0 }}
+    />
   );
 }
 

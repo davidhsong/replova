@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   IconMessage, IconUsers, IconSend, IconCard, IconCog,
-  IconChevDown, IconSignOut, IconLogo,
+  IconChevDown, IconSignOut,
 } from '@/components/icons'
 import { getSupabaseBrowser } from '@/lib/supabase'
 import LocationSwitcherClient from '@/components/dashboard/LocationSwitcherClient'
@@ -63,13 +64,13 @@ export default function DashboardSidebar({
       {/* Workspace switcher */}
       <div style={{ borderBottom: '1px solid var(--line)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px' }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: 7, background: 'var(--t1)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            flexShrink: 0, color: 'var(--bg)',
-          }}>
-            <IconLogo s={16} />
-          </div>
+          <Image
+            src="/replova-logo.png"
+            alt="Replova"
+            width={28}
+            height={28}
+            style={{ borderRadius: 7, flexShrink: 0 }}
+          />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
               fontSize: 13, fontWeight: 600, color: 'var(--t1)',
