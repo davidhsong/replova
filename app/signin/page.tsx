@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { getSupabaseBrowser } from '@/lib/supabase'
 
 type State = 'idle' | 'loading' | 'sent' | 'error'
 
@@ -21,9 +23,18 @@ function Logo({ size = 20 }: { size?: number }) {
 }
 
 export default function SignInPage() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [state, setState] = useState<State>('idle')
   const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!window.location.hash.includes('access_token')) return
+    const supabase = getSupabaseBrowser()
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) router.replace('/dashboard')
+    })
+  }, [router])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
