@@ -2,11 +2,11 @@
   "crons": [
     {
       "path": "/api/cron/sync-all-reviews",
-      "schedule": "0 */6 * * *"
+      "schedule": "0 2 * * *"
     },
     {
       "path": "/api/cron/process-reply-queue",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 1 * * *"
     },
     {
       "path": "/api/cron/update-scores",
