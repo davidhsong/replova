@@ -178,22 +178,6 @@ export default function Home() {
             </a>
             <span className="t-xs c-t3">30 days · no card</span>
           </div>
-          <div style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid var(--line)', display: 'flex', alignItems: 'center', gap: 32 }}>
-            <div>
-              <div className="t-mono" style={{ fontSize: 22, fontWeight: 600 }}>4,200<span className="c-t3">+</span></div>
-              <div className="t-xs c-t3">restaurants tracked</div>
-            </div>
-            <div className="vr" style={{ height: 32 }} />
-            <div>
-              <div className="t-mono" style={{ fontSize: 22, fontWeight: 600 }}>91<span className="c-t3">%</span></div>
-              <div className="t-xs c-t3">reply rate avg</div>
-            </div>
-            <div className="vr" style={{ height: 32 }} />
-            <div>
-              <div className="t-mono" style={{ fontSize: 22, fontWeight: 600 }}>5h<span className="c-t3"> /wk</span></div>
-              <div className="t-xs c-t3">saved per location</div>
-            </div>
-          </div>
         </div>
         <div className="fade-up" style={{ animationDelay: '80ms' }}>
           <HeroProductShot />
