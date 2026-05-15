@@ -37,10 +37,15 @@ export default function SignInPage() {
   }, [])
 
   useEffect(() => {
-    // Redirect already-authenticated users straight to the dashboard
+    // Redirect already-authenticated users straight to the dashboard.
+    // If the refresh token is stale, sign out silently so the bad cookies are cleared.
     void (async () => {
       const supabase = getSupabaseBrowser()
-      const { data: { user } } = await supabase.auth.getUser()
+      const { data: { user }, error } = await supabase.auth.getUser()
+      if (error) {
+        await supabase.auth.signOut()
+        return
+      }
       if (user) router.replace('/dashboard')
     })()
   }, [router])
