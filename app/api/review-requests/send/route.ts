@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { sendReviewRequestEmail } from '@/lib/reviewRequests'
+import { ACTIVE_LOCATION_COOKIE } from '@/lib/activeLocation'
 
 function delay(ms: number) {
   return new Promise(resolve => setTimeout(resolve, ms))
@@ -15,21 +16,43 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const admin = getSupabaseAdmin()
-
-  const { data: restaurant } = await admin
-    .from('restaurants')
-    .select('id, name')
-    .eq('owner_email', user.email)
-    .single()
-
-  if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
-
   const body = await req.json() as { restaurantId?: string; requestIds?: string[] }
 
-  if (body.restaurantId && body.restaurantId !== restaurant.id) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const admin = getSupabaseAdmin()
+  let restaurant: { id: string; name: string } | null = null
+
+  if (body.restaurantId) {
+    const { data } = await admin
+      .from('restaurants')
+      .select('id, name')
+      .eq('id', body.restaurantId)
+      .eq('owner_email', user.email!)
+      .maybeSingle()
+    restaurant = data
+  } else {
+    const activeId = cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value
+    if (activeId) {
+      const { data } = await admin
+        .from('restaurants')
+        .select('id, name')
+        .eq('id', activeId)
+        .eq('owner_email', user.email!)
+        .maybeSingle()
+      restaurant = data
+    }
+    if (!restaurant) {
+      const { data } = await admin
+        .from('restaurants')
+        .select('id, name')
+        .eq('owner_email', user.email!)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+      restaurant = data
+    }
   }
+
+  if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
 
   let query = admin
     .from('review_requests')

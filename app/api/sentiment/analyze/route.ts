@@ -17,15 +17,6 @@ export async function POST(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
-  // Verify restaurant ownership and check plan
-  const { data: restaurant } = await admin
-    .from('restaurants')
-    .select('id, owner_email')
-    .eq('owner_email', user.email)
-    .single()
-
-  if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
-
   const { data: account } = await admin
     .from('accounts')
     .select('plan')
@@ -40,14 +31,23 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // Look up review first, then verify restaurant ownership (supports multi-location users)
   const { data: review } = await admin
     .from('reviews')
-    .select('id')
+    .select('id, restaurant_id')
     .eq('id', reviewId)
-    .eq('restaurant_id', restaurant.id)
-    .single()
+    .maybeSingle()
 
   if (!review) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+
+  const { data: restaurant } = await admin
+    .from('restaurants')
+    .select('id')
+    .eq('id', review.restaurant_id)
+    .eq('owner_email', user.email!)
+    .maybeSingle()
+
+  if (!restaurant) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
 
   const result = await analyzeAndSaveReview(reviewId)
 

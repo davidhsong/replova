@@ -25,11 +25,59 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Replova",
+    default: "Replova — AI Review Management for Med Spas & Aesthetic Clinics",
     template: "%s | Replova",
   },
   description:
-    "AI-powered Google review replies for restaurants. Weekly drafts delivered every Monday.",
+    "Replova is AI-powered reputation management for med spas, aesthetic clinics, salons, and dental offices. Get AI-drafted Google review replies, sentiment analysis, competitor tracking, and weekly digest emails.",
+  keywords: [
+    "Replova",
+    "AI review replies",
+    "med spa reputation management",
+    "aesthetic clinic reviews",
+    "Google review management",
+    "salon review software",
+    "dental office reviews",
+    "AI reply generator",
+    "reputation management SaaS",
+  ],
+  metadataBase: new URL("https://replova.app"),
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    url: "https://replova.app",
+    siteName: "Replova",
+    title: "Replova — AI Review Management for Med Spas & Aesthetic Clinics",
+    description:
+      "AI-drafted Google review replies, sentiment analysis, competitor tracking, and weekly digests for med spas, aesthetic clinics, and salons.",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Replova — AI Review Management",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Replova — AI Review Management for Med Spas & Aesthetic Clinics",
+    description:
+      "AI-drafted Google review replies, sentiment analysis, and competitor tracking for aesthetic businesses.",
+    images: ["/og-image.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
 };
 
 export default function RootLayout({

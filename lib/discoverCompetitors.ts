@@ -18,11 +18,11 @@ function formatTypes(types: string[]): string {
   const tags = types.filter(t => !GENERIC_PLACE_TYPES.has(t))
     .map(t => t.replace(/_/g, ' '))
     .slice(0, 3)
-  return tags.join(', ') || 'restaurant'
+  return tags.join(', ') || 'local business'
 }
 
 export async function discoverCompetitorsWithClaude(
-  restaurant: { name: string; cuisineType: string | null },
+  restaurant: { name: string; businessType: string | null },
   candidates: PlaceSearchResult[],
   maxResults: number
 ): Promise<DiscoveredCompetitor[]> {
@@ -41,27 +41,27 @@ export async function discoverCompetitorsWithClaude(
   const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   let claudeResults: DiscoveredCompetitor[] = []
 
-  const cuisineContext = restaurant.cuisineType
-    ? `IMPORTANT: Only select restaurants that serve ${restaurant.cuisineType} cuisine or are a direct substitute. Exclude restaurants of clearly different cuisines.`
+  const businessTypeContext = restaurant.businessType
+    ? `IMPORTANT: Only select businesses that are the same type (${restaurant.businessType}) or a direct substitute. Exclude businesses in clearly different categories.`
     : ''
 
   try {
     const message = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 2048,
-      system: `You are a restaurant market analyst. Identify the most relevant same-cuisine competitors for a restaurant from a list of nearby options. A competitor is any place a customer would choose INSTEAD of the given restaurant.`,
+      system: `You are a local business market analyst. Identify the most relevant competitors for a business from a list of nearby options. A competitor is any place a customer would choose INSTEAD of the given business for the same service.`,
       messages: [{
         role: 'user',
-        content: `My restaurant:
+        content: `My business:
 Name: ${restaurant.name}
-Cuisine: ${restaurant.cuisineType ?? 'not specified'}
+Type: ${restaurant.businessType ?? 'not specified'}
 
-Nearby restaurants to evaluate:
+Nearby businesses to evaluate:
 ${JSON.stringify(formatted, null, 2)}
 
-${cuisineContext}
+${businessTypeContext}
 Select up to ${maxResults} competitors (or all candidates if fewer than ${maxResults} exist).
-Rank them: direct competitors first (same cuisine, similar price), then indirect.
+Rank them: direct competitors first (same type, similar positioning), then indirect.
 
 Return ONLY a valid JSON array — no markdown, no explanation:
 [{"placeId":"...","reason":"one sentence","competitorType":"direct"}]`,
@@ -86,7 +86,7 @@ Return ONLY a valid JSON array — no markdown, no explanation:
       .slice(0, maxResults - claudeResults.length)
       .map(c => ({
         placeId: c.placeId,
-        reason: 'Highly-rated nearby restaurant',
+        reason: 'Highly-rated nearby business',
         competitorType: 'indirect' as const,
       }))
     claudeResults = [...claudeResults, ...remaining]

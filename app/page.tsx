@@ -3,9 +3,41 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: { absolute: "Replova — Reply to every Google review in 60 seconds" },
+  title: { absolute: "Replova — AI Review Management for Med Spas & Aesthetic Clinics" },
   description:
-    "Replova monitors your Google Business reviews and drafts three ready-to-post replies for every new one. Professional, Warm, or Brief. Post directly to Google in under 60 seconds.",
+    "Replova monitors your Google Business reviews and drafts AI reply suggestions for every new one. Post directly to Google in seconds. Built for med spas, aesthetic clinics, salons, and dental offices.",
+  alternates: { canonical: "https://replova.app" },
+};
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Replova",
+  url: "https://replova.app",
+  applicationCategory: "BusinessApplication",
+  operatingSystem: "Web",
+  description:
+    "AI-powered reputation management for med spas, aesthetic clinics, salons, and dental offices. Get AI-drafted Google review replies, sentiment analysis, competitor tracking, and weekly digest emails.",
+  offers: {
+    "@type": "AggregateOffer",
+    priceCurrency: "USD",
+    lowPrice: "79",
+    highPrice: "349",
+    offerCount: "3",
+  },
+  brand: {
+    "@type": "Brand",
+    name: "Replova",
+  },
+  publisher: {
+    "@type": "Organization",
+    name: "Replova",
+    url: "https://replova.app",
+    logo: {
+      "@type": "ImageObject",
+      url: "https://replova.app/replova-logo.png",
+    },
+  },
 };
 
 function Logo({ size = 20 }: { size?: number }) {
@@ -39,8 +71,8 @@ function Stars({ rating, size = 11 }: { rating: number; size?: number }) {
 
 function HeroProductShot() {
   const faded = [
-    { stars: 5, name: 'Sofia L.', t: 'Best carbonara outside Rome.', time: 'Yesterday', op: 0.55 },
-    { stars: 4, name: 'Marco R.', t: 'Truffle pizza was excellent.', time: 'Apr 19', op: 0.32 },
+    { stars: 5, name: 'Sofia L.', t: 'Best facial I\'ve had in years.', time: 'Yesterday', op: 0.55 },
+    { stars: 4, name: 'Marco R.', t: 'The HydraFacial was excellent.', time: 'Apr 19', op: 0.32 },
   ];
 
   return (
@@ -94,7 +126,7 @@ function HeroProductShot() {
               <span className="pill pill-neg">Urgent · 1-star</span>
             </div>
             <p className="t-serif t-italic" style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--t2)', margin: 0 }}>
-              &ldquo;Service was slow tonight and my pasta came out cold. We waited 45 minutes.&rdquo;
+              &ldquo;Wait time was much longer than expected and staff seemed rushed. We waited nearly an hour.&rdquo;
             </p>
           </div>
           <span className="t-xs c-t4" style={{ flexShrink: 0 }}>3h</span>
@@ -111,7 +143,7 @@ function HeroProductShot() {
             ))}
           </div>
           <p style={{ fontSize: 12, color: 'var(--t2)', lineHeight: 1.55, margin: 0 }}>
-            Hi James — a 45-minute wait and cold food fall well below the standard we hold ourselves to. I&apos;d like the chance to make this right…
+            Hi James — a longer wait and rushed service fall well below the standard we hold ourselves to. I&apos;d like the chance to make this right…
           </p>
         </div>
       </div>
@@ -136,6 +168,10 @@ export default function Home() {
 
   return (
     <div style={{ background: 'var(--bg)', color: 'var(--t1)', minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
 
       {/* Nav */}
       <header style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(250,249,246,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid var(--line)' }}>
@@ -158,12 +194,12 @@ export default function Home() {
       {/* Hero */}
       <section style={{ maxWidth: 1140, margin: '0 auto', padding: '72px 32px 56px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'start' }}>
         <div className="fade-up">
-          <div className="t-eyebrow" style={{ marginBottom: 18 }}>Reputation management for restaurants</div>
+          <div className="t-eyebrow" style={{ marginBottom: 18 }}>Reputation management for med spas and local service businesses</div>
           <h1 className="t-serif" style={{ fontSize: 56, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: 22 }}>
             Reviews aren&apos;t<br />
             <span style={{ fontStyle: 'italic' }}>marketing.</span><br />
-            They&apos;re the menu<br />
-            after the meal.
+            They&apos;re the proof<br />
+            before the visit.
           </h1>
           <p style={{ fontSize: 16, color: 'var(--t2)', maxWidth: 430, marginBottom: 28, lineHeight: 1.6 }}>
             Replova reads every Google review the moment it lands, drafts a reply in your voice,
@@ -187,9 +223,9 @@ export default function Home() {
       {/* Trust strip */}
       <section style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto', padding: '24px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
-          <span className="t-eyebrow">In the kitchens of</span>
+          <span className="t-eyebrow">Trusted by</span>
           <div style={{ display: 'flex', gap: 36, alignItems: 'center', flexWrap: 'wrap' }}>
-            {['Bella Napoli', 'Casa Lupita', 'The Cured', 'Hudson & Coal', 'Ferment', 'Maison Petit'].map(n => (
+            {['Lumiere Aesthetics', 'The Skin Studio', 'Renewal Med Spa', 'Glow Theory', 'Elevate Wellness', 'Aria Beauty'].map(n => (
               <span key={n} className="t-serif t-italic" style={{ fontSize: 18, color: 'var(--t3)' }}>{n}</span>
             ))}
           </div>
@@ -206,7 +242,7 @@ export default function Home() {
             </h2>
           </div>
           <p style={{ fontSize: 16, color: 'var(--t2)', lineHeight: 1.7, alignSelf: 'end', maxWidth: 520 }}>
-            Most owner-operators write replies between covers, after a shift, or never. Replova writes
+            Most practice owners write replies between appointments, after a long day, or never. Replova writes
             them in your voice the second a review lands — three options, each in a different register,
             ready for one tap.
           </p>
@@ -257,18 +293,18 @@ export default function Home() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', border: '1px solid var(--line-md)', borderRadius: 14, overflow: 'hidden' }}>
             {([
               {
-                plan: 'Starter', price: 39, locs: '1 location', comps: '3 competitor slots', best: 'Single-site GMs',
+                plan: 'Solo', planKey: 'starter', price: 79, locs: '1 location', comps: '3 competitor slots', best: 'Solo practices',
                 features: ['AI reply drafts', 'Urgent alerts', 'Weekly digest', 'Review request campaigns'],
                 highlight: false,
               },
               {
-                plan: 'Growth', price: 99, locs: '5 locations', comps: '5 competitor slots', best: 'Small chains',
-                features: ['Everything in Starter', 'Reputation score', 'Sentiment analysis', 'Competitor tracking', 'Monthly PDF report'],
+                plan: 'Studio', planKey: 'growth', price: 179, locs: '5 locations', comps: '5 competitor slots', best: 'Multi-location studios',
+                features: ['Everything in Solo', 'Reputation score', 'Sentiment analysis', 'Competitor tracking', 'Monthly PDF report'],
                 highlight: true,
               },
               {
-                plan: 'Agency', price: 199, locs: '15 locations', comps: '10 competitor slots', best: 'Groups & agencies',
-                features: ['Everything in Growth', 'Custom reply persona', 'White-label PDF reports', 'Priority support'],
+                plan: 'Practice', planKey: 'agency', price: 349, locs: '15 locations', comps: '10 competitor slots', best: 'Groups & agencies',
+                features: ['Everything in Studio', 'Custom reply persona', 'White-label PDF reports', 'Priority support'],
                 highlight: false,
               },
             ] as const).map((p, i) => (
@@ -301,7 +337,7 @@ export default function Home() {
                   ))}
                 </div>
                 <a
-                  href={`/onboard?plan=${p.plan.toLowerCase()}`}
+                  href={`/onboard?plan=${p.planKey}`}
                   className={`btn ${p.highlight ? 'btn-primary' : 'btn-ghost'} btn-press`}
                   style={{ width: '100%', textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
@@ -317,13 +353,13 @@ export default function Home() {
       <section style={{ borderTop: '1px solid var(--line)', padding: '96px 32px', background: 'var(--bg)' }}>
         <div style={{ maxWidth: 880, margin: '0 auto', textAlign: 'center' }}>
           <h2 className="t-serif" style={{ fontSize: 48, lineHeight: 1.1, letterSpacing: '-0.02em', marginBottom: 18 }}>
-            Open the dashboard<br />before the lunch rush.
+            Open the dashboard<br />before the first appointment.
           </h2>
           <p style={{ fontSize: 16, color: 'var(--t2)', maxWidth: 540, margin: '0 auto 32px' }}>
-            Five minutes of setup. Thirty days free. After that, $39 a month for one location.
+            Five minutes of setup. Thirty days free. After that, $79 a month for one location.
           </p>
           <a href="/onboard" className="btn btn-primary btn-lg btn-press" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            Find my restaurant
+            Find my business
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>

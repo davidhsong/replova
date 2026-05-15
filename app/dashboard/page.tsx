@@ -8,6 +8,7 @@ import DemoMode from './DemoMode'
 import AutoDismissBanner from './AutoDismissBanner'
 import IntelligencePanel from '@/components/dashboard/IntelligencePanel'
 import StatTile from '@/components/dashboard/StatTile'
+import ProviderDashboard from '@/components/dashboard/ProviderDashboard'
 import type { Plan } from '@/lib/planLimits'
 
 type Restaurant = {
@@ -333,6 +334,14 @@ export default async function DashboardPage({
             topKeywords={topKeywords}
             staffShoutouts={staffShoutouts}
             hasCompetitors={hasCompetitors}
+            restaurantId={restaurant.id}
+            plan={plan}
+          />
+        </div>
+
+        {/* Provider / Team Reputation */}
+        <div style={{ marginTop: 40 }}>
+          <ProviderDashboard
             restaurantId={restaurant.id}
             plan={plan}
           />

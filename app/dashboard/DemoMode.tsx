@@ -8,12 +8,12 @@ import AutoDismissBanner from './AutoDismissBanner'
 const DEMO_REVIEWS = [
   {
     id: 'demo-1',
-    author: 'James K.',
-    rating: 1,
-    review_text: 'Waited 45 minutes for a table even though we had a reservation. The food was cold when it arrived and no one came to check on us the entire meal. Very disappointing — won\'t be coming back.',
-    reply_draft_1: 'Hi James, thank you for sharing your experience with us. I sincerely apologize — a 45-minute wait despite a reservation, cold food, and no table check-ins is completely unacceptable. This does not reflect our standards. I\'d appreciate the chance to speak with you directly and make this right. Please reach out to us at hello@restaurant.com.',
-    reply_draft_2: 'James, I\'m truly sorry your visit fell so far short. Cold food and a long wait with no attention from our team — that\'s not the experience we ever want a guest to have. We\'d love the opportunity to do better by you. Please reach out and we\'ll take care of you properly.',
-    reply_draft_3: 'Hi James, this is not acceptable and I sincerely apologize. Please contact us directly so we can make this right.',
+    author: 'Sarah M.',
+    rating: 2,
+    review_text: 'Had a consultation here for Botox. The appointment was rushed, the provider barely looked at my face before recommending a full treatment plan, and I felt pressured to book on the spot. Left feeling uncertain. Will try somewhere else.',
+    reply_draft_1: 'Hi Sarah, thank you for sharing your experience with us. I sincerely apologize — feeling rushed during your consultation and leaving without clear answers is not the experience we aim to provide. This does not reflect our standards. I would appreciate the opportunity to speak with you directly. Please reach out to us at hello@yourspa.com so we can make this right.',
+    reply_draft_2: 'Sarah, I\'m truly sorry your consultation fell so far short. Feeling pressured and uncertain after an appointment is never acceptable — our goal is always for you to leave feeling informed and confident. We\'d love the opportunity to make this right. Please reach out and we\'ll take care of you properly.',
+    reply_draft_3: 'Hi Sarah, this is not the experience we want for our guests and I sincerely apologize. Please contact us directly so we can make this right.',
     review_timestamp: Math.floor(Date.now() / 1000) - 7200,
     created_at: new Date(Date.now() - 7200000).toISOString(),
     status: 'drafted',

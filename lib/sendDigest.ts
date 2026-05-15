@@ -70,11 +70,12 @@ async function generateActionItems(opts: {
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 256,
       system:
-        'You are a restaurant advisor. Return ONLY a JSON array of 2-3 strings. ' +
+        'You are a reputation advisor for med spas, salons, and local service businesses. ' +
+        'Return ONLY a JSON array of 2-3 strings. ' +
         'Each string is a specific, actionable recommendation under 20 words. ' +
         'Base recommendations on the actual data provided. ' +
-        "Examples: 'Respond to the 3-star review from Tuesday before it affects your rating' " +
-        "or 'Friday nights keep getting slow service complaints — review staffing levels'",
+        "Examples: 'Respond to the 2-star consultation complaint before it affects your score' " +
+        "or 'Laser treatment reviews are trending negative this week — review provider protocols'",
       messages: [
         {
           role: 'user',
@@ -162,7 +163,7 @@ export async function buildDigestData(restaurantId: string): Promise<DigestData>
         .lt('sent_at', weekEnd.toISOString()),
     ])
 
-  const restaurantName = restaurantRes.data?.name ?? 'Your Restaurant'
+  const restaurantName = restaurantRes.data?.name ?? 'Your Business'
   const thisWeek = thisWeekRes.data ?? []
   const prevWeek = prevWeekRes.data ?? []
 
@@ -502,7 +503,7 @@ export async function sendWeeklyDigest(restaurant: {
   const { error } = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL ?? 'Replova <onboarding@resend.dev>',
     to: restaurant.owner_email,
-    subject: `Your Weekly Reputation Report — ${data.restaurantName}`,
+    subject: `Weekly Reputation Report — ${data.restaurantName}`,
     html,
   })
 

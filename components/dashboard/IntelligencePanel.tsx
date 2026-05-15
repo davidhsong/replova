@@ -199,7 +199,7 @@ export default function IntelligencePanel({
       {/* Staff shoutouts */}
       {staffShoutouts.length > 0 && (
         <div style={CARD}>
-          <div style={EYEBROW}>Mentioned by name</div>
+          <div style={EYEBROW}>Team mentioned by name</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {staffShoutouts.map(name => (
               <span key={name} style={{
@@ -228,7 +228,7 @@ export default function IntelligencePanel({
       <PanelLink
         href="/dashboard/competitors"
         label="vs. Competitors"
-        description={hasCompetitors ? 'View rating comparison' : 'Track nearby restaurants'}
+        description={hasCompetitors ? 'View rating comparison' : 'Track nearby competitors'}
       />
 
       <PanelLink

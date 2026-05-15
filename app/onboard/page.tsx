@@ -29,7 +29,7 @@ function Logo({ size = 20 }: { size?: number }) {
 }
 
 const STEP_LABELS: Record<Step, string> = {
-  search: 'Find restaurant',
+  search: 'Find business',
   confirm: 'Confirm',
   email: 'Your email',
   success: 'Done',
@@ -192,14 +192,14 @@ function OnboardPageContent() {
   }
 
   const headings: Record<Step, string> = {
-    search: addMode ? 'Add a new location.' : 'Find your restaurant.',
+    search: addMode ? 'Add a new location.' : 'Find your business.',
     confirm: 'Is this your business?',
     email: 'Where should we send the replies?',
     success: '',
   }
 
   const subheadings: Record<Step, string> = {
-    search: addMode ? 'Search for the location you want to add.' : 'We use Google Places to make sure we sync from the right listing.',
+    search: addMode ? 'Search for the location you want to add.' : 'We use Google Places to connect your business listing and start syncing reviews.',
     confirm: 'Verify we found the right listing.',
     email: "We'll send you AI suggested replies whenever new reviews come in.",
     success: '',
@@ -221,7 +221,7 @@ function OnboardPageContent() {
             Click it to access your dashboard.
           </p>
           <p className="t-xs c-t4" style={{ marginTop: 16 }}>
-            You&apos;ll receive suggested replies as new reviews come in.
+            You&apos;ll get AI-drafted replies and alerts as new reviews come in.
           </p>
         </div>
       </div>
@@ -272,7 +272,7 @@ function OnboardPageContent() {
                 value={restaurantName}
                 onChange={e => setRestaurantName(e.target.value)}
                 className="field field-lg"
-                placeholder="Bella Napoli"
+                placeholder="Glow Aesthetics"
                 autoFocus
               />
             </div>
@@ -381,7 +381,7 @@ function OnboardPageContent() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="field field-lg"
-                placeholder="you@restaurant.com"
+                placeholder="owner@yourpractice.com"
                 autoFocus
               />
               <p className="t-xs c-t4" style={{ marginTop: 6 }}>Suggested replies will be sent here whenever new reviews come in.</p>

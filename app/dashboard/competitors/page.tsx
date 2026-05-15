@@ -405,7 +405,7 @@ export default function CompetitorsPage() {
                 <thead>
                   <tr>
                     <th style={{ width: 44 }}>#</th>
-                    <th>Restaurant</th>
+                    <th>Business</th>
                     <th style={{ width: 56 }}>Source</th>
                     <th style={{ width: 56 }}>Price</th>
                     <th style={{ width: 72, textAlign: 'right' }}>Rating</th>
@@ -519,7 +519,7 @@ export default function CompetitorsPage() {
         ) : (
           <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
             <p className="t-serif t-italic c-t3" style={{ fontSize: 18, marginBottom: 6 }}>No competitors tracked yet.</p>
-            <p className="t-xs c-t3">Search above, or use auto-discover to find nearby restaurants.</p>
+            <p className="t-xs c-t3">Search above, or use auto-discover to find nearby competitors.</p>
           </div>
         )}
 

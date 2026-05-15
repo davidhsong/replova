@@ -8,6 +8,22 @@ import { discoverCompetitorsWithClaude } from '@/lib/discoverCompetitors'
 import { getPlanLimits } from '@/lib/planLimits'
 import type { Plan } from '@/lib/planLimits'
 
+function getGooglePlacesType(businessType: string | null): string {
+  const map: Record<string, string> = {
+    medical_spa: 'spa',
+    botox_clinic: 'beauty_salon',
+    laser_clinic: 'beauty_salon',
+    beauty_salon: 'beauty_salon',
+    nail_salon: 'beauty_salon',
+    massage_therapy: 'spa',
+    dental_office: 'dentist',
+    chiropractor: 'physiotherapist',
+    physical_therapy: 'physiotherapist',
+    wellness_center: 'health',
+  }
+  return map[businessType ?? ''] ?? 'establishment'
+}
+
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
   const supabase = createClient(cookieStore)
@@ -20,7 +36,7 @@ export async function POST(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
-  // Verify ownership, get cuisine and name for Claude context
+  // Verify ownership, get business type and name for Claude context
   const { data: restaurant } = await admin
     .from('restaurants')
     .select('id, name, place_id, cuisine_type')
@@ -30,7 +46,7 @@ export async function POST(req: NextRequest) {
 
   if (!restaurant) return NextResponse.json({ error: 'Not found' }, { status: 404 })
   if (!restaurant.place_id) {
-    return NextResponse.json({ error: 'Restaurant has no Google Place ID. Please reconnect your Google Business profile.' }, { status: 400 })
+    return NextResponse.json({ error: 'Business has no Google Place ID. Please reconnect your Google Business profile.' }, { status: 400 })
   }
 
   // Use plan-based competitor limit
@@ -65,7 +81,7 @@ export async function POST(req: NextRequest) {
   const candidates = await findNearbyCompetitors(
     restaurant.place_id,
     restaurant.place_id,
-    restaurant.cuisine_type
+    getGooglePlacesType(restaurant.cuisine_type)
   )
 
   const fresh = candidates.filter(c => !alreadyTracked.has(c.placeId))
@@ -75,7 +91,7 @@ export async function POST(req: NextRequest) {
 
   // 2. Use Claude to intelligently rank and select the best competitors
   const selected = await discoverCompetitorsWithClaude(
-    { name: restaurant.name, cuisineType: restaurant.cuisine_type },
+    { name: restaurant.name, businessType: restaurant.cuisine_type },
     fresh,
     slotsLeft
   )

@@ -129,7 +129,7 @@ export async function getCompetitorComparison(restaurantId: string): Promise<Com
       .eq('active', true),
   ])
 
-  const restaurantName: string = restaurantRes.data?.name ?? 'Your Restaurant'
+  const restaurantName: string = restaurantRes.data?.name ?? 'Your Business'
   const activeCompetitors = competitorsRes.data ?? []
 
   // Get your latest score

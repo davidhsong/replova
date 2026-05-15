@@ -25,23 +25,23 @@ export async function POST(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
-  // Verify the review belongs to this user's restaurant
+  // Verify ownership via the review's restaurant_id (supports multi-location users)
+  const { data: review } = await admin
+    .from('reviews')
+    .select('id, restaurant_id')
+    .eq('id', reviewId)
+    .maybeSingle<{ id: string; restaurant_id: string }>()
+
+  if (!review) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+
   const { data: restaurant } = await admin
     .from('restaurants')
     .select('id')
-    .eq('owner_email', user.email)
-    .single<{ id: string }>()
+    .eq('id', review.restaurant_id)
+    .eq('owner_email', user.email!)
+    .maybeSingle<{ id: string }>()
 
-  if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
-
-  const { data: review } = await admin
-    .from('reviews')
-    .select('id')
-    .eq('id', reviewId)
-    .eq('restaurant_id', restaurant.id)
-    .single<{ id: string }>()
-
-  if (!review) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+  if (!restaurant) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
 
   try {
     const { queueId } = await queueReplyForReview(reviewId)

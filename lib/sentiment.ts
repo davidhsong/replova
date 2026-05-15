@@ -8,7 +8,7 @@ export interface SentimentResult {
   summary: string
   keywords: string[]
   staffMentions: string[]
-  menuMentions: string[]
+  treatmentMentions: string[]
 }
 
 function fallbackFromRating(rating: number): SentimentResult {
@@ -18,7 +18,7 @@ function fallbackFromRating(rating: number): SentimentResult {
     summary: 'Unable to analyze review text.',
     keywords: [],
     staffMentions: [],
-    menuMentions: [],
+    treatmentMentions: [],
   }
 }
 
@@ -36,14 +36,17 @@ export async function analyzeSentiment(
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 512,
       system:
-        'You are a restaurant review analyzer. Return ONLY a valid JSON object with no markdown, ' +
+        'You are a med spa and local service business review analyzer. Return ONLY a valid JSON object with no markdown, ' +
         'no code fences, no explanation. Analyze the review text and return exactly these fields: ' +
         'score (float -1.0 to 1.0), label (positive/neutral/negative), ' +
         'summary (one sentence describing the main sentiment and topics), ' +
-        'keywords (array, pick relevant from: food quality, service, wait time, ambiance, ' +
-        'price, cleanliness, value, staff friendliness), ' +
-        'staffMentions (array of first names of staff mentioned by name), ' +
-        'menuMentions (array of specific food or drink items mentioned).',
+        'keywords (array, pick relevant from: treatment results, staff expertise, ' +
+        'consultation quality, cleanliness, pain level, pricing transparency, ' +
+        'results longevity, booking experience, before/after photos, product recommendations), ' +
+        'staffMentions (array of first names of injectors, estheticians, or staff mentioned by name), ' +
+        'treatmentMentions (array of specific treatments or services mentioned, e.g. Botox, filler, ' +
+        'HydraFacial, laser hair removal, microneedling, chemical peel, CoolSculpting, PRP, Sculptra, ' +
+        'lip filler, lash lift, brow lamination, waxing, facial, massage, body contouring).',
       messages: [
         {
           role: 'user',
@@ -87,7 +90,7 @@ export async function analyzeAndSaveReview(reviewId: string): Promise<SentimentR
       summary: review.sentiment_summary,
       keywords: review.keywords ?? [],
       staffMentions: review.staff_mentions ?? [],
-      menuMentions: review.menu_mentions ?? [],
+      treatmentMentions: review.menu_mentions ?? [],
     }
   }
 
@@ -101,7 +104,7 @@ export async function analyzeAndSaveReview(reviewId: string): Promise<SentimentR
       sentiment_summary: result.summary,
       keywords: result.keywords,
       staff_mentions: result.staffMentions,
-      menu_mentions: result.menuMentions,
+      menu_mentions: result.treatmentMentions,
     })
     .eq('id', reviewId)
 

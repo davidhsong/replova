@@ -19,38 +19,60 @@ export async function POST() {
 
   const admin = getSupabaseAdmin()
 
-  const { data: restaurant } = await admin
-    .from('restaurants')
-    .select('id, stripe_customer_id')
-    .eq('owner_email', user.email)
-    .single()
+  // stripe_customer_id lives on accounts, not restaurants
+  const { data: account } = await admin
+    .from('accounts')
+    .select('stripe_customer_id')
+    .eq('owner_email', user.email!)
+    .maybeSingle()
 
-  if (restaurant?.stripe_customer_id) {
+  if (account?.stripe_customer_id) {
     try {
       const stripe = getStripe()
-      // Cancel all active subscriptions for this customer
       const subscriptions = await stripe.subscriptions.list({
-        customer: restaurant.stripe_customer_id,
+        customer: account.stripe_customer_id,
         status: 'active',
       })
       await Promise.all(
-        subscriptions.data.map(sub =>
-          stripe.subscriptions.cancel(sub.id)
-        )
+        subscriptions.data.map(sub => stripe.subscriptions.cancel(sub.id))
       )
     } catch (err) {
       console.error('[account/delete] Stripe cancellation failed:', err)
-      // Proceed with deletion even if Stripe fails — Stripe webhook will handle edge cases
     }
   }
 
-  if (restaurant) {
-    // Delete all reviews for this restaurant first (FK constraint)
-    await admin.from('reviews').delete().eq('restaurant_id', restaurant.id)
-    await admin.from('restaurants').delete().eq('id', restaurant.id)
+  // Get all restaurants owned by this user
+  const { data: restaurants } = await admin
+    .from('restaurants')
+    .select('id')
+    .eq('owner_email', user.email!)
+
+  const restaurantIds = (restaurants ?? []).map(r => r.id)
+
+  if (restaurantIds.length > 0) {
+    // Get competitor IDs so we can delete their snapshots
+    const { data: competitors } = await admin
+      .from('competitors')
+      .select('id')
+      .in('restaurant_id', restaurantIds)
+
+    const competitorIds = (competitors ?? []).map(c => c.id)
+    if (competitorIds.length > 0) {
+      await admin.from('competitor_snapshots').delete().in('competitor_id', competitorIds)
+    }
+
+    // Delete all child rows before restaurants (FK constraints)
+    await admin.from('review_requests').delete().in('restaurant_id', restaurantIds)
+    await admin.from('reply_queue').delete().in('restaurant_id', restaurantIds)
+    await admin.from('reputation_scores').delete().in('restaurant_id', restaurantIds)
+    await admin.from('competitors').delete().in('restaurant_id', restaurantIds)
+    await admin.from('restaurant_settings').delete().in('restaurant_id', restaurantIds)
+    await admin.from('reviews').delete().in('restaurant_id', restaurantIds)
+    await admin.from('restaurants').delete().in('restaurant_id', restaurantIds)
   }
 
-  // Delete the Supabase auth user
+  await admin.from('accounts').delete().eq('owner_email', user.email!)
+
   const { error: deleteUserError } = await admin.auth.admin.deleteUser(user.id)
   if (deleteUserError) {
     console.error('[account/delete] Failed to delete auth user:', deleteUserError.message)

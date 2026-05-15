@@ -25,9 +25,9 @@ const PLAN_META: Record<Plan, {
   competitors: number
   tagline: string
 }> = {
-  starter: { label: 'Starter', price: 39,  locations: 1,  competitors: 3,  tagline: 'Single-site operator' },
-  growth:  { label: 'Growth',  price: 99,  locations: 5,  competitors: 5,  tagline: 'Small chains' },
-  agency:  { label: 'Agency',  price: 199, locations: 15, competitors: 10, tagline: 'Groups & agencies' },
+  starter: { label: 'Solo',     price: 79,  locations: 1,  competitors: 3,  tagline: 'Solo practices' },
+  growth:  { label: 'Studio',   price: 179, locations: 5,  competitors: 5,  tagline: 'Multi-location studios' },
+  agency:  { label: 'Practice', price: 349, locations: 15, competitors: 10, tagline: 'Multi-practice groups' },
 }
 
 const PLAN_FEATURES: Record<Plan, { features: string[]; missing: string[] }> = {

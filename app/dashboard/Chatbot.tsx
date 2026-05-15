@@ -44,7 +44,7 @@ const PLAN_PRICE: Record<string, string> = {
 }
 
 const CHIPS = [
-  { label: 'My restaurant info', input: 'Tell me about my account' },
+  { label: 'My business info', input: 'Tell me about my account' },
   { label: 'Connect Google', input: 'How do I connect Google Business?' },
   { label: 'Upgrade my plan', input: 'What plan am I on?' },
   { label: 'Track a competitor', input: 'How do I track a competitor?' },
@@ -79,10 +79,10 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
   // ── Business / restaurant name ────────────────────────────────────────────
 
   if (
-    m(q, 'my business name', 'my restaurant name', 'restaurant called', 'business called', 'what restaurant', 'restaurant am i', 'business am i', "what's my restaurant", "what's my business") ||
+    m(q, 'my business name', 'my restaurant name', 'restaurant called', 'business called', 'what restaurant', 'restaurant am i', 'business am i', "what's my restaurant", "what's my business", 'what practice', 'my practice', 'practice called') ||
     q === 'my name' || q === 'what is my name' || q === "what's my name"
   ) {
-    return { text: `Your restaurant is called "${ctx.restaurantName}".` }
+    return { text: `Your business is called "${ctx.restaurantName}".` }
   }
 
   // ── Email ─────────────────────────────────────────────────────────────────
@@ -596,7 +596,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'auto discover', 'auto-discover', 'find competitors automatically', 'nearby competitor')) {
     return {
-      text: `Click "Auto-discover" on the Competitors page to automatically find nearby restaurants by cuisine and location.`,
+      text: `Click "Auto-discover" on the Competitors page to automatically find nearby competitors by business type and location.`,
       link: { label: 'Go to Competitors', href: '/dashboard/competitors' },
     }
   }

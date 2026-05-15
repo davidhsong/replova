@@ -125,6 +125,7 @@ export interface Competitor {
   website: string | null
   price_level: number | null
   cuisine_tags: string[] | null
+  source: 'manual' | 'auto' | null
   active: boolean
   created_at: string
 }

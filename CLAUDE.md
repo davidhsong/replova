@@ -1,6 +1,6 @@
 # Replova
 
-Restaurant reputation management SaaS. AI-powered review reply generation, sentiment analysis, competitor tracking, review request campaigns, and weekly digest emails.
+Local service business reputation management SaaS. Primary focus: med spas, aesthetic clinics, salons, dental offices, and similar businesses. AI-powered review reply generation, sentiment analysis, competitor tracking, review request campaigns, and weekly digest emails.
 
 Stack: Next.js (App Router), TypeScript, Tailwind CSS, Supabase, Claude API, Resend, Stripe, Vercel.
 
@@ -62,25 +62,25 @@ supabase/             # DB migrations
 - `POST   api/competitors/` — Adds a competitor (enforces plan limit)
 - `DELETE api/competitors/` — Soft-deletes competitor (sets active: false)
 - `GET    api/competitors/search/` — Searches Google Places for competitors
-- `POST   api/competitors/auto-discover/` — Auto-discovers competitors by cuisine/location
+- `POST   api/competitors/auto-discover/` — Auto-discovers competitors by business type/location
 - `GET    api/competitors/comparison/` — Returns rating comparison and ranking data
 
 ### Billing (Stripe)
-- `GET  api/create-checkout/` — Creates Stripe checkout session (30-day trial); accepts `?plan=starter|growth|agency`
+- `GET  api/create-checkout/` — Creates Stripe checkout session (30-day trial); accepts `?plan=solo|studio|practice`
 - `GET  api/billing-portal/` — Redirects to Stripe customer portal (change plan, cancel, update payment)
 - `POST api/webhooks/stripe/` — Handles: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, `invoice.payment_succeeded`
 
 ### Restaurant & Account
 - `GET   api/restaurant/` — Returns current restaurant info with plan and connectivity status
 - `GET   api/active-location/` — Returns active location from cookie (multi-location support)
-- `PATCH api/settings/` — Updates restaurant_settings (persona requires Agency; logo_url requires Agency)
+- `PATCH api/settings/` — Updates restaurant_settings (persona requires Practice; logo_url requires Practice)
 - `POST  api/terms/accept/` — Records terms acceptance timestamp on accounts row
 - `POST  api/account/delete/` — Deletes account and all restaurants
 - `POST  api/restaurants/create/` — Creates new restaurant record during onboarding
 
 ### Other
 - `POST api/onboard/search-place/` — Searches Google Places during signup
-- `GET  api/reports/monthly/` — Generates monthly PDF report (white-label logo for Agency)
+- `GET  api/reports/monthly/` — Generates monthly PDF report (white-label logo for Practice)
 - `POST api/alerts/test/` — Sends a test negative review alert email
 
 ### Cron Jobs (Vercel scheduled)
@@ -123,7 +123,7 @@ Key components:
 | `lib/supabase.ts` | Admin (service role) and browser Supabase clients |
 | `lib/generateReplies.ts` | 3 reply variants via Claude Sonnet (professional, warm, brief) |
 | `lib/generateSingleReply.ts` | Single reply with custom persona for auto-reply |
-| `lib/sentiment.ts` | Sentiment analysis + keyword/staff/menu extraction via Claude Haiku |
+| `lib/sentiment.ts` | Sentiment analysis + keyword/staff/treatment extraction via Claude Haiku (med-spa topics; menu_mentions DB column stores treatment mentions) |
 | `lib/syncReviews.ts` | Core sync: fetch GMB/Places → dedupe → generate replies → send alerts; concurrency via p-limit |
 | `lib/replyQueue.ts` | Reply queue management (queue, approve, scheduled send to GMB) |
 | `lib/reputationScore.ts` | Composite score: 35% rating, 20% volume, 25% response rate, 20% sentiment |
@@ -135,7 +135,7 @@ Key components:
 | `lib/reviewRequests.ts` | Email templates for review requests with open/click tracking |
 | `lib/alerts.ts` | Negative review alert emails with suggested replies |
 | `lib/sendDigest.ts` | Weekly digest email with AI-generated action items |
-| `lib/pdfReport.tsx` | Monthly PDF report via @react-pdf/renderer (white-label for Agency) |
+| `lib/pdfReport.tsx` | Monthly PDF report via @react-pdf/renderer (white-label for Practice) |
 | `lib/activeLocation.ts` | Manages active location cookie for multi-location support |
 | `lib/baseUrl.ts` | Resolves BASE_URL from env or Vercel URL |
 | `lib/database.types.ts` | TypeScript types for all Supabase tables |
@@ -145,11 +145,11 @@ Key components:
 ## Database Schema
 
 ### Core Tables
-- **restaurants** — id, name, place_id, owner_email, active, google OAuth tokens, google_location_name, report_logo_url
-- **reviews** — id, restaurant_id, google_review_name, author, rating, review_text, review_timestamp, reply_draft_{1,2,3}, status, replied_at, owner_reply_text, sentiment fields (score, label, summary, keywords[], staff_mentions[], menu_mentions[])
+- **restaurants** — id, name, place_id, owner_email, active, google OAuth tokens, google_location_name, report_logo_url, cuisine_type (stores business type: medical_spa, botox_clinic, laser_clinic, etc. — used for competitor discovery; column name unchanged from original)
+- **reviews** — id, restaurant_id, google_review_name, author, rating, review_text, review_timestamp, reply_draft_{1,2,3}, status, replied_at, owner_reply_text, sentiment fields (score, label, summary, keywords[], staff_mentions[], menu_mentions[] — menu_mentions stores treatment/service mentions, repurposed from original menu item tracking)
 
 ### Extended Tables (from migrations)
-- **accounts** — owner_email (unique), plan (starter/growth/agency), stripe_customer_id, created_at, terms_accepted_at
+- **accounts** — owner_email (unique), plan (starter/growth/agency — DB values; displayed as Solo/Studio/Practice), stripe_customer_id, created_at, terms_accepted_at
 - **restaurant_settings** — auto_reply (bool), notifications (bool), persona (text), digest schedule, recovery offers config
 - **reply_queue** — review_id, restaurant_id, generated/edited reply, scheduled_send_at, approved (bool), sent (bool)
 - **reputation_scores** — daily snapshot: composite score (0–100), avg_rating, total_reviews, reviews_this_month, response_rate, avg_sentiment
@@ -165,9 +165,9 @@ Key components:
 
 | Plan | Price | Locations | Competitors/location | Extras |
 |------|-------|-----------|----------------------|--------|
-| Starter | $39/mo | 1 | 3 | — |
-| Growth | $99/mo | 5 | 5 | Sentiment, scores, PDF reports |
-| Agency | $199/mo | 15 | 10 | + Custom persona, white-label reports |
+| Solo | $79/mo | 1 | 3 | — |
+| Studio | $179/mo | 5 | 5 | Sentiment, scores, PDF reports |
+| Practice | $349/mo | 15 | 10 | + Custom persona, white-label reports |
 
 Plan limits and feature gates defined in `lib/planLimits.ts`. All plans include: AI reply drafts, urgent review alerts, weekly digest, review request campaigns.
 
@@ -232,7 +232,7 @@ CRON_SECRET                            # Bearer token for cron route auth
 ## Billing Notes
 
 - 30-day trial via Stripe checkout `trial_period_days: 30`.
-- `inTrial` = restaurant active AND no `stripe_customer_id` AND within 30 days of `restaurant.created_at`. If user completed checkout during trial, trial end date comes from Stripe (`sub.trial_end`).
+- `inTrial` = business active AND no `stripe_customer_id` AND within 30 days of `restaurant.created_at`. If user completed checkout during trial, trial end date comes from Stripe (`sub.trial_end`).
 - Plan changes and cancellations go through the Stripe billing portal (`/api/billing-portal`). Proration handled by Stripe.
 - Stripe webhook keeps `accounts.plan` and `restaurants.active` in sync with subscription state.
 - Billing page always shows all three plan tiers with upgrade/downgrade buttons regardless of Stripe status.

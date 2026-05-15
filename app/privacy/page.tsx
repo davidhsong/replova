@@ -11,7 +11,7 @@ const sections: LegalSection[] = [
       <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 0 }}>
         {[
           'Your email address (used to sign in and send weekly digests)',
-          'Your restaurant name and Google Place ID (to fetch reviews)',
+          'Your business name and Google Place ID (to fetch reviews)',
           'Optional profile information: display name, phone number, profile picture',
           'Google reviews fetched via the Google Places API (publicly available data)',
           'Payment information (processed by Stripe — we never see your card details)',

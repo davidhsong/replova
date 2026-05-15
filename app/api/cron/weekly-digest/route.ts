@@ -8,7 +8,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { data: restaurants, error } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin()
+
+  const { data: restaurants, error } = await admin
     .from('restaurants')
     .select('id, name, place_id, owner_email')
     .eq('active', true)
@@ -17,10 +19,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  // Respect the user's digest_enabled preference
+  const restaurantIds = (restaurants ?? []).map(r => r.id)
+  const { data: disabledSettings } = restaurantIds.length > 0
+    ? await admin
+        .from('restaurant_settings')
+        .select('restaurant_id')
+        .in('restaurant_id', restaurantIds)
+        .eq('digest_enabled', false)
+    : { data: [] as { restaurant_id: string }[] }
+
+  const disabledIds = new Set(disabledSettings?.map(s => s.restaurant_id) ?? [])
+  const eligible = (restaurants ?? []).filter(r => !disabledIds.has(r.id))
+
   let processed = 0
   let errors = 0
 
-  for (const restaurant of restaurants ?? []) {
+  for (const restaurant of eligible) {
     try {
       await sendWeeklyDigest(restaurant)
       processed++

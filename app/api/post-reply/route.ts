@@ -95,16 +95,28 @@ export async function POST(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
+  // Look up review first, then get restaurant via review.restaurant_id (supports multi-location)
+  const { data: review } = await admin
+    .from('reviews')
+    .select('id, restaurant_id, author, review_text, google_review_name')
+    .eq('id', reviewId)
+    .maybeSingle<Review>()
+
+  if (!review) {
+    return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+  }
+
   const { data: restaurant } = await admin
     .from('restaurants')
     .select(
       'id, place_id, google_access_token, google_refresh_token, google_token_expires_at, google_location_name'
     )
-    .eq('owner_email', user.email)
-    .single<Restaurant>()
+    .eq('id', review.restaurant_id)
+    .eq('owner_email', user.email!)
+    .maybeSingle<Restaurant>()
 
   if (!restaurant) {
-    return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
+    return NextResponse.json({ error: 'Review not found' }, { status: 404 })
   }
 
   if (!restaurant.google_refresh_token) {
@@ -122,18 +134,6 @@ export async function POST(req: NextRequest) {
       },
       { status: 400 }
     )
-  }
-
-  // Verify this review belongs to the user's restaurant
-  const { data: review } = await admin
-    .from('reviews')
-    .select('id, restaurant_id, author, review_text, google_review_name')
-    .eq('id', reviewId)
-    .eq('restaurant_id', restaurant.id)
-    .single<Review>()
-
-  if (!review) {
-    return NextResponse.json({ error: 'Review not found' }, { status: 404 })
   }
 
   const accessToken = await getValidGoogleToken(restaurant, admin)

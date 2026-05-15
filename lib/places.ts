@@ -33,7 +33,7 @@ interface PlaceReviewsResult {
 export async function searchNearbyPlaces(query: string): Promise<PlaceSearchResult[]> {
   const params = new URLSearchParams({
     query,
-    type: 'restaurant',
+    type: 'establishment',
     key: API_KEY!,
   })
 
@@ -164,8 +164,8 @@ export async function findNearbyCompetitors(
   async function nearbySearch(keyword?: string): Promise<NearbyResult[]> {
     const params = new URLSearchParams({
       location: `${lat},${lng}`,
-      radius: '2000',
-      type: 'restaurant',
+      radius: '8000',
+      type: 'establishment',
       key: API_KEY!,
     })
     if (keyword) params.set('keyword', keyword)

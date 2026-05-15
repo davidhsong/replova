@@ -17,7 +17,9 @@ export async function GET() {
     .from('restaurants')
     .select('id')
     .eq('owner_email', user.email)
-    .single()
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
 
   if (!restaurant) {
     return NextResponse.redirect(new URL('/onboard', BASE_URL))

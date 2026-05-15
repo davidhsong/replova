@@ -66,7 +66,7 @@ function Toggle({ on, onChange, disabled = false }: {
   )
 }
 
-function LockedNotice({ children, plan = 'Agency' }: { children: React.ReactNode; plan?: string }) {
+function LockedNotice({ children, plan = 'Practice' }: { children: React.ReactNode; plan?: string }) {
   return (
     <div style={{ position: 'relative', padding: 14, background: 'var(--surface-2)', border: '1px dashed var(--line-md)', borderRadius: 'var(--r-4)' }}>
       <div style={{ opacity: 0.4, pointerEvents: 'none' }}>{children}</div>
@@ -110,9 +110,9 @@ export default function SettingsPage() {
   const [savedPersona, setSavedPersona] = useState('')
   const [regenerating, setRegenerating] = useState(false)
 
-  const [cuisineType, setCuisineType] = useState('')
+  const [businessType, setBusinessType] = useState('')
   const [savingCuisine, setSavingCuisine] = useState(false)
-  const [cuisineResult, setCuisineResult] = useState<{ ok: boolean; msg: string } | null>(null)
+  const [businessTypeResult, setBusinessTypeResult] = useState<{ ok: boolean; msg: string } | null>(null)
 
   const [reportLogoUrl, setReportLogoUrl] = useState('')
   const [savingLogo, setSavingLogo] = useState(false)
@@ -139,7 +139,7 @@ export default function SettingsPage() {
             negative_threshold: data.negative_threshold ?? 3,
           })
           setSavedPersona(persona)
-          setCuisineType(data.cuisine_type ?? '')
+          setBusinessType(data.cuisine_type ?? '')
           setReportLogoUrl(data.report_logo_url ?? '')
         }
         setReplySettingsLoaded(true)
@@ -182,7 +182,7 @@ export default function SettingsPage() {
         token_exchange_failed: 'Failed to connect Google. Please try again.',
         missing_tokens: 'Google did not return the required permissions.',
         state_mismatch: 'Connection failed due to a security check. Please try again.',
-        restaurant_not_found: 'Could not find your restaurant. Please try again.',
+        restaurant_not_found: 'Could not find your business. Please try again.',
         invalid_callback: 'Invalid callback. Please try again.',
       }
       setGoogleNotice(messages[oauthError] ?? 'Google connection failed. Please try again.')
@@ -252,20 +252,20 @@ export default function SettingsPage() {
 
   async function handleSaveCuisine() {
     setSavingCuisine(true)
-    setCuisineResult(null)
+    setBusinessTypeResult(null)
     try {
       const res = await fetch('/api/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cuisine_type: cuisineType || null }),
+        body: JSON.stringify({ cuisine_type: businessType || null }),
       })
       if (!res.ok) {
         const data = await res.json()
         throw new Error(data.error ?? 'Save failed')
       }
-      setCuisineResult({ ok: true, msg: 'Saved.' })
+      setBusinessTypeResult({ ok: true, msg: 'Saved.' })
     } catch (err) {
-      setCuisineResult({ ok: false, msg: err instanceof Error ? err.message : 'Save failed.' })
+      setBusinessTypeResult({ ok: false, msg: err instanceof Error ? err.message : 'Save failed.' })
     } finally {
       setSavingCuisine(false)
     }
@@ -473,55 +473,46 @@ export default function SettingsPage() {
           )}
         </section>
 
-        {/* Restaurant profile */}
+        {/* Business profile */}
         <section style={{ marginBottom: 52 }}>
-          <SectionHeader kicker="Restaurant" title="Profile" sub="Helps auto-discover competitors that serve the same cuisine." />
-          <Row label="Cuisine type" hint="What kind of food do you serve?">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <select
-                value={cuisineType}
-                onChange={e => setCuisineType(e.target.value)}
-                className="field"
-                style={{ maxWidth: 260 }}
-              >
-                <option value="">— Select cuisine —</option>
-                <option value="American">American</option>
-                <option value="Italian">Italian</option>
-                <option value="Mexican">Mexican</option>
-                <option value="Chinese">Chinese</option>
-                <option value="Japanese">Japanese</option>
-                <option value="Thai">Thai</option>
-                <option value="Indian">Indian</option>
-                <option value="Mediterranean">Mediterranean</option>
-                <option value="French">French</option>
-                <option value="Greek">Greek</option>
-                <option value="Korean">Korean</option>
-                <option value="Vietnamese">Vietnamese</option>
-                <option value="Middle Eastern">Middle Eastern</option>
-                <option value="Spanish">Spanish</option>
-                <option value="BBQ">BBQ / Smokehouse</option>
-                <option value="Seafood">Seafood</option>
-                <option value="Pizza">Pizza</option>
-                <option value="Burgers">Burgers</option>
-                <option value="Sushi">Sushi</option>
-                <option value="Steakhouse">Steakhouse</option>
-                <option value="Cafe">Cafe / Coffee Shop</option>
-                <option value="Bakery">Bakery</option>
-                <option value="Bar">Bar &amp; Grill</option>
-                <option value="Fast Food">Fast Food</option>
-                <option value="Sandwiches">Sandwiches / Deli</option>
-                <option value="Vegetarian">Vegetarian / Vegan</option>
-              </select>
+          <SectionHeader
+            kicker="Business"
+            title="Profile"
+            sub="Helps auto-discover competitors in your category. Choose the type that best describes your business."
+          />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <label className="t-eyebrow" style={{ display: 'block', marginBottom: 4 }} htmlFor="businessType">
+              Business Type
+            </label>
+            <select
+              id="businessType"
+              className="field"
+              value={businessType}
+              onChange={e => setBusinessType(e.target.value)}
+            >
+              <option value="">— Select type —</option>
+              <option value="medical_spa">Med Spa / Aesthetic Clinic</option>
+              <option value="botox_clinic">Botox & Filler Clinic</option>
+              <option value="laser_clinic">Laser & Skin Treatment Clinic</option>
+              <option value="beauty_salon">Beauty Salon / Hair Salon</option>
+              <option value="nail_salon">Nail Salon</option>
+              <option value="massage_therapy">Massage Therapy Studio</option>
+              <option value="dental_office">Dental Office</option>
+              <option value="chiropractor">Chiropractic Office</option>
+              <option value="physical_therapy">Physical Therapy Clinic</option>
+              <option value="wellness_center">Wellness / Holistic Health Center</option>
+            </select>
+            <div style={{ marginTop: 4 }}>
               <button onClick={handleSaveCuisine} disabled={savingCuisine} className="btn btn-primary btn-sm">
                 {savingCuisine ? 'Saving…' : 'Save'}
               </button>
-              {cuisineResult && (
-                <span style={{ fontSize: 12, fontWeight: 500, color: cuisineResult.ok ? 'var(--pos)' : 'var(--neg)' }}>
-                  {cuisineResult.msg}
-                </span>
-              )}
             </div>
-          </Row>
+            {businessTypeResult && (
+              <span style={{ fontSize: 12, fontWeight: 500, color: businessTypeResult.ok ? 'var(--pos)' : 'var(--neg)' }}>
+                {businessTypeResult.msg}
+              </span>
+            )}
+          </div>
         </section>
 
         {/* Reply settings */}
@@ -577,7 +568,7 @@ export default function SettingsPage() {
                       maxLength={300}
                       value={replySettings.reply_persona}
                       onChange={e => setReplySettings(s => ({ ...s, reply_persona: e.target.value }))}
-                      placeholder="Describe your restaurant's tone, e.g. 'Warm and confident. We're family-owned. Use first names.'"
+                      placeholder="Describe your practice's tone, e.g. 'Warm and clinical. Board-certified team. Use first names. Never be defensive about results.'"
                       className="field"
                       style={{ resize: 'vertical', lineHeight: 1.6 }}
                     />
@@ -693,7 +684,7 @@ export default function SettingsPage() {
           <SectionHeader
             kicker="Danger zone"
             title="Delete account"
-            sub="Permanently deletes your restaurant, reviews, replies, and billing. Cannot be undone."
+            sub="Permanently deletes your account, reviews, replies, and billing. Cannot be undone."
           />
           <DeleteAccountButton />
         </section>
@@ -730,7 +721,7 @@ function DeleteAccountButton() {
       <div className="fade-in" style={{ padding: 18, background: 'var(--neg-sub)', border: '1px solid var(--neg-line)', borderRadius: 'var(--r-4)' }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--neg)', marginBottom: 6 }}>This cannot be undone.</div>
         <p className="t-xs c-t2" style={{ marginBottom: 14, maxWidth: 520, lineHeight: 1.6 }}>
-          We'll cancel your subscription and delete your restaurant record and all reviews. You'll be signed out immediately.
+          We'll cancel your subscription and delete your account and all associated reviews. You'll be signed out immediately.
         </p>
         {error && <p style={{ fontSize: 12, color: 'var(--neg)', marginBottom: 10 }}>{error}</p>}
         <div style={{ display: 'flex', gap: 8 }}>
