@@ -28,6 +28,24 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // Show error when redirected back from a failed magic-link verification
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('error') === 'invalid_link') {
+      setError('That sign-in link has expired or already been used. Request a new one.')
+      setState('error')
+    }
+  }, [])
+
+  useEffect(() => {
+    // Redirect already-authenticated users straight to the dashboard
+    void (async () => {
+      const supabase = getSupabaseBrowser()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) router.replace('/dashboard')
+    })()
+  }, [router])
+
+  useEffect(() => {
     const hash = window.location.hash
     if (!hash.includes('access_token')) return
     const params = new URLSearchParams(hash.slice(1))
