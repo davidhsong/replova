@@ -68,6 +68,11 @@ export const metadata: Metadata = {
       "AI-drafted Google review replies, sentiment analysis, and competitor tracking for aesthetic businesses.",
     images: ["/og-image.png"],
   },
+  icons: {
+    icon: "/replova-logo.png",
+    shortcut: "/replova-logo.png",
+    apple: "/replova-logo.png",
+  },
   robots: {
     index: true,
     follow: true,
