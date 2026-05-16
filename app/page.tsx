@@ -220,17 +220,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Trust strip */}
-      <section style={{ borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
-        <div style={{ maxWidth: 1140, margin: '0 auto', padding: '24px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, flexWrap: 'wrap' }}>
-          <span className="t-eyebrow">Trusted by</span>
-          <div style={{ display: 'flex', gap: 36, alignItems: 'center', flexWrap: 'wrap' }}>
-            {['Lumiere Aesthetics', 'The Skin Studio', 'Renewal Med Spa', 'Glow Theory', 'Elevate Wellness', 'Aria Beauty'].map(n => (
-              <span key={n} className="t-serif t-italic" style={{ fontSize: 18, color: 'var(--t3)' }}>{n}</span>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* The Work */}
       <section style={{ maxWidth: 1140, margin: '0 auto', padding: '80px 32px' }}>
