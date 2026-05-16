@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-  title: { absolute: "Replova — AI Review Management for Med Spas & Aesthetic Clinics" },
+  title: { absolute: "AI Review Management for Med Spas & Aesthetic Clinics | Replova" },
   description:
     "Replova monitors your Google Business reviews and drafts AI reply suggestions for every new one. Post directly to Google in seconds. Built for med spas, aesthetic clinics, salons, and dental offices.",
   alternates: { canonical: "https://replova.app" },
@@ -38,6 +38,45 @@ const jsonLd = {
       url: "https://replova.app/replova-logo.png",
     },
   },
+};
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "How does AI reply generation work?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "When a new Google review is detected, Replova sends it to Claude (Anthropic's AI) and generates three reply drafts — Professional, Warm, and Brief — written in your business's voice. You review the options, edit if needed, and post directly to Google in one click. Practice plan users can set a custom persona so every reply reflects their brand's exact tone.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does Replova work with Google My Business?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. Replova connects directly to your Google Business Profile (formerly Google My Business) via Google's official API. Once you authorize your account, Replova automatically monitors for new reviews, syncs them in real time, and can post approved replies directly back to Google — no copy-pasting required.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How much does reputation management cost for a med spa?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Replova starts at $79/month for a single location (Solo plan), $179/month for up to 5 locations (Studio), and $349/month for up to 15 locations (Practice). All plans include a 30-day free trial with no credit card required and no setup fees.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can I use Replova for multiple locations?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. The Studio plan supports up to 5 locations and the Practice plan supports up to 15. Each location gets its own review monitoring, AI reply drafts, reputation score, and analytics. You can switch between locations from a single dashboard.",
+      },
+    },
+  ],
 };
 
 function Logo({ size = 20 }: { size?: number }) {
@@ -172,6 +211,10 @@ export default function Home() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
 
       {/* Nav */}
       <header style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(250,249,246,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid var(--line)' }}>
@@ -194,7 +237,7 @@ export default function Home() {
       {/* Hero */}
       <section style={{ maxWidth: 1140, margin: '0 auto', padding: '72px 32px 56px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'start' }}>
         <div className="fade-up">
-          <div className="t-eyebrow" style={{ marginBottom: 18 }}>Reputation management for med spas and local service businesses</div>
+          <div className="t-eyebrow" style={{ marginBottom: 18 }}>Reputation management software for med spas &amp; aesthetic clinics</div>
           <h1 className="t-serif" style={{ fontSize: 56, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: 22 }}>
             Reviews aren&apos;t<br />
             <span style={{ fontStyle: 'italic' }}>marketing.</span><br />
@@ -353,6 +396,43 @@ export default function Home() {
               <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
           </a>
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section style={{ borderTop: '1px solid var(--line)', padding: '80px 32px', background: 'var(--surface)' }}>
+        <div style={{ maxWidth: 720, margin: '0 auto' }}>
+          <div className="t-eyebrow c-accent" style={{ marginBottom: 8 }}>FAQ</div>
+          <h2 className="t-serif" style={{ fontSize: 40, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: 48 }}>
+            Common questions.
+          </h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {[
+              {
+                q: 'How does AI reply generation work?',
+                a: 'When a new Google review is detected, Replova sends it to Claude (Anthropic\'s AI) and generates three reply drafts — Professional, Warm, and Brief — written in your business\'s voice. You review the options, edit if needed, and post directly to Google in one click. Practice plan users can set a custom persona so every reply reflects their brand\'s exact tone.',
+              },
+              {
+                q: 'Does Replova work with Google My Business?',
+                a: 'Yes. Replova connects directly to your Google Business Profile (formerly Google My Business) via Google\'s official API. Once you authorize your account, Replova automatically monitors for new reviews, syncs them in real time, and can post approved replies directly back to Google — no copy-pasting required.',
+              },
+              {
+                q: 'How much does reputation management cost for a med spa?',
+                a: 'Replova starts at $79/month for a single location (Solo plan), $179/month for up to 5 locations (Studio), and $349/month for up to 15 locations (Practice). All plans include a 30-day free trial with no credit card required and no setup fees.',
+              },
+              {
+                q: 'Can I use Replova for multiple locations?',
+                a: 'Yes. The Studio plan supports up to 5 locations and the Practice plan supports up to 15. Each location gets its own review monitoring, AI reply drafts, reputation score, and analytics. You can switch between all locations from a single dashboard.',
+              },
+            ].map((item, i, arr) => (
+              <div key={item.q} style={{ padding: '28px 0', borderBottom: i < arr.length - 1 ? '1px solid var(--line)' : 'none' }}>
+                <h3 className="t-serif" style={{ fontSize: 20, fontWeight: 400, marginBottom: 10, letterSpacing: '-0.01em', color: 'var(--t1)' }}>
+                  {item.q}
+                </h3>
+                <p style={{ fontSize: 15, color: 'var(--t2)', lineHeight: 1.7, margin: 0 }}>{item.a}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

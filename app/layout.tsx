@@ -26,7 +26,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Replova — AI Review Management for Med Spas & Aesthetic Clinics",
+    default: "AI Review Management for Med Spas & Aesthetic Clinics | Replova",
     template: "%s | Replova",
   },
   description:
@@ -35,6 +35,7 @@ export const metadata: Metadata = {
     "Replova",
     "AI review replies",
     "med spa reputation management",
+    "reputation management software for med spas",
     "aesthetic clinic reviews",
     "Google review management",
     "salon review software",
@@ -50,7 +51,7 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://replova.app",
     siteName: "Replova",
-    title: "Replova — AI Review Management for Med Spas & Aesthetic Clinics",
+    title: "AI Review Management for Med Spas & Aesthetic Clinics | Replova",
     description:
       "AI-drafted Google review replies, sentiment analysis, competitor tracking, and weekly digests for med spas, aesthetic clinics, and salons.",
     images: [
@@ -64,7 +65,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Replova — AI Review Management for Med Spas & Aesthetic Clinics",
+    title: "AI Review Management for Med Spas & Aesthetic Clinics | Replova",
     description:
       "AI-drafted Google review replies, sentiment analysis, and competitor tracking for aesthetic businesses.",
     images: ["/og-image.png"],
