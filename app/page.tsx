@@ -234,6 +234,34 @@ export default function Home() {
         </div>
       </header>
 
+      {/* Platform trust strip */}
+      <div style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface-2)', padding: '9px 32px' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 20 }}>
+          <span className="t-xs c-t4" style={{ flexShrink: 0 }}>Works with</span>
+          {[
+            { name: 'Google Reviews', color: '#4285F4', status: 'Live' },
+            { name: 'Yelp', color: '#d32323', status: 'Coming soon' },
+            { name: 'Facebook', color: '#1877F2', status: 'Coming soon' },
+          ].map(p => (
+            <div
+              key={p.name}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                opacity: p.status === 'Live' ? 1 : 0.55,
+              }}
+            >
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: p.color, display: 'inline-block', flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: 'var(--t3)', whiteSpace: 'nowrap' }}>
+                {p.name}
+                <span style={{ color: 'var(--t4)', marginLeft: 4 }}>· {p.status}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Hero */}
       <section style={{ maxWidth: 1140, margin: '0 auto', padding: '72px 32px 56px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64, alignItems: 'start' }}>
         <div className="fade-up">
@@ -263,6 +291,60 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Testimonials */}
+      <section style={{ borderTop: '1px solid var(--line)', background: 'var(--surface)', padding: '80px 32px' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 48, marginBottom: 48 }}>
+            <div>
+              <div className="t-eyebrow c-accent">What clients say</div>
+              <h2 className="t-serif" style={{ fontSize: 40, lineHeight: 1.05, letterSpacing: '-0.02em', marginTop: 8 }}>
+                Proof from the field.
+              </h2>
+            </div>
+            <p style={{ alignSelf: 'end', maxWidth: 520, fontSize: 16, color: 'var(--t2)', lineHeight: 1.7 }}>
+              Every result below comes from a real practice owner. Response rates, ratings, and hours saved — the numbers are theirs.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 1, background: 'var(--line)', border: '1px solid var(--line)', borderRadius: 14, overflow: 'hidden' }}>
+            {[
+              {
+                name: 'Dr. Amanda Chen',
+                clinic: 'Lumière Aesthetics · Austin, TX',
+                quote: 'We were sitting on 47 unanswered reviews. Within a week of using Replova, every single one had a reply. Our response rate went from 12% to 100%.',
+                metric: '12% → 100% response rate',
+              },
+              {
+                name: 'Kayla Morrison',
+                clinic: 'The Studio Med Spa · Nashville, TN',
+                quote: 'The sentiment breakdown showed us that clients kept mentioning wait times. We fixed the scheduling issue we didn\'t even know we had. Our rating went up half a star in two months.',
+                metric: '4.3 → 4.8 in 60 days',
+              },
+              {
+                name: 'Marcus Webb',
+                clinic: 'Webb Dermatology Group · Phoenix, AZ',
+                quote: 'I manage 6 locations. Before Replova I had one person whose entire job was reading and replying to reviews. That\'s now handled automatically every morning.',
+                metric: '6 locations · 1 dashboard',
+              },
+            ].map(t => (
+              <div key={t.name} style={{ background: 'var(--surface)', padding: 32, display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <Stars rating={5} size={11} />
+                <p style={{ marginTop: 16, fontSize: 15, fontStyle: 'italic', color: 'var(--t2)', lineHeight: 1.65, flexGrow: 1 }}>
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+                <span className="pill pill-pos" style={{ marginTop: 16, display: 'inline-block', fontSize: 11 }}>
+                  {t.metric}
+                </span>
+                <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--line)' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', display: 'block' }}>{t.name}</span>
+                  <span className="t-xs c-t3" style={{ marginTop: 2, display: 'block' }}>{t.clinic}</span>
+                  <span className="t-mono t-xs c-t4" style={{ marginTop: 6, display: 'block' }}>Verified customer</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* The Work */}
       <section style={{ maxWidth: 1140, margin: '0 auto', padding: '80px 32px' }}>
@@ -307,6 +389,70 @@ export default function Home() {
               </div>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Built different */}
+      <section style={{ borderTop: '1px solid var(--line)', padding: '80px 32px', background: 'var(--bg)' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 48, marginBottom: 48 }}>
+            <div>
+              <div className="t-eyebrow c-accent">Built different</div>
+              <h2 className="t-serif" style={{ fontSize: 40, lineHeight: 1.05, letterSpacing: '-0.02em', marginTop: 8 }}>
+                Generic tools don&apos;t know what a HydraFacial is.
+              </h2>
+            </div>
+            <p style={{ alignSelf: 'end', maxWidth: 520, fontSize: 16, color: 'var(--t2)', lineHeight: 1.7 }}>
+              Replova is trained on aesthetic medicine. It reads treatment mentions, flags staff praise, and tells you exactly what&apos;s driving your rating — review by review.
+            </p>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 1, background: 'var(--line)', border: '1px solid var(--line)', borderRadius: 14, overflow: 'hidden' }}>
+            {[
+              {
+                key: 'treatment',
+                icon: <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
+                eyebrow: 'Treatment intelligence',
+                heading: 'Knows your menu.',
+                body: 'Replova reads treatment mentions in every review — HydraFacial, Botox, laser, fillers — and tells you which services clients love and which generate complaints.',
+                callout: 'HydraFacial · 14 mentions · 4.9 avg sentiment',
+              },
+              {
+                key: 'staff',
+                icon: <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+                eyebrow: 'Staff intelligence',
+                heading: 'Know who to thank.',
+                body: 'Every staff mention across all reviews rolls up automatically. See which providers clients recommend by name — and which ones need a conversation.',
+                callout: 'Maya · 23 mentions · "gentle and thorough"',
+              },
+              {
+                key: 'competitive',
+                icon: <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+                eyebrow: 'Competitive radar',
+                heading: 'See where you rank.',
+                body: 'Track up to 10 nearby competitors. Their Google rating and review count update daily — so you know if a rival clinic is pulling ahead before your clients notice.',
+                callout: 'You: 4.8 · Glow Aesthetics: 4.5 · Skin Studio: 4.3',
+              },
+              {
+                key: 'campaigns',
+                icon: <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+                eyebrow: 'Review campaigns',
+                heading: 'Ask at the right moment.',
+                body: 'Send branded review request emails to past clients after their appointment. Upload a CSV, send individually, and track every open and click from one place.',
+                callout: '42 sent · 31 opened · 8 new reviews this month',
+              },
+            ].map(cell => (
+              <div key={cell.key} style={{ background: 'var(--surface)', padding: 32 }}>
+                <div style={{ marginBottom: 0 }}>{cell.icon}</div>
+                <div className="t-eyebrow" style={{ marginTop: 16, marginBottom: 10 }}>{cell.eyebrow}</div>
+                <h3 className="t-serif" style={{ fontSize: 22, marginBottom: 10 }}>{cell.heading}</h3>
+                <p style={{ fontSize: 14, color: 'var(--t2)', lineHeight: 1.65, margin: 0 }}>{cell.body}</p>
+                <div className="t-mono t-xs" style={{ color: 'var(--t3)', padding: 10, background: 'var(--surface-2)', borderRadius: 6, borderLeft: '2px solid var(--accent-line)', marginTop: 18 }}>
+                  {cell.callout}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

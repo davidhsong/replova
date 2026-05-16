@@ -436,6 +436,16 @@ export default function CompetitorsPage() {
                             }}>
                               {entry.name}
                             </span>
+                            {comp && comp.address && comp.address.length > 0 && (
+                              <a
+                                href={`https://www.yelp.com/search?find_desc=${encodeURIComponent(comp.name)}&find_loc=${encodeURIComponent(comp.address)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ fontSize: 11, color: 'var(--t4)', textDecoration: 'none', marginLeft: 8, whiteSpace: 'nowrap' }}
+                              >
+                                Yelp ↗
+                              </a>
+                            )}
                             {entry.isYou && <span className="pill pill-accent" style={{ height: 16, flexShrink: 0 }}>You</span>}
                             {comp?.website && (
                               <a href={comp.website} target="_blank" rel="noopener noreferrer"
