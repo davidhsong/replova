@@ -123,10 +123,6 @@ function HeroProductShot() {
           <span style={{ color: 'var(--t4)', fontSize: 11 }}>/</span>
           <span className="t-xs c-t3">Reviews</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--pos)', display: 'inline-block' }} className="pulse-dot" />
-          <span className="t-xs c-t3">Monitoring</span>
-        </div>
       </div>
 
       {/* Stat strip */}

@@ -217,12 +217,6 @@ export default async function DashboardPage({
             <h1 className="t-h1" style={{ marginBottom: 4 }}>{restaurant.name}</h1>
             <p className="t-sm c-t3">Auto-syncs every 6h</p>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, paddingTop: 6 }}>
-            <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--t3)' }}>
-              <span className="dot dot-green pulse-dot" />
-              Monitoring
-            </span>
-          </div>
         </div>
       </div>
 

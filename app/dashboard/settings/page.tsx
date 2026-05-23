@@ -398,8 +398,7 @@ export default function SettingsPage() {
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
                     Google Business Profile
-                    <span className="dot dot-pos dot-pulse" />
-                    <span className="t-xs c-pos">Connected</span>
+<span className="t-xs c-pos">Connected</span>
                   </div>
                   <div className="t-xs c-t3">Scope: read reviews, post replies</div>
                 </div>
