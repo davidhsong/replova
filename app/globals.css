@@ -529,3 +529,96 @@ textarea.field { padding: 10px 12px; height: auto; min-height: 80px; resize: ver
   .page-wrap { padding: 20px 16px; }
   .sec-head { padding: 16px; }
 }
+
+/* ── Landing page responsive layout ──────────────────────────────────────── */
+.lp-nav-inner {
+  max-width: 1140px; margin: 0 auto; padding: 0 32px;
+  height: 56px; display: flex; align-items: center; justify-content: space-between;
+}
+.lp-strip-inner {
+  max-width: 1140px; margin: 0 auto;
+  display: flex; align-items: center; gap: 20px;
+  padding: 9px 32px; overflow-x: auto;
+}
+/* full-width sections: padding only */
+.lp-section-pad { padding: 80px 32px; }
+.lp-cta-pad     { padding: 96px 32px; }
+/* constrained sections (bg same as page): max-width on the section itself */
+.lp-container { max-width: 1140px; margin: 0 auto; padding: 80px 32px; }
+/* inner wrapper for full-width sections */
+.lp-inner { max-width: 1140px; margin: 0 auto; }
+/* hero: constrained + 2-col grid */
+.lp-hero {
+  max-width: 1140px; margin: 0 auto; padding: 72px 32px 56px;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: start;
+}
+/* section heading: 1-col label + 2-col body */
+.lp-2up { display: grid; grid-template-columns: 1fr 2fr; gap: 48px; margin-bottom: 48px; }
+/* feature grids */
+.lp-3col {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+}
+.lp-2col {
+  display: grid; grid-template-columns: repeat(2, 1fr);
+  gap: 1px; background: var(--line);
+  border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+}
+/* pricing grid — border-right between cells */
+.lp-plan-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--line-md); border-radius: 14px; overflow: hidden;
+}
+.lp-plan-col { border-right: 1px solid var(--line-md); }
+.lp-plan-col:last-child { border-right: none; }
+/* footer inner */
+.lp-footer-inner {
+  max-width: 1140px; margin: 0 auto; padding: 24px 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap;
+}
+/* type scale — defined here so media queries can override inline values */
+.lp-h1 { font-size: 56px; line-height: 1.05; letter-spacing: -0.02em; margin-bottom: 22px; }
+.lp-h2 { font-size: 40px; line-height: 1.05; letter-spacing: -0.02em; margin-top: 8px; }
+.lp-cta-h2 { font-size: 48px; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 18px; }
+.lp-faq-h2 { font-size: 40px; line-height: 1.05; letter-spacing: -0.02em; margin-bottom: 48px; }
+/* pricing h2 has no margin-top */
+.lp-pricing-h2 { font-size: 40px; line-height: 1.05; margin-top: 8px; }
+
+@media (max-width: 900px) {
+  .lp-nav-inner   { padding: 0 20px; }
+  .lp-strip-inner { padding: 9px 20px; gap: 14px; }
+  .lp-section-pad { padding: 60px 20px; }
+  .lp-cta-pad     { padding: 64px 20px; }
+  .lp-container   { padding: 60px 20px; }
+  .lp-hero        { grid-template-columns: 1fr; gap: 40px; padding: 52px 20px 44px; }
+  .lp-2up         { grid-template-columns: 1fr; gap: 12px; margin-bottom: 28px; }
+  .lp-3col        { grid-template-columns: 1fr; }
+  .lp-2col        { grid-template-columns: 1fr; }
+  .lp-plan-grid   { grid-template-columns: 1fr; }
+  .lp-plan-col         { border-right: none; border-bottom: 1px solid var(--line-md); }
+  .lp-plan-col:last-child { border-bottom: none; }
+  .lp-footer-inner { padding: 20px 20px; }
+  .lp-h1         { font-size: 38px; margin-bottom: 18px; }
+  .lp-h2         { font-size: 28px; }
+  .lp-cta-h2     { font-size: 34px; margin-bottom: 14px; }
+  .lp-faq-h2     { font-size: 28px; margin-bottom: 32px; }
+  .lp-pricing-h2 { font-size: 28px; }
+}
+
+@media (max-width: 600px) {
+  .lp-nav-inner   { padding: 0 16px; }
+  .lp-strip-inner { padding: 9px 16px; gap: 12px; }
+  .lp-section-pad { padding: 48px 16px; }
+  .lp-cta-pad     { padding: 52px 16px; }
+  .lp-container   { padding: 48px 16px; }
+  .lp-hero        { padding: 40px 16px 36px; gap: 32px; }
+  .lp-footer-inner { padding: 20px 16px; }
+  .lp-signin      { display: none; }
+  .lp-h1          { font-size: 32px; }
+  .lp-h2          { font-size: 24px; }
+  .lp-cta-h2      { font-size: 28px; }
+  .lp-faq-h2      { font-size: 24px; }
+  .lp-pricing-h2  { font-size: 24px; }
+}
