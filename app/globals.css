@@ -414,7 +414,7 @@ textarea.field { padding: 10px 12px; height: auto; min-height: 80px; resize: ver
 .note {
   font-family: var(--font-mono); font-size: 11px; color: var(--t3);
   background: var(--surface-2);
-  border-left: 2px solid var(--line-md);
+  border: 1px solid var(--line-md);
   padding: 10px 14px; border-radius: var(--r-3);
   line-height: 1.55; white-space: pre-wrap;
 }

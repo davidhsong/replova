@@ -67,12 +67,6 @@ function Stars({ rating }: { rating: number }) {
   )
 }
 
-function railColor(rating: number | null): string {
-  if (rating === null) return 'transparent'
-  if (rating <= 2) return 'var(--neg)'
-  if (rating === 3) return 'var(--warn)'
-  return 'var(--pos)'
-}
 
 function ReviewRow({
   review,
@@ -110,11 +104,14 @@ function ReviewRow({
 
   const initials = (review.author ?? 'A').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
 
+  const rowBg = isReplied ? 'var(--surface)' :
+    review.rating !== null && review.rating <= 2 ? 'var(--neg-sub)' :
+    review.rating === 3 ? 'var(--warn-sub)' : 'var(--surface)'
+
   return (
     <article style={{
-      background: 'var(--surface)',
+      background: rowBg,
       borderTop: '1px solid var(--line)',
-      borderLeft: `3px solid ${isReplied ? 'transparent' : railColor(review.rating)}`,
       opacity: isReplied ? 0.5 : 1,
       transition: 'opacity 0.15s',
     }}>

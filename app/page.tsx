@@ -441,7 +441,7 @@ export default function Home() {
                 <div className="t-eyebrow" style={{ marginTop: 16, marginBottom: 10 }}>{cell.eyebrow}</div>
                 <h3 className="t-serif" style={{ fontSize: 22, marginBottom: 10 }}>{cell.heading}</h3>
                 <p style={{ fontSize: 14, color: 'var(--t2)', lineHeight: 1.65, margin: 0 }}>{cell.body}</p>
-                <div className="t-mono t-xs" style={{ color: 'var(--t3)', padding: 10, background: 'var(--surface-2)', borderRadius: 6, borderLeft: '2px solid var(--accent-line)', marginTop: 18 }}>
+                <div className="t-mono t-xs" style={{ color: 'var(--t3)', padding: 10, background: 'var(--surface-2)', borderRadius: 6, border: '1px solid var(--line-md)', marginTop: 18 }}>
                   {cell.callout}
                 </div>
               </div>
