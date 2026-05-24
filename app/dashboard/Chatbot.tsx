@@ -71,7 +71,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     const score = ctx.reputationScore !== null ? `${ctx.reputationScore}/100` : 'N/A (Growth/Agency)'
     const google = ctx.googleConnected ? 'Connected' : 'Not connected'
     return {
-      text: `${ctx.restaurantName} — ${planLabel} plan (${planPrice})\n\nGoogle: ${google}\nReputation score: ${score}\nGoogle rating: ${rating}\nTotal reviews: ${ctx.totalReviews ?? 0}\nAwaiting reply: ${ctx.awaitingReplyCount}\nAuto-reply: ${ctx.autoReplyEnabled ? `ON (${ctx.autoReplyDelayHours}h delay)` : 'OFF'}\nAccount email: ${ctx.userEmail}`,
+      text: `${ctx.restaurantName} | ${planLabel} plan (${planPrice})\n\nGoogle: ${google}\nReputation score: ${score}\nGoogle rating: ${rating}\nTotal reviews: ${ctx.totalReviews ?? 0}\nAwaiting reply: ${ctx.awaitingReplyCount}\nAuto-reply: ${ctx.autoReplyEnabled ? `ON (${ctx.autoReplyDelayHours}h delay)` : 'OFF'}\nAccount email: ${ctx.userEmail}`,
       link: { label: 'Go to Dashboard', href: '/dashboard' },
     }
   }
@@ -97,7 +97,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     const upsell =
       ctx.plan === 'starter' ? ' You can upgrade to Growth or Agency for more features.'
       : ctx.plan === 'growth' ? ' Upgrade to Agency to unlock custom persona and white-label reports.'
-      : " You're on our top tier — all features are unlocked."
+      : " You're on our top tier. All features are unlocked."
     const renewal = ctx.renewalDate ? ` Renews on ${ctx.renewalDate}.` : ` Trial ends ${ctx.trialEndDate}.`
     return {
       text: `You're on the ${planLabel} plan (${planPrice}).${renewal}${upsell}`,
@@ -110,7 +110,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
   if (m(q, 'when does my subscription renew', 'renewal date', 'next billing', 'next charge', 'when am i billed', 'next payment', 'billing cycle', 'when will i be charged', 'when do i get charged', 'billing date', 'renew', 'subscription renew')) {
     if (ctx.subscriptionStatus === 'past_due') {
       return {
-        text: `Your last payment failed — your subscription is currently past due. Please update your payment method immediately to avoid service interruption.`,
+        text: `Your last payment failed. Your subscription is currently past due. Please update your payment method immediately to avoid service interruption.`,
         link: { label: 'Update Payment Method', href: '/dashboard/billing' },
       }
     }
@@ -136,11 +136,11 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'subscription status', 'payment status', 'my payment', 'payment failed', 'past due', 'account status', 'is my subscription active')) {
     const statusMap: Record<string, string> = {
-      active: `Active — your ${planLabel} plan is in good standing and renews on ${ctx.renewalDate ?? 'the next billing date'}.`,
-      trialing: `In free trial — ends on ${ctx.trialEndDate}. No charge until then.`,
-      past_due: `Past due — your last payment failed. Please update your payment method to restore full access.`,
-      canceled: `Canceled — your subscription has ended. Reactivate on the Billing page.`,
-      unpaid: `Unpaid — your subscription is suspended due to a failed payment. Update your payment method immediately.`,
+      active: `Active: your ${planLabel} plan is in good standing and renews on ${ctx.renewalDate ?? 'the next billing date'}.`,
+      trialing: `In free trial, ends on ${ctx.trialEndDate}. No charge until then.`,
+      past_due: `Past due. Your last payment failed. Please update your payment method to restore full access.`,
+      canceled: `Canceled. Your subscription has ended. Reactivate on the Billing page.`,
+      unpaid: `Unpaid. Your subscription is suspended due to a failed payment. Update your payment method immediately.`,
     }
     const msg = statusMap[ctx.subscriptionStatus] ?? `Status: ${ctx.subscriptionStatus}. Check the Billing page for details.`
     return {
@@ -207,7 +207,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     return {
       text: ctx.googleConnected
         ? `Google is connected. Go to Settings and click "Sync now" to pull the latest reviews immediately. Reviews also auto-sync every 6 hours.`
-        : `Google Business isn't connected yet — you need to connect it first before reviews can sync.`,
+        : `Google Business isn't connected yet. Connect it first before reviews can sync.`,
       link: { label: 'Go to Settings', href: '/dashboard/settings' },
     }
   }
@@ -215,7 +215,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
   if (m(q, 'connect google', 'google business', 'link google', 'gmb', 'not connected', 'google my business', 'google account', 'google profile')) {
     return {
       text: ctx.googleConnected
-        ? `Google Business is already connected${ctx.googleLocationName ? ` to ${ctx.googleLocationName}` : ' — select a location in Settings to finish setup'}.`
+        ? `Google Business is already connected${ctx.googleLocationName ? ` to ${ctx.googleLocationName}` : '. Select a location in Settings to finish setup'}.`
         : `Go to Settings → Google Business and click "Connect Google." Authorize Replova via OAuth, then select your business location. Reviews sync automatically every 6 hours once connected.`,
       link: { label: ctx.googleConnected ? 'Go to Settings' : 'Connect in Settings', href: '/dashboard/settings' },
     }
@@ -233,7 +233,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
   if (m(q, 'what is my score', 'my current score', 'my reputation score', 'my replova score', 'current score', 'overall score', 'score out of', 'reputation score')) {
     if (ctx.reputationScore !== null) {
       const quality =
-        ctx.reputationScore >= 80 ? 'Excellent — you\'re in great shape.'
+        ctx.reputationScore >= 80 ? 'Excellent. You\'re in great shape.'
         : ctx.reputationScore >= 60 ? 'Good. Focus on response rate and getting more reviews to improve.'
         : ctx.reputationScore >= 40 ? 'Fair. Reply to more reviews and run a review request campaign to boost this.'
         : 'Needs attention. Prioritize replying to reviews and requesting more from happy customers.'
@@ -245,7 +245,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     return {
       text: ctx.plan === 'starter'
         ? `Reputation scores are a Growth/Agency feature. Upgrade to unlock your 0–100 composite score.`
-        : `Your score hasn't been calculated yet — it runs daily. Check back tomorrow, or sync your reviews first.`,
+        : `Your score hasn't been calculated yet. It runs daily. Check back tomorrow, or sync your reviews first.`,
       link: ctx.plan === 'starter' ? { label: 'Upgrade Plan', href: '/dashboard/billing' } : { label: 'Go to Settings', href: '/dashboard/settings' },
     }
   }
@@ -272,7 +272,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     const total = ctx.totalReviews ?? 0
     const awaiting = ctx.awaitingReplyCount
     return {
-      text: `You have ${total} total review${total !== 1 ? 's' : ''} — ${awaiting} awaiting a reply${total > awaiting ? `, ${total - awaiting} already replied` : ''}.`,
+      text: `You have ${total} total review${total !== 1 ? 's' : ''} , ${awaiting} awaiting a reply${total > awaiting ? `, ${total - awaiting} already replied` : ''}.`,
       link: { label: 'Go to Dashboard', href: '/dashboard' },
     }
   }
@@ -303,10 +303,10 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     const rate = pct(ctx.responseRate)
     if (rate) {
       const comment =
-        ctx.responseRate! >= 0.9 ? 'Outstanding — keep it up!'
+        ctx.responseRate! >= 0.9 ? 'Outstanding. Keep it up!'
         : ctx.responseRate! >= 0.7 ? 'Good. Aim for 90%+ to maximize your score.'
-        : ctx.responseRate! >= 0.5 ? 'Moderate. Response rate is 25% of your Replova score — reply to more reviews to improve.'
-        : 'Low. Prioritize replying to reviews — it\'s the quickest way to boost your Replova score.'
+        : ctx.responseRate! >= 0.5 ? 'Moderate. Response rate is 25% of your Replova score. Reply to more reviews to improve.'
+        : 'Low. Prioritize replying to reviews. It\'s the quickest way to boost your Replova score.'
       return {
         text: `Your response rate is ${rate}. ${comment}`,
         link: { label: 'Go to Dashboard', href: '/dashboard' },
@@ -332,7 +332,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     return {
       text: ctx.plan === 'starter'
         ? `Sentiment analysis is a Growth/Agency feature. Upgrade to unlock AI-powered sentiment scoring.`
-        : `Sentiment data hasn't been calculated yet — it runs nightly. Check back after your first batch.`,
+        : `Sentiment data hasn't been calculated yet. It runs nightly. Check back after your first batch.`,
     }
   }
 
@@ -402,7 +402,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
   if (m(q, 'improve my score', 'better score', 'increase score', 'boost score', 'score is low', 'how to improve', 'improve reputation', 'better reputation')) {
     const tips: string[] = []
     if (ctx.awaitingReplyCount > 0) tips.push(`Reply to your ${ctx.awaitingReplyCount} unanswered review${ctx.awaitingReplyCount !== 1 ? 's' : ''} (response rate is 25% of the score)`)
-    if (ctx.responseRate !== null && ctx.responseRate < 0.8) tips.push(`Your response rate is ${pct(ctx.responseRate)} — aim for 80%+`)
+    if (ctx.responseRate !== null && ctx.responseRate < 0.8) tips.push(`Your response rate is ${pct(ctx.responseRate)}. Aim for 80%+`)
     tips.push('Send review requests to happy customers to grow your review volume')
     if (ctx.avgRating !== null && ctx.avgRating < 4.5) tips.push('Address negative reviews promptly and professionally')
     return {
@@ -413,7 +413,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'get more reviews', 'more google reviews', 'increase reviews', 'grow reviews', 'more reviews', 'ask customers', 'request reviews')) {
     return {
-      text: `Use Review Requests to email customers asking for a Google review. You currently have ${ctx.totalReviews ?? 0} reviews. Upload a CSV with name + email, hit "Send All," and track opens and clicks — it's the most effective way to grow your review count.`,
+      text: `Use Review Requests to email customers asking for a Google review. You currently have ${ctx.totalReviews ?? 0} reviews. Upload a CSV with name + email, hit "Send All," and track opens and clicks. It's the most effective way to grow your review count.`,
       link: { label: 'Go to Review Requests', href: '/dashboard/review-requests' },
     }
   }
@@ -455,7 +455,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
   if (m(q, 'reviews not showing', 'why no reviews', 'reviews not loading', 'reviews disappeared', 'missing reviews', 'reviews not appearing')) {
     return {
       text: ctx.googleConnected
-        ? `Google is connected. Click "Sync now" in Settings to force a fresh pull — reviews auto-sync every 6 hours but a manual sync should fix it immediately.`
+        ? `Google is connected. Click "Sync now" in Settings to force a fresh pull. Reviews auto-sync every 6 hours but a manual sync should fix it immediately.`
         : `Google Business isn't connected, which is why reviews aren't showing. Connect it in Settings → Google Business.`,
       link: { label: 'Go to Settings', href: '/dashboard/settings' },
     }
@@ -463,7 +463,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'reply failed', "can't post reply", 'post failed', 'error posting', 'reply not posting', 'reply not working', 'unable to post')) {
     return {
-      text: `If a reply fails to post: 1) Check Settings — Google may have disconnected. 2) Click "Reconnect" if you see a warning. 3) Make sure the review isn't already replied to on Google. 4) Try again after reconnecting.${ctx.googleConnected ? '' : ' Note: Google Business is currently disconnected.'}`,
+      text: `If a reply fails to post: 1) Check Settings. Google may have disconnected. 2) Click "Reconnect" if you see a warning. 3) Make sure the review isn't already replied to on Google. 4) Try again after reconnecting.${ctx.googleConnected ? '' : ' Note: Google Business is currently disconnected.'}`,
       link: { label: 'Go to Settings', href: '/dashboard/settings' },
     }
   }
@@ -476,7 +476,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'something broken', 'not working', 'there is a bug', "it's broken", 'page not loading', 'something went wrong', 'error message')) {
     return {
-      text: `Try refreshing the page first. If Google-related, reconnect in Settings. If billing-related, use the Stripe billing portal. For persistent issues, contact Replova support — the email is in the footer of your weekly digest.`,
+      text: `Try refreshing the page first. If Google-related, reconnect in Settings. If billing-related, use the Stripe billing portal. For persistent issues, contact Replova support. The email is in the footer of your weekly digest.`,
       link: { label: 'Go to Settings', href: '/dashboard/settings' },
     }
   }
@@ -484,7 +484,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
   // ── Can I... ──────────────────────────────────────────────────────────────
 
   if (m(q, 'multiple user', 'team member', 'add user', 'share access', 'invite team', 'add staff', 'give access', 'other user', 'team access', 'staff login')) {
-    return { text: `Replova is single-user per account — tied to one login email. Multi-user team access isn't available yet.` }
+    return { text: `Replova is single-user per account, tied to one login email. Multi-user team access isn't available yet.` }
   }
 
   if (m(q, 'can i export', 'export data', 'download data', 'data export', 'download my data')) {
@@ -498,7 +498,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'can i edit', 'can i change the draft', 'edit the ai', 'modify the reply', 'edit the reply', 'can i modify')) {
     return {
-      text: `Yes — click any draft to edit it before posting. You can tweak tone, add specific details, or rewrite entirely. Once happy, click Post reply to publish to Google.`,
+      text: `Yes, click any draft to edit it before posting. You can tweak tone, add specific details, or rewrite entirely. Once happy, click Post reply to publish to Google.`,
       link: { label: 'Go to Dashboard', href: '/dashboard' },
     }
   }
@@ -507,7 +507,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'contact support', 'get help', 'talk to someone', 'email support', 'human support', 'customer support', 'help desk', 'support team', 'reach out', 'report a problem')) {
     return {
-      text: `For support, contact the Replova team — the support email is in the footer of your weekly digest. For billing issues, the Stripe billing portal is the fastest path.`,
+      text: `For support, contact the Replova team. The support email is in the footer of your weekly digest. For billing issues, the Stripe billing portal is the fastest path.`,
       link: { label: 'Go to Billing', href: '/dashboard/billing' },
     }
   }
@@ -516,7 +516,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'delete account', 'cancel account', 'remove account', 'close account', 'delete my account', 'deactivate')) {
     return {
-      text: `To delete your account (${ctx.userEmail}), go to Settings → Danger zone. You'll need to confirm twice. This permanently removes all data for "${ctx.restaurantName}" — it can't be undone.`,
+      text: `To delete your account (${ctx.userEmail}), go to Settings → Danger zone. You'll need to confirm twice. This permanently removes all data for "${ctx.restaurantName}". It can't be undone.`,
       link: { label: 'Go to Settings', href: '/dashboard/settings' },
     }
   }
@@ -525,7 +525,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'sign in', 'log in', 'login', 'magic link', 'email link', 'password', 'sign out', 'log out', 'logout')) {
     return {
-      text: `Replova uses magic link sign-in — no passwords. Enter your email (${ctx.userEmail}) on the sign-in page to get a one-click link. To sign out, click your profile avatar in the sidebar.`,
+      text: `Replova uses magic link sign-in, no passwords. Enter your email (${ctx.userEmail}) on the sign-in page to get a one-click link. To sign out, click your profile avatar in the sidebar.`,
       link: { label: 'Sign-in page', href: '/signin' },
     }
   }
@@ -555,7 +555,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'weekly digest', 'weekly email', 'monday email', 'digest email', 'weekly summary')) {
     return {
-      text: `Replova sends a weekly digest every Monday morning with your review summary, AI-generated action items, sentiment trends, and staff shoutouts. It's automatic on all plans — nothing to set up.`,
+      text: `Replova sends a weekly digest every Monday morning with your review summary, AI-generated action items, sentiment trends, and staff shoutouts. It's automatic on all plans. Nothing to set up.`,
     }
   }
 
@@ -573,7 +573,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'csv', 'upload contact', 'bulk import', 'drag and drop', 'import customer', 'customer list')) {
     return {
-      text: `On the Review Requests page, upload a CSV with name and email columns — drag-and-drop or browse. Then click "Send All" to email your customers asking for a Google review.`,
+      text: `On the Review Requests page, upload a CSV with name and email columns, drag-and-drop or browse. Then click "Send All" to email your customers asking for a Google review.`,
       link: { label: 'Go to Review Requests', href: '/dashboard/review-requests' },
     }
   }
@@ -587,7 +587,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'review request', 'ask for review', 'request campaign', 'send review email', 'request a review', 'solicit review')) {
     return {
-      text: `Go to Review Requests to send email campaigns asking customers for a Google review. Upload a CSV (name + email), hit "Send All," and track opens and clicks. You currently have ${ctx.totalReviews ?? 0} reviews — this is the best way to grow that number.`,
+      text: `Go to Review Requests to send email campaigns asking customers for a Google review. Upload a CSV (name + email), hit "Send All," and track opens and clicks. You currently have ${ctx.totalReviews ?? 0} reviews. This is the best way to grow that number.`,
       link: { label: 'Go to Review Requests', href: '/dashboard/review-requests' },
     }
   }
@@ -658,21 +658,21 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'ai reply', 'reply draft', 'draft reply', 'ai draft', 'ai-generated reply', 'how are drafts')) {
     return {
-      text: `Replova generates 3 AI reply drafts per review using Claude AI — Professional, Warm, and Brief. Created automatically when reviews sync.${ctx.awaitingReplyCount > 0 ? ` You have ${ctx.awaitingReplyCount} review${ctx.awaitingReplyCount !== 1 ? 's' : ''} with drafts ready.` : ''}`,
+      text: `Replova generates 3 AI reply drafts per review using Claude AI: Professional, Warm, and Brief. Created automatically when reviews sync.${ctx.awaitingReplyCount > 0 ? ` You have ${ctx.awaitingReplyCount} review${ctx.awaitingReplyCount !== 1 ? 's' : ''} with drafts ready.` : ''}`,
       link: { label: 'Go to Dashboard', href: '/dashboard' },
     }
   }
 
   if (m(q, 'post reply', 'post to google', 'send reply to google', 'publish reply', 'how do i post')) {
     return {
-      text: `Click "Post reply" on any draft to publish it directly to Google Business Profile.${ctx.googleConnected ? '' : ' Note: Google Business isn\'t connected yet — connect it in Settings first.'}`,
+      text: `Click "Post reply" on any draft to publish it directly to Google Business Profile.${ctx.googleConnected ? '' : ' Note: Google Business isn\'t connected yet. Connect it in Settings first.'}`,
       link: ctx.googleConnected ? { label: 'Go to Dashboard', href: '/dashboard' } : { label: 'Connect Google', href: '/dashboard/settings' },
     }
   }
 
   if (m(q, 'mark replied', 'mark as replied', 'already replied', 'replied directly')) {
     return {
-      text: `"Mark replied" marks a review as done in Replova without posting through the app — use this if you replied directly in Google Business Manager.`,
+      text: `"Mark replied" marks a review as done in Replova without posting through the app. Use this if you replied directly in Google Business Manager.`,
       link: { label: 'Go to Dashboard', href: '/dashboard' },
     }
   }
@@ -681,14 +681,14 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'filter review', 'filter by', 'sort review', 'view by rating', 'view by status', 'urgent review', 'unreplied review')) {
     return {
-      text: `Filter reviews by status (awaiting reply, replied), star rating (1–5), and sentiment. Urgent reviews — low-rated and unreplied — appear at the top.${ctx.awaitingReplyCount > 0 ? ` You have ${ctx.awaitingReplyCount} awaiting reply now.` : ''}`,
+      text: `Filter reviews by status (awaiting reply, replied), star rating (1–5), and sentiment. Urgent reviews (low-rated and unreplied) appear at the top.${ctx.awaitingReplyCount > 0 ? ` You have ${ctx.awaitingReplyCount} awaiting reply now.` : ''}`,
       link: { label: 'Go to Dashboard', href: '/dashboard' },
     }
   }
 
   if (m(q, 'demo mode', 'demo data', 'sample review', 'demo review', 'fake review')) {
     return {
-      text: `Demo mode shows sample reviews so you can explore Replova before real reviews sync.${ctx.googleConnected ? ' Your Google is connected — click "Sync now" in Settings to load your real reviews.' : ' Connect Google Business in Settings to replace demo data with your actual reviews.'}`,
+      text: `Demo mode shows sample reviews so you can explore Replova before real reviews sync.${ctx.googleConnected ? ' Your Google is connected. Click "Sync now" in Settings to load your real reviews.' : ' Connect Google Business in Settings to replace demo data with your actual reviews.'}`,
       link: { label: ctx.googleConnected ? 'Go to Settings' : 'Connect Google', href: '/dashboard/settings' },
     }
   }
@@ -732,7 +732,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'cancel subscription', 'cancel my plan', 'unsubscribe', 'cancel billing', 'stop paying')) {
     return {
-      text: `Cancel anytime through the Stripe billing portal — click "Manage subscription" on the Billing page. Access continues until the end of your current billing period${ctx.renewalDate ? ` (${ctx.renewalDate})` : ''}.`,
+      text: `Cancel anytime through the Stripe billing portal. Click "Manage subscription" on the Billing page. Access continues until the end of your current billing period${ctx.renewalDate ? ` (${ctx.renewalDate})` : ''}.`,
       link: { label: 'Go to Billing', href: '/dashboard/billing' },
     }
   }
@@ -746,7 +746,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'upgrade', 'downgrade', 'change plan', 'switch plan')) {
     return {
-      text: `Upgrade or downgrade on the Billing page — click the button on any plan card. Or click "Manage subscription" for the Stripe portal with proration. You're currently on ${planLabel} (${planPrice}).`,
+      text: `Upgrade or downgrade on the Billing page. Click the button on any plan card. Or click "Manage subscription" for the Stripe portal with proration. You're currently on ${planLabel} (${planPrice}).`,
       link: { label: 'Go to Billing', href: '/dashboard/billing' },
     }
   }
@@ -785,7 +785,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'what can you do', 'what can you help', 'how does this chatbot', 'what do you know', 'what are you')) {
     return {
-      text: `I'm the Replova assistant, and I know your account details. Ask me anything: your subscription renewal, Google connection status, your ${ctx.reputationScore !== null ? `${ctx.reputationScore}/100` : ''} reputation score, the ${ctx.awaitingReplyCount} reviews awaiting reply, billing, competitors, settings — anything.`,
+      text: `I'm the Replova assistant, and I know your account details. Ask me anything: your subscription renewal, Google connection status, your ${ctx.reputationScore !== null ? `${ctx.reputationScore}/100` : ''} reputation score, the ${ctx.awaitingReplyCount} reviews awaiting reply, billing, competitors, settings, anything.`,
     }
   }
 
@@ -942,7 +942,7 @@ export default function Chatbot(props: ChatbotProps) {
           <div style={{ flex: 1, overflowY: 'auto', padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
               <div className="chatbot-msg" style={{ maxWidth: '85%', padding: '9px 12px', borderRadius: '12px 12px 12px 3px', background: 'var(--surface-2)', color: 'var(--t1)', fontSize: 13, lineHeight: 1.55 }}>
-                {`Hi! I'm the Replova assistant for ${ctx.restaurantName}. Ask me anything — your subscription, reviews, Google connection, score, billing, settings, or any feature.`}
+                {`Hi! I'm the Replova assistant for ${ctx.restaurantName}. Ask me anything: your subscription, reviews, Google connection, score, billing, settings, or any feature.`}
               </div>
             </div>
 

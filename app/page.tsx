@@ -49,7 +49,7 @@ const faqJsonLd = {
       name: "How does AI reply generation work?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "When a new Google review is detected, Replova sends it to Claude (Anthropic's AI) and generates three reply drafts — Professional, Warm, and Brief — written in your business's voice. You review the options, edit if needed, and post directly to Google in one click. Practice plan users can set a custom persona so every reply reflects their brand's exact tone.",
+        text: "When a new Google review is detected, Replova generates three reply drafts: Professional, Warm, and Brief, written in your business's voice. You review the options, edit if needed, and post directly to Google in one click. Practice plan users can set a custom persona so every reply reflects their brand's exact tone.",
       },
     },
     {
@@ -57,7 +57,7 @@ const faqJsonLd = {
       name: "Does Replova work with Google My Business?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. Replova connects directly to your Google Business Profile (formerly Google My Business) via Google's official API. Once you authorize your account, Replova automatically monitors for new reviews, syncs them in real time, and can post approved replies directly back to Google — no copy-pasting required.",
+        text: "Yes. Replova connects directly to your Google Business Profile (formerly Google My Business) via Google's official API. Once you authorize your account, Replova automatically monitors for new reviews, syncs them in real time, and can post approved replies directly back to Google. No copy-pasting required.",
       },
     },
     {
@@ -178,7 +178,7 @@ function HeroProductShot() {
             ))}
           </div>
           <p style={{ fontSize: 12, color: 'var(--t2)', lineHeight: 1.55, margin: 0 }}>
-            Hi James — a longer wait and rushed service fall well below the standard we hold ourselves to. I&apos;d like the chance to make this right…
+            Hi James, a longer wait and rushed service fall well below the standard we hold ourselves to. I&apos;d like the chance to make this right…
           </p>
         </div>
       </div>
@@ -230,35 +230,6 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Platform trust strip */}
-      <div style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface-2)' }}>
-        <div className="lp-strip-inner">
-          <span className="t-xs c-t4" style={{ flexShrink: 0 }}>Works with</span>
-          {[
-            { name: 'Google Reviews', color: '#4285F4', status: 'Live' },
-            { name: 'Yelp', color: '#d32323', status: 'Coming soon' },
-            { name: 'Facebook', color: '#1877F2', status: 'Coming soon' },
-          ].map(p => (
-            <div
-              key={p.name}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                opacity: p.status === 'Live' ? 1 : 0.55,
-                flexShrink: 0,
-              }}
-            >
-              <span style={{ width: 6, height: 6, borderRadius: '50%', background: p.color, display: 'inline-block', flexShrink: 0 }} />
-              <span style={{ fontSize: 12, color: 'var(--t3)', whiteSpace: 'nowrap' }}>
-                {p.name}
-                <span style={{ color: 'var(--t4)', marginLeft: 4 }}>· {p.status}</span>
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Hero */}
       <section className="lp-hero">
         <div className="fade-up">
@@ -270,7 +241,7 @@ export default function Home() {
             before the visit.
           </h1>
           <p style={{ fontSize: 16, color: 'var(--t2)', maxWidth: 430, marginBottom: 28, lineHeight: 1.6 }}>
-            Replova monitors your Google reviews, drafts replies in your voice, and surfaces what&apos;s actually driving your rating — which treatments clients love, which staff they name, and how you compare to nearby clinics.
+            Replova monitors your Google reviews, drafts replies in your voice, and surfaces what&apos;s actually driving your rating: which treatments clients love, which staff they name, and how you compare to nearby clinics.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
             <a href="/onboard" className="btn btn-primary btn-lg btn-press" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -325,7 +296,7 @@ export default function Home() {
               </h2>
             </div>
             <p style={{ alignSelf: 'end', maxWidth: 520, fontSize: 16, color: 'var(--t2)', lineHeight: 1.7 }}>
-              Every result below comes from a real practice owner. Response rates, ratings, and hours saved — the numbers are theirs.
+              Every result below comes from a real practice owner. Response rates, ratings, and hours saved. The numbers are theirs.
             </p>
           </div>
 
@@ -380,7 +351,7 @@ export default function Home() {
           </div>
           <p style={{ fontSize: 16, color: 'var(--t2)', lineHeight: 1.7, alignSelf: 'end', maxWidth: 520 }}>
             Most practice owners write replies between appointments, after a long day, or never. Replova writes
-            them in your voice the second a review lands — three options, each in a different register,
+            them in your voice the second a review lands. Three options, each in a different register,
             ready for one tap.
           </p>
         </div>
@@ -389,12 +360,12 @@ export default function Home() {
           {[
             {
               n: '01', t: 'Reply',
-              b: 'Three drafts per review — Professional, Warm, Brief. Edit and post to Google in one tap — or enable auto-reply and Replova posts instantly, 24/7.',
-              ex: '"Hi James — a longer wait falls well below our standard. I\'d like the chance to make this right…" · auto-posted 4 min after review',
+              b: 'Three drafts per review: Professional, Warm, Brief. Edit and post to Google in one tap, or enable auto-reply and Replova posts instantly, 24/7.',
+              ex: '"Hi James, a longer wait falls well below our standard. I\'d like the chance to make this right…" · auto-posted 4 min after review',
             },
             {
               n: '02', t: 'Read',
-              b: 'A reputation score updated daily — rating, volume, response rate, and sentiment — broken down so you can see what moved it.',
+              b: 'A reputation score updated daily: rating, volume, response rate, and sentiment, broken down so you can see what moved it.',
               ex: '78 / 100 · Rating up · Sentiment flat · Response 91%',
             },
             {
@@ -407,7 +378,7 @@ export default function Home() {
               <div className="t-mono c-accent" style={{ fontSize: 11, marginBottom: 18 }}>{c.n}</div>
               <h3 className="t-serif" style={{ fontSize: 28, marginBottom: 12, letterSpacing: '-0.01em' }}>{c.t}</h3>
               <p className="t-sm c-t2" style={{ marginBottom: 18, lineHeight: 1.65 }}>{c.b}</p>
-              <div className="t-mono t-xs" style={{ color: 'var(--t3)', padding: 10, background: 'var(--surface-2)', borderRadius: 6, borderLeft: '2px solid var(--accent-line)' }}>
+              <div className="t-mono t-xs" style={{ color: 'var(--t3)', padding: 10, background: 'var(--surface-2)', borderRadius: 6 }}>
                 {c.ex}
               </div>
             </div>
@@ -426,7 +397,7 @@ export default function Home() {
               </h2>
             </div>
             <p style={{ alignSelf: 'end', maxWidth: 520, fontSize: 16, color: 'var(--t2)', lineHeight: 1.7 }}>
-              Replova is trained on aesthetic medicine. It reads treatment mentions, flags staff praise, and tells you exactly what&apos;s driving your rating — review by review.
+              Replova is trained on aesthetic medicine. It reads treatment mentions, flags staff praise, and tells you exactly what&apos;s driving your rating, review by review.
             </p>
           </div>
 
@@ -437,7 +408,7 @@ export default function Home() {
                 icon: <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>,
                 eyebrow: 'Treatment intelligence',
                 heading: 'Knows your menu.',
-                body: 'Replova reads treatment mentions in every review — HydraFacial, Botox, laser, fillers — and tells you which services clients love and which generate complaints.',
+                body: 'Replova reads treatment mentions in every review (HydraFacial, Botox, laser, fillers) and tells you which services clients love and which generate complaints.',
                 callout: 'HydraFacial · 14 mentions · 4.9 avg sentiment',
               },
               {
@@ -445,7 +416,7 @@ export default function Home() {
                 icon: <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
                 eyebrow: 'Staff intelligence',
                 heading: 'Know who to thank.',
-                body: 'Every staff mention across all reviews rolls up automatically. See which providers clients recommend by name — and which ones need a conversation.',
+                body: 'Every staff mention across all reviews rolls up automatically. See which providers clients recommend by name, and which ones need a conversation.',
                 callout: 'Maya · 23 mentions · "gentle and thorough"',
               },
               {
@@ -453,7 +424,7 @@ export default function Home() {
                 icon: <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
                 eyebrow: 'Competitive radar',
                 heading: 'See where you rank.',
-                body: 'Track up to 10 nearby competitors. Their Google rating and review count update daily — so you know if a rival clinic is pulling ahead before your clients notice.',
+                body: 'Track up to 10 nearby competitors. Their Google rating and review count update daily, so you know if a rival clinic is pulling ahead before your clients notice.',
                 callout: 'You: 4.8 · Glow Aesthetics: 4.5 · Skin Studio: 4.3',
               },
               {
@@ -556,7 +527,7 @@ export default function Home() {
             Open the dashboard<br />before the first appointment.
           </h2>
           <p style={{ fontSize: 16, color: 'var(--t2)', maxWidth: 540, margin: '0 auto 32px' }}>
-            Five minutes of setup. Thirty days free. After that, $79 a month — with treatment sentiment, competitor tracking, and staff analytics built in.
+            Five minutes of setup. Thirty days free. After that, $79 a month, with treatment sentiment, competitor tracking, and staff analytics built in.
           </p>
           <a href="/onboard" className="btn btn-primary btn-lg btn-press" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: 6 }}>
             Find my business
@@ -578,11 +549,11 @@ export default function Home() {
             {[
               {
                 q: 'How does AI reply generation work?',
-                a: 'When a new Google review is detected, Replova sends it to Claude (Anthropic\'s AI) and generates three reply drafts — Professional, Warm, and Brief — written in your business\'s voice. You review the options, edit if needed, and post directly to Google in one click. Practice plan users can set a custom persona so every reply reflects their brand\'s exact tone.',
+                a: 'When a new Google review is detected, Replova generates three reply drafts: Professional, Warm, and Brief, written in your business\'s voice. You review the options, edit if needed, and post directly to Google in one click. Practice plan users can set a custom persona so every reply reflects their brand\'s exact tone.',
               },
               {
                 q: 'Does Replova work with Google My Business?',
-                a: 'Yes. Replova connects directly to your Google Business Profile (formerly Google My Business) via Google\'s official API. Once you authorize your account, Replova automatically monitors for new reviews, syncs them in real time, and can post approved replies directly back to Google — no copy-pasting required.',
+                a: 'Yes. Replova connects directly to your Google Business Profile (formerly Google My Business) via Google\'s official API. Once you authorize your account, Replova automatically monitors for new reviews, syncs them in real time, and can post approved replies directly back to Google. No copy-pasting required.',
               },
               {
                 q: 'How much does reputation management cost for a med spa?',

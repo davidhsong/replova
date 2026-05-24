@@ -38,7 +38,7 @@ type RatingFilter = 'all' | '5' | '4' | '3' | '1-2'
 const OVERDUE_DAYS = 3
 
 function formatReviewDate(timestamp: number | null): string {
-  if (!timestamp) return '—'
+  if (!timestamp) return '-'
   const d = new Date(timestamp * 1000)
   const diff = Date.now() - d.getTime()
   if (diff < 3_600_000)  return `${Math.floor(diff / 60_000)}m ago`
@@ -199,7 +199,7 @@ function ReviewRow({
 
           {/* Full review text — serif italic for negative */}
           {review.review_text ? (
-            <div style={{ marginBottom: 16, paddingLeft: 14, borderLeft: `2px solid ${isLowRating ? 'var(--neg-line)' : 'var(--line-md)'}` }}>
+            <div style={{ marginBottom: 16, paddingLeft: 14 }}>
               {isLowRating ? (
                 <p className="t-serif t-italic" style={{ fontSize: 17, color: 'var(--t1)', lineHeight: 1.5, margin: 0, letterSpacing: '-0.005em', fontWeight: 400 }}>
                   &ldquo;{review.review_text}&rdquo;
@@ -211,7 +211,7 @@ function ReviewRow({
               )}
             </div>
           ) : (
-            <p style={{ fontSize: 13, color: 'var(--t3)', fontStyle: 'italic', marginBottom: 16 }}>No review text — rating only.</p>
+            <p style={{ fontSize: 13, color: 'var(--t3)', fontStyle: 'italic', marginBottom: 16 }}>No review text (rating only).</p>
           )}
 
           {/* Reply drafts */}

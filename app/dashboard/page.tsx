@@ -269,7 +269,7 @@ export default async function DashboardPage({
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 28 }}>
           <StatTile
             label="Replova score"
-            value={repScore?.score != null ? Math.round(repScore.score) : '—'}
+            value={repScore?.score != null ? Math.round(repScore.score) : '-'}
             delta={scoreDelta !== null ? scoreDelta : undefined}
             sub="vs last week"
           />
@@ -281,7 +281,7 @@ export default async function DashboardPage({
                     {displayAvgRating.toFixed(1)}
                     <span style={{ color: 'var(--gold)', fontSize: 20, lineHeight: 1, marginLeft: 1 }}>★</span>
                   </span>
-                : '—'
+                : '-'
             }
             sub={`${allRows.length} review${allRows.length !== 1 ? 's' : ''} · last 90 days`}
           />

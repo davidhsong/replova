@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import LegalLayout from '@/components/LegalLayout'
 import type { LegalSection } from '@/components/LegalLayout'
 
-export const metadata: Metadata = { title: 'Refund Policy — Replova' }
+export const metadata: Metadata = { title: 'Refund Policy | Replova' }
 
 const sections: LegalSection[] = [
   {
@@ -20,7 +20,7 @@ const sections: LegalSection[] = [
     content: (
       <p>
         You may cancel at any time through the <strong style={{ color: 'var(--t1)' }}>Billing page</strong> in your
-        dashboard. Cancellation takes effect at the end of your current billing period — you retain full access to
+        dashboard. Cancellation takes effect at the end of your current billing period. You retain full access to
         all features until then. No cancellation fees.
       </p>
     ),

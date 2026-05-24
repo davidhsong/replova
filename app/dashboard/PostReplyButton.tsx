@@ -55,7 +55,7 @@ export default function PostReplyButton({ replyText, reviewId, onReplied }: Prop
         setState('error')
         setTimeout(() => { setState('idle'); setErrorMsg(null) }, 4000)
       } catch {
-        setErrorMsg('Network error — try copying manually.')
+        setErrorMsg('Network error. Try copying manually.')
         setState('error')
         setTimeout(() => { setState('idle'); setErrorMsg(null) }, 4000)
       }

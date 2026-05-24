@@ -39,7 +39,7 @@ const STATUS_COLORS: Record<string, { bg: string; c: string; label: string }> = 
 }
 
 function formatDate(iso: string | null) {
-  if (!iso) return '—'
+  if (!iso) return '-'
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
@@ -252,7 +252,7 @@ export default function ReviewRequestsPage() {
                   {uploadResult.skipped > 0 && (
                     <span style={{ opacity: 0.8 }}>
                       {' '}({uploadResult.skipped} skipped
-                      {uploadResult.reasons.duplicate > 0 && ` — ${uploadResult.reasons.duplicate} already contacted`}
+                      {uploadResult.reasons.duplicate > 0 && `, ${uploadResult.reasons.duplicate} already contacted`}
                       {uploadResult.reasons.invalidEmail > 0 && `, ${uploadResult.reasons.invalidEmail} invalid email`}
                       {uploadResult.reasons.noEmail > 0 && `, ${uploadResult.reasons.noEmail} missing email`}
                       )
@@ -310,7 +310,7 @@ export default function ReviewRequestsPage() {
                     return (
                       <tr key={r.id}>
                         <td style={{ fontWeight: 600 }}>
-                          {r.customer_name ?? <span className="c-t3">—</span>}
+                          {r.customer_name ?? <span className="c-t3">-</span>}
                         </td>
                         <td className="t-mono t-xs c-t2">{r.customer_email}</td>
                         <td>

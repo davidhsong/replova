@@ -126,7 +126,7 @@ export default function CompetitorsPage() {
         setAutoDiscoverMsg(data.error ?? 'Auto-discover failed.')
       }
     } catch {
-      if (!silent) setAutoDiscoverMsg('Auto-discover failed — check your connection.')
+      if (!silent) setAutoDiscoverMsg('Auto-discover failed. Check your connection.')
     } finally {
       setAutoDiscovering(false)
     }
@@ -491,15 +491,15 @@ export default function CompetitorsPage() {
                         <td className="tnum" style={{ textAlign: 'right', fontWeight: 600 }}>
                           {entry.avgRating !== null
                             ? <>{entry.avgRating.toFixed(1)} <span style={{ color: 'var(--gold)' }}>★</span></>
-                            : <span className="c-t3">—</span>
+                            : <span className="c-t3">-</span>
                           }
                         </td>
                         <td className="tnum c-t2" style={{ textAlign: 'right' }}>
-                          {entry.totalReviews !== null ? entry.totalReviews.toLocaleString() : '—'}
+                          {entry.totalReviews !== null ? entry.totalReviews.toLocaleString() : '-'}
                         </td>
                         <td className="tnum" style={{ textAlign: 'right' }}>
                           {entry.isYou || delta === null ? (
-                            <span className="c-t3">—</span>
+                            <span className="c-t3">-</span>
                           ) : (
                             <span style={{ fontWeight: 600, color: isAhead ? 'var(--neg)' : isBehind ? 'var(--pos)' : 'var(--t3)' }}>
                               {isAhead ? '+' : ''}{delta.toFixed(2)}

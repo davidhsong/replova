@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import LegalLayout from '@/components/LegalLayout'
 import type { LegalSection } from '@/components/LegalLayout'
 
-export const metadata: Metadata = { title: 'Privacy Policy — Replova' }
+export const metadata: Metadata = { title: 'Privacy Policy | Replova' }
 
 const sections: LegalSection[] = [
   {
@@ -14,7 +14,7 @@ const sections: LegalSection[] = [
           'Your business name and Google Place ID (to fetch reviews)',
           'Optional profile information: display name, phone number, profile picture',
           'Google reviews fetched via the Google Places API (publicly available data)',
-          'Payment information (processed by Stripe — we never see your card details)',
+          'Payment information (processed by Stripe, we never see your card details)',
         ].map(item => (
           <li key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
             <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--t4)', flexShrink: 0, marginTop: 9 }} />
@@ -84,7 +84,7 @@ const sections: LegalSection[] = [
   {
     heading: 'Security',
     content: (
-      <p>All data is encrypted in transit (TLS). Passwords are not stored — we use passwordless magic link authentication via Supabase.</p>
+      <p>All data is encrypted in transit (TLS). Passwords are not stored. We use passwordless magic link authentication via Supabase.</p>
     ),
   },
 ]

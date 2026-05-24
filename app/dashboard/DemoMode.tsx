@@ -11,8 +11,8 @@ const DEMO_REVIEWS = [
     author: 'Sarah M.',
     rating: 2,
     review_text: 'Had a consultation here for Botox. The appointment was rushed, the provider barely looked at my face before recommending a full treatment plan, and I felt pressured to book on the spot. Left feeling uncertain. Will try somewhere else.',
-    reply_draft_1: 'Hi Sarah, thank you for sharing your experience with us. I sincerely apologize — feeling rushed during your consultation and leaving without clear answers is not the experience we aim to provide. This does not reflect our standards. I would appreciate the opportunity to speak with you directly. Please reach out to us at hello@yourspa.com so we can make this right.',
-    reply_draft_2: 'Sarah, I\'m truly sorry your consultation fell so far short. Feeling pressured and uncertain after an appointment is never acceptable — our goal is always for you to leave feeling informed and confident. We\'d love the opportunity to make this right. Please reach out and we\'ll take care of you properly.',
+    reply_draft_1: 'Hi Sarah, thank you for sharing your experience with us. I sincerely apologize. Feeling rushed during your consultation and leaving without clear answers is not the experience we aim to provide. This does not reflect our standards. I would appreciate the opportunity to speak with you directly. Please reach out to us at hello@yourspa.com so we can make this right.',
+    reply_draft_2: 'Sarah, I\'m truly sorry your consultation fell so far short. Feeling pressured and uncertain after an appointment is never acceptable. Our goal is always for you to leave feeling informed and confident. We\'d love the opportunity to make this right. Please reach out and we\'ll take care of you properly.',
     reply_draft_3: 'Hi Sarah, this is not the experience we want for our guests and I sincerely apologize. Please contact us directly so we can make this right.',
     review_timestamp: Math.floor(Date.now() / 1000) - 7200,
     created_at: new Date(Date.now() - 7200000).toISOString(),
@@ -23,8 +23,8 @@ const DEMO_REVIEWS = [
     author: 'Maria S.',
     rating: 2,
     review_text: 'The pasta used to be amazing here but something has changed. It tasted bland and overcooked. Service was fine. I really hope they go back to the old recipe.',
-    reply_draft_1: 'Hi Maria, thank you for your honest feedback. I\'m sorry to hear the pasta didn\'t meet your expectations — consistency is something we take seriously. We\'ve recently updated our prep process and clearly there\'s room to improve. I\'ve passed your feedback directly to our kitchen. We\'d love to have you back and show you we can do better.',
-    reply_draft_2: 'Maria, thank you for being a loyal guest and for speaking up. Hearing that something you used to love isn\'t the same is hard — and we take that seriously. Your feedback is going straight to our chef. We\'d love to invite you back for a complimentary bowl to win you over again.',
+    reply_draft_1: 'Hi Maria, thank you for your honest feedback. I\'m sorry to hear the pasta didn\'t meet your expectations. Consistency is something we take seriously, and we\'ve recently updated our prep process. I\'ve passed your feedback directly to our kitchen. We\'d love to have you back and show you we can do better.',
+    reply_draft_2: 'Maria, thank you for being a loyal guest and for speaking up. Hearing that something you used to love isn\'t the same is hard, and we take that seriously. Your feedback is going straight to our chef. We\'d love to invite you back for a complimentary bowl to win you over again.',
     reply_draft_3: 'Hi Maria, thank you for the feedback. We\'re looking into the pasta consistency right away. We\'d love to have you back and make it right.',
     review_timestamp: Math.floor(Date.now() / 1000) - 86400,
     created_at: new Date(Date.now() - 86400000).toISOString(),
@@ -35,9 +35,9 @@ const DEMO_REVIEWS = [
     author: 'Sofia L.',
     rating: 5,
     review_text: 'Absolutely the best dinner I\'ve had in months. The tiramisu was out of this world and our server Carlos was so attentive and warm. We celebrated our anniversary here and it was perfect.',
-    reply_draft_1: 'Thank you so much, Sofia! It truly means everything to hear that your anniversary dinner was perfect. Carlos will be thrilled to read your kind words — we\'ll pass them along. The tiramisu is a labour of love and we\'re so glad it made the night special. We hope to see you both again soon.',
-    reply_draft_2: 'Sofia, what a wonderful review to read — thank you! Anniversaries are precious and we\'re so honoured you chose us to celebrate yours. Carlos is one of our favourites and we\'ll make sure he knows. We can\'t wait to welcome you both back.',
-    reply_draft_3: 'Thank you, Sofia! So happy your anniversary was perfect — we\'ll be sure to tell Carlos. See you again soon!',
+    reply_draft_1: 'Thank you so much, Sofia! It truly means everything to hear that your anniversary dinner was perfect. Carlos will be thrilled to read your kind words, and we\'ll pass them along. The tiramisu is a labour of love and we\'re so glad it made the night special. We hope to see you both again soon.',
+    reply_draft_2: 'Sofia, what a wonderful review to read. Thank you! Anniversaries are precious and we\'re so honoured you chose us to celebrate yours. Carlos is one of our favourites and we\'ll make sure he knows. We can\'t wait to welcome you both back.',
+    reply_draft_3: 'Thank you, Sofia! So happy your anniversary was perfect. We\'ll be sure to tell Carlos. See you again soon!',
     review_timestamp: Math.floor(Date.now() / 1000) - 172800,
     created_at: new Date(Date.now() - 172800000).toISOString(),
     status: 'drafted',
@@ -46,10 +46,10 @@ const DEMO_REVIEWS = [
     id: 'demo-4',
     author: 'Marco R.',
     rating: 4,
-    review_text: 'Great food, really solid menu. My only complaint is that it gets very loud on weekends — hard to have a conversation. Would love a quieter corner option. Will definitely return.',
-    reply_draft_1: 'Thank you for the kind words, Marco, and for the honest feedback about noise levels on weekends. You\'re right that it gets lively — we\'re actually exploring some acoustic improvements for the dining room. Next time, ask to be seated near the back or in our corner alcove — it\'s noticeably quieter. We look forward to seeing you again.',
-    reply_draft_2: 'Marco, thank you! So glad you enjoyed the menu. The weekend buzz is a double-edged sword — we love a full house but totally understand wanting to actually hear your dinner companion! Ask us for the back corner next visit — much more peaceful. Can\'t wait to have you back.',
-    reply_draft_3: 'Thanks, Marco! Great tip on the noise — ask for our back corner next time, it\'s much quieter. See you soon!',
+    review_text: 'Great food, really solid menu. My only complaint is that it gets very loud on weekends, hard to have a conversation. Would love a quieter corner option. Will definitely return.',
+    reply_draft_1: 'Thank you for the kind words, Marco, and for the honest feedback about noise levels on weekends. You\'re right that it gets lively. We\'re actually exploring some acoustic improvements for the dining room. Next time, ask to be seated near the back or in our corner alcove, it\'s noticeably quieter. We look forward to seeing you again.',
+    reply_draft_2: 'Marco, thank you! So glad you enjoyed the menu. We love a full house but totally understand wanting to actually hear your dinner companion! Ask us for the back corner next visit, much more peaceful. Can\'t wait to have you back.',
+    reply_draft_3: 'Thanks, Marco! Ask for our back corner next time, it\'s much quieter. See you soon!',
     review_timestamp: Math.floor(Date.now() / 1000) - 259200,
     created_at: new Date(Date.now() - 259200000).toISOString(),
     status: 'drafted',
@@ -138,7 +138,7 @@ function DemoReviewRow({ review, defaultOpen = false }: { review: DemoReview; de
             </div>
           )}
 
-          <div style={{ margin: '16px 0', paddingLeft: 14, borderLeft: '2px solid var(--border-md)' }}>
+          <div style={{ margin: '16px 0', paddingLeft: 14 }}>
             <p style={{ fontSize: 13, color: 'var(--t2)', lineHeight: 1.7, fontStyle: 'italic', margin: 0 }}>
               &ldquo;{review.review_text}&rdquo;
             </p>

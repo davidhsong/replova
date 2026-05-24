@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import LegalLayout from '@/components/LegalLayout'
 import type { LegalSection } from '@/components/LegalLayout'
 
-export const metadata: Metadata = { title: 'Terms of Service — Replova' }
+export const metadata: Metadata = { title: 'Terms of Service | Replova' }
 
 const sections: LegalSection[] = [
   {
@@ -111,8 +111,8 @@ const sections: LegalSection[] = [
     heading: 'Account termination',
     content: (
       <p>
-        You may delete your account at any time from Settings → Danger zone. Upon deletion, all associated data —
-        including businesses, reviews, and reply drafts — is permanently removed. This action cannot be undone.
+        You may delete your account at any time from Settings → Danger zone. Upon deletion, all associated data
+        including businesses, reviews, and reply drafts is permanently removed. This action cannot be undone.
         We may also terminate accounts for violation of these Terms.
       </p>
     ),

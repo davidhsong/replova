@@ -238,7 +238,7 @@ export default function SettingsPage() {
       if (!res.ok) throw new Error(data.error ?? 'Sync failed')
       const { newlyStored, repliesGenerated, autoMarkedReplied } = data
       setSyncResult(
-        `Synced — ${newlyStored} new review${newlyStored !== 1 ? 's' : ''}, ` +
+        `Synced: ${newlyStored} new review${newlyStored !== 1 ? 's' : ''}, ` +
         `${repliesGenerated} draft${repliesGenerated !== 1 ? 's' : ''} generated, ` +
         `${autoMarkedReplied} auto-marked replied.`
       )
@@ -295,7 +295,7 @@ export default function SettingsPage() {
           const regen = await fetch('/api/replies/regenerate-all', { method: 'POST' })
           const regenData = await regen.json()
           if (!regen.ok) throw new Error(regenData.error ?? 'Regeneration failed')
-          setReplySettingsResult({ ok: true, msg: `Done — ${regenData.regenerated} draft${regenData.regenerated !== 1 ? 's' : ''} rewritten with new voice.` })
+          setReplySettingsResult({ ok: true, msg: `Done. ${regenData.regenerated} draft${regenData.regenerated !== 1 ? 's' : ''} rewritten with new voice.` })
           router.refresh()
         } catch (regenErr) {
           setReplySettingsResult({ ok: false, msg: regenErr instanceof Error ? regenErr.message : 'Drafts failed to regenerate.' })
@@ -489,7 +489,7 @@ export default function SettingsPage() {
               value={businessType}
               onChange={e => setBusinessType(e.target.value)}
             >
-              <option value="">— Select type —</option>
+              <option value="">Select type</option>
               <option value="medical_spa">Med Spa / Aesthetic Clinic</option>
               <option value="botox_clinic">Botox & Filler Clinic</option>
               <option value="laser_clinic">Laser & Skin Treatment Clinic</option>
@@ -536,7 +536,7 @@ export default function SettingsPage() {
                     onChange={v => setReplySettings(s => ({ ...s, auto_reply_enabled: v }))}
                   />
                   <span className="t-sm c-t2">
-                    {replySettings.auto_reply_enabled ? 'On — positive reviews send automatically' : 'Off — every reply needs your approval'}
+                    {replySettings.auto_reply_enabled ? 'On: positive reviews send automatically' : 'Off: every reply needs your approval'}
                   </span>
                 </div>
               </Row>
@@ -659,7 +659,7 @@ export default function SettingsPage() {
           <Row label="Email" hint="Magic-link sign-in only.">
             <input
               className="field"
-              value={email || '—'}
+              value={email || '-'}
               readOnly
               style={{ background: 'var(--surface-2)', cursor: 'not-allowed', color: 'var(--t3)' }}
             />

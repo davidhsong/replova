@@ -72,7 +72,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <div style={{ textAlign: 'center', marginBottom: 48, maxWidth: 480 }}>
             <div className="t-eyebrow" style={{ marginBottom: 12 }}>Start your free trial</div>
             <h1 className="t-serif" style={{ fontSize: 40, lineHeight: 1.1, letterSpacing: '-0.02em', marginBottom: 14 }}>Choose your plan</h1>
-            <p style={{ fontSize: 15, color: 'var(--t3)', lineHeight: 1.6 }}>30 days free — no charge until your trial ends. Cancel anytime.</p>
+            <p style={{ fontSize: 15, color: 'var(--t3)', lineHeight: 1.6 }}>30 days free. No charge until your trial ends. Cancel anytime.</p>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, width: '100%', maxWidth: 860 }}>
             {plans.map(p => (

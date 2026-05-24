@@ -59,7 +59,7 @@ export const metadata: Metadata = {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Replova — AI Review Management",
+        alt: "Replova | AI Review Management",
       },
     ],
   },
