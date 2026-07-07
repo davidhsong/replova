@@ -64,7 +64,26 @@ export async function analyzeSentiment(
       .trim()
 
     const parsed = JSON.parse(cleaned)
-    return parsed as SentimentResult
+
+    if (
+      typeof parsed.score !== 'number' ||
+      (parsed.label !== 'positive' && parsed.label !== 'neutral' && parsed.label !== 'negative') ||
+      typeof parsed.summary !== 'string' ||
+      !Array.isArray(parsed.keywords) ||
+      !Array.isArray(parsed.staffMentions) ||
+      !Array.isArray(parsed.treatmentMentions)
+    ) {
+      return fallbackFromRating(rating)
+    }
+
+    return {
+      score: parsed.score,
+      label: parsed.label,
+      summary: parsed.summary,
+      keywords: parsed.keywords.filter((k: unknown) => typeof k === 'string'),
+      staffMentions: parsed.staffMentions.filter((k: unknown) => typeof k === 'string'),
+      treatmentMentions: parsed.treatmentMentions.filter((k: unknown) => typeof k === 'string'),
+    }
   } catch {
     return fallbackFromRating(rating)
   }

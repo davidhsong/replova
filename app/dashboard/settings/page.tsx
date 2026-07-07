@@ -720,7 +720,7 @@ function DeleteAccountButton() {
       <div className="fade-in" style={{ padding: 18, background: 'var(--neg-sub)', border: '1px solid var(--neg-line)', borderRadius: 'var(--r-4)' }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--neg)', marginBottom: 6 }}>This cannot be undone.</div>
         <p className="t-xs c-t2" style={{ marginBottom: 14, maxWidth: 520, lineHeight: 1.6 }}>
-          We'll cancel your subscription and delete your account and all associated reviews. You'll be signed out immediately.
+          We&apos;ll cancel your subscription and delete your account and all associated reviews. You&apos;ll be signed out immediately.
         </p>
         {error && <p style={{ fontSize: 12, color: 'var(--neg)', marginBottom: 10 }}>{error}</p>}
         <div style={{ display: 'flex', gap: 8 }}>

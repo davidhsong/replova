@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 
 function Logo({ size = 20 }: { size?: number }) {
   const box = size + 6
@@ -25,10 +26,10 @@ export default function Error({
     <div style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       <header style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 32px', height: 56, display: 'flex', alignItems: 'center' }}>
-          <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
             <Logo size={18} />
             <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--t1)' }}>Replova</span>
-          </a>
+          </Link>
         </div>
       </header>
 
@@ -45,9 +46,9 @@ export default function Error({
             <button onClick={reset} className="btn btn-primary btn-press">
               Try again
             </button>
-            <a href="/" className="btn btn-ghost btn-press" style={{ textDecoration: 'none' }}>
+            <Link href="/" className="btn btn-ghost btn-press" style={{ textDecoration: 'none' }}>
               Go home
-            </a>
+            </Link>
           </div>
         </div>
       </main>

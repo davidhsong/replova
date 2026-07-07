@@ -78,8 +78,12 @@ export async function queueReplyForReview(reviewId: string): Promise<{ queueId: 
     persona: settings?.reply_persona ?? null,
   })
 
+  // Auto-reply only ever covers positive reviews (per Settings copy: "Skip the
+  // queue for 4★ and 5★"). Negative/neutral reviews always require manual
+  // approval, regardless of the auto_reply_enabled toggle.
+  const isPositiveRating = review.rating != null && review.rating >= 4
   let scheduledSendAt: string | null = null
-  if (settings?.auto_reply_enabled) {
+  if (settings?.auto_reply_enabled && isPositiveRating) {
     const delayHours = settings.auto_reply_delay_hours ?? 2
     const sendAt = new Date(Date.now() + delayHours * 60 * 60 * 1000)
     scheduledSendAt = sendAt.toISOString()

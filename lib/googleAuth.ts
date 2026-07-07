@@ -32,7 +32,26 @@ export async function getValidGoogleToken(
   })
 
   if (!res.ok) {
-    console.error('Google token refresh failed:', await res.text())
+    const body = await res.text()
+    console.error('Google token refresh failed:', body)
+
+    // A 4xx response (e.g. invalid_grant) means the refresh token itself is
+    // dead — usually because the user revoked access from their Google
+    // account. Clear the stored tokens so the app stops retrying a doomed
+    // refresh on every sync and the Settings page correctly shows
+    // "not connected" / prompts the user to reconnect, instead of silently
+    // failing forever while still showing as "Connected".
+    if (res.status >= 400 && res.status < 500) {
+      await admin
+        .from('restaurants')
+        .update({
+          google_access_token: null,
+          google_refresh_token: null,
+          google_token_expires_at: null,
+        })
+        .eq('id', restaurant.id)
+    }
+
     return null
   }
 

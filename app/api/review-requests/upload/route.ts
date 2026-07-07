@@ -4,6 +4,7 @@ import Papa from 'papaparse'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { buildGoogleReviewLink } from '@/lib/reviewRequests'
+import { ACTIVE_LOCATION_COOKIE } from '@/lib/activeLocation'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -16,11 +17,27 @@ export async function POST(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
-  const { data: restaurant } = await admin
-    .from('restaurants')
-    .select('id, place_id, active')
-    .eq('owner_email', user.email)
-    .single()
+  let restaurant: { id: string; place_id: string; active: boolean } | null = null
+  const activeId = cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value
+  if (activeId) {
+    const { data } = await admin
+      .from('restaurants')
+      .select('id, place_id, active')
+      .eq('id', activeId)
+      .eq('owner_email', user.email!)
+      .maybeSingle()
+    restaurant = data
+  }
+  if (!restaurant) {
+    const { data } = await admin
+      .from('restaurants')
+      .select('id, place_id, active')
+      .eq('owner_email', user.email!)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    restaurant = data
+  }
 
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
   if (!restaurant.active) return NextResponse.json({ error: 'Subscription inactive' }, { status: 403 })

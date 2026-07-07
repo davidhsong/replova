@@ -165,11 +165,16 @@ export async function getCompetitorComparison(restaurantId: string): Promise<Com
     })
   )
 
-  // Rank all entries by rating descending (nulls last)
-  type Entry = { name: string; avgRating: number | null; isYou: boolean }
+  // Rank all entries by rating descending (nulls last). Keyed by id, not
+  // name — two tracked competitors can share an identical name (common for
+  // chains/franchises), or a competitor's name can coincidentally match the
+  // user's own business name, which would silently collide and misattribute
+  // ranks if keyed by name instead.
+  const YOU_KEY = '__you__'
+  type Entry = { key: string; avgRating: number | null }
   const all: Entry[] = [
-    { name: restaurantName, avgRating: yourRating, isYou: true },
-    ...competitorData.map(c => ({ name: c.name, avgRating: c.avgRating, isYou: false })),
+    { key: YOU_KEY, avgRating: yourRating },
+    ...competitorData.map(c => ({ key: c.id, avgRating: c.avgRating })),
   ]
 
   all.sort((a, b) => {
@@ -180,9 +185,9 @@ export async function getCompetitorComparison(restaurantId: string): Promise<Com
   })
 
   const rankMap = new Map<string, number>()
-  all.forEach((e, i) => rankMap.set(e.name, i + 1))
+  all.forEach((e, i) => rankMap.set(e.key, i + 1))
 
-  const yourRank = rankMap.get(restaurantName) ?? 1
+  const yourRank = rankMap.get(YOU_KEY) ?? 1
 
   return {
     yourRestaurant: {
@@ -197,7 +202,7 @@ export async function getCompetitorComparison(restaurantId: string): Promise<Com
         c.avgRating !== null && yourRating !== null
           ? parseFloat((c.avgRating - yourRating).toFixed(2))
           : null,
-      rank: rankMap.get(c.name) ?? 99,
+      rank: rankMap.get(c.id) ?? 99,
     })),
     totalTracked: 1 + activeCompetitors.length,
   }

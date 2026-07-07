@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { ACTIVE_LOCATION_COOKIE } from '@/lib/activeLocation'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -19,10 +20,39 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid locationName format' }, { status: 400 })
   }
 
-  const { error } = await getSupabaseAdmin()
+  const admin = getSupabaseAdmin()
+
+  // Resolve the single restaurant this location picker was shown for. Updating
+  // by owner_email alone would overwrite google_location_name on every
+  // restaurant that owner has — this must be scoped to exactly one row.
+  let restaurant: { id: string } | null = null
+  const activeId = cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value
+  if (activeId) {
+    const { data } = await admin
+      .from('restaurants')
+      .select('id')
+      .eq('id', activeId)
+      .eq('owner_email', user.email)
+      .maybeSingle()
+    restaurant = data
+  }
+  if (!restaurant) {
+    const { data } = await admin
+      .from('restaurants')
+      .select('id')
+      .eq('owner_email', user.email)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    restaurant = data
+  }
+
+  if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
+
+  const { error } = await admin
     .from('restaurants')
     .update({ google_location_name: locationName })
-    .eq('owner_email', user.email)
+    .eq('id', restaurant.id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 

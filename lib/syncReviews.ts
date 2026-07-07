@@ -67,12 +67,20 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
       .filter(r => r.google_review_name)
       .map(r => [r.google_review_name as string, r])
   )
-  // Fallback key for old records imported without a google_review_name
+  // Fallback key for old records imported without a google_review_name.
+  // Scoped to rows that themselves have no google_review_name — a row that
+  // already has its own canonical name is uniquely identified by
+  // existingByGmbName above, so it must never be matched here too (two
+  // different reviews sharing an author + same-second timestamp, e.g. two
+  // "Anonymous" reviewers, would otherwise collide and the newer one would
+  // be silently dropped instead of inserted).
   const existingByKey = new Map(
-    (existingRows ?? []).map(r => [
-      `${r.author ?? ''}::${r.review_timestamp ?? ''}`,
-      r,
-    ])
+    (existingRows ?? [])
+      .filter(r => !r.google_review_name)
+      .map(r => [
+        `${r.author ?? ''}::${r.review_timestamp ?? ''}`,
+        r,
+      ])
   )
 
   let candidates: ReviewCandidate[] = []
@@ -157,10 +165,15 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
       .in('id', toMarkReplied)
   }
 
-  // Insert reviews that already have a Google reply (no AI draft needed)
+  // Insert reviews that already have a Google reply (no AI draft needed).
+  // Upsert + ignoreDuplicates guards against a concurrent sync (manual sync
+  // racing the cron, or two overlapping cron runs) both treating the same
+  // Google review as new and double-inserting it — the DB-level unique
+  // index on (restaurant_id, google_review_name) is the source of truth,
+  // the in-memory existingByGmbName check above is only a fast-path.
   const alreadyReplied = toInsert.filter(r => r.hasGoogleReply)
   if (alreadyReplied.length > 0) {
-    await admin.from('reviews').insert(
+    await admin.from('reviews').upsert(
       alreadyReplied.map(r => ({
         restaurant_id: restaurantId,
         google_review_name: r.google_review_name || null,
@@ -170,7 +183,8 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
         review_timestamp: r.review_timestamp,
         status: 'replied',
         replied_at: new Date().toISOString(),
-      }))
+      })),
+      { onConflict: 'restaurant_id,google_review_name', ignoreDuplicates: true }
     )
   }
 
@@ -181,9 +195,13 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
   let draftsFailed = 0
 
   if (needDraft.length > 0) {
+    // Upsert + ignoreDuplicates: if a concurrent sync already inserted one of
+    // these reviews, ON CONFLICT DO NOTHING means it's silently skipped and
+    // (critically) NOT returned below — so we never generate a second AI
+    // draft or send a second negative-review alert for the same review.
     const { data: inserted } = await admin
       .from('reviews')
-      .insert(
+      .upsert(
         needDraft.map(r => ({
           restaurant_id: restaurantId,
           google_review_name: r.google_review_name || null,
@@ -192,7 +210,8 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
           review_text: r.review_text,
           review_timestamp: r.review_timestamp,
           status: 'pending',
-        }))
+        })),
+        { onConflict: 'restaurant_id,google_review_name', ignoreDuplicates: true }
       )
       .select('id, author, rating, review_text')
 
@@ -201,37 +220,46 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
     // Limit concurrent Claude API calls to avoid rate limits
     const limit = pLimit(AI_CONCURRENCY)
 
+    // Each task is independently try/caught so one failure (e.g. a transient
+    // Supabase error on the status update) can't reject the whole Promise.all
+    // and discard the tally/results for every other review already processed
+    // in this batch.
     await Promise.all(
       (inserted ?? []).map(row =>
         limit(async () => {
-          const success = await generateWithRetry({
-            restaurantName: restaurant.name,
-            author: row.author ?? '',
-            rating: row.rating ?? 0,
-            reviewText: row.review_text ?? '',
-            persona,
-          })
+          try {
+            const success = await generateWithRetry({
+              restaurantName: restaurant.name,
+              author: row.author ?? '',
+              rating: row.rating ?? 0,
+              reviewText: row.review_text ?? '',
+              persona,
+            })
 
-          if (success) {
-            await admin
-              .from('reviews')
-              .update({
-                reply_draft_1: success.professional,
-                reply_draft_2: success.warm,
-                reply_draft_3: success.brief,
-                status: 'drafted',
-              })
-              .eq('id', row.id)
-            repliesGenerated++
-          } else {
+            if (success) {
+              await admin
+                .from('reviews')
+                .update({
+                  reply_draft_1: success.professional,
+                  reply_draft_2: success.warm,
+                  reply_draft_3: success.brief,
+                  status: 'drafted',
+                })
+                .eq('id', row.id)
+              repliesGenerated++
+            } else {
+              draftsFailed++
+              // Status stays 'pending' — visible in UI as "Draft not yet generated"
+            }
+
+            if ((row.rating ?? 0) <= 3) {
+              void sendNegativeReviewAlert(row.id).catch(err =>
+                console.error('Alert failed for review', row.id, err)
+              )
+            }
+          } catch (err) {
             draftsFailed++
-            // Status stays 'pending' — visible in UI as "Draft not yet generated"
-          }
-
-          if ((row.rating ?? 0) <= 3) {
-            void sendNegativeReviewAlert(row.id).catch(err =>
-              console.error('Alert failed for review', row.id, err)
-            )
+            console.error('Failed to process review', row.id, err)
           }
         })
       )

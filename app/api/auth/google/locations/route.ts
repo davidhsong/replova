@@ -3,11 +3,19 @@ import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { getValidGoogleToken } from '@/lib/googleAuth'
+import { ACTIVE_LOCATION_COOKIE } from '@/lib/activeLocation'
 
 export type GmbLocation = {
   name: string    // "accounts/xxx/locations/yyy"
   title: string   // business display name
   placeId: string | null
+}
+
+type RestaurantTokenRow = {
+  id: string
+  google_access_token: string | null
+  google_refresh_token: string | null
+  google_token_expires_at: number | null
 }
 
 export async function GET() {
@@ -19,11 +27,28 @@ export async function GET() {
 
   const admin = getSupabaseAdmin()
 
-  const { data: restaurant } = await admin
-    .from('restaurants')
-    .select('id, google_access_token, google_refresh_token, google_token_expires_at')
-    .eq('owner_email', user.email)
-    .single()
+  const select = 'id, google_access_token, google_refresh_token, google_token_expires_at'
+  let restaurant: RestaurantTokenRow | null = null
+  const activeId = cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value
+  if (activeId) {
+    const { data } = await admin
+      .from('restaurants')
+      .select(select)
+      .eq('id', activeId)
+      .eq('owner_email', user.email)
+      .maybeSingle<RestaurantTokenRow>()
+    restaurant = data
+  }
+  if (!restaurant) {
+    const { data } = await admin
+      .from('restaurants')
+      .select(select)
+      .eq('owner_email', user.email)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle<RestaurantTokenRow>()
+    restaurant = data
+  }
 
   if (!restaurant) return NextResponse.json({ error: 'No restaurant found' }, { status: 404 })
   if (!restaurant.google_access_token) return NextResponse.json({ error: 'Google not connected' }, { status: 400 })

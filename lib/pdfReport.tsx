@@ -1,6 +1,6 @@
 // This module is Node.js only — never import in browser bundles
 
-import { Document, Page, Text, View, StyleSheet, renderToBuffer, type DocumentProps } from '@react-pdf/renderer'
+import { Document, Page, Text, View, Image, StyleSheet, renderToBuffer, type DocumentProps } from '@react-pdf/renderer'
 import React, { type JSXElementConstructor, type ReactElement } from 'react'
 import { getSupabaseAdmin } from '@/lib/supabase'
 
@@ -41,6 +41,16 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     alignItems: 'flex-end',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  logo: {
+    width: 28,
+    height: 28,
+    marginRight: 10,
+    borderRadius: 4,
   },
   body: {
     padding: '20 30',
@@ -450,6 +460,7 @@ type ReportBranding = { logoUrl?: string; brandName?: string }
 
 function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?: ReportBranding }) {
   const brandName = branding?.brandName
+  const logoUrl = branding?.logoUrl
   const trendText = data.scoreDelta !== null
     ? data.scoreDelta > 0
       ? `Your score improved by ${data.scoreDelta.toFixed(1)} points vs last month`
@@ -463,9 +474,12 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
       {/* PAGE 1 — Executive Summary */}
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <View>
-            <Text style={styles.headerTitle}>{brandName ? `${brandName} — ` : ''}Reputation Report</Text>
-            <Text style={styles.headerSub}>{data.restaurantName}</Text>
+          <View style={styles.headerLeft}>
+            {logoUrl && <Image src={logoUrl} style={styles.logo} />}
+            <View>
+              <Text style={styles.headerTitle}>{brandName ? `${brandName} — ` : ''}Reputation Report</Text>
+              <Text style={styles.headerSub}>{data.restaurantName}</Text>
+            </View>
           </View>
           <View style={styles.headerRight}>
             <Text style={{ ...styles.headerSub, color: '#ffffff' }}>{data.month}</Text>
@@ -546,7 +560,7 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
                     <Text style={styles.reviewAuthor}>{r.author}</Text>
                     <StarRating rating={r.rating} />
                   </View>
-                  <Text style={styles.reviewExcerpt}>"{r.excerpt}"</Text>
+                  <Text style={styles.reviewExcerpt}>&quot;{r.excerpt}&quot;</Text>
                 </View>
               ))}
             </>
@@ -561,7 +575,7 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
                     <Text style={styles.reviewAuthor}>{r.author}</Text>
                     <StarRating rating={r.rating} negative />
                   </View>
-                  <Text style={styles.reviewExcerpt}>"{r.excerpt}"</Text>
+                  <Text style={styles.reviewExcerpt}>&quot;{r.excerpt}&quot;</Text>
                 </View>
               ))}
             </>
@@ -650,12 +664,28 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
   )
 }
 
+function buildDocumentElement(data: MonthlyReportData, branding?: ReportBranding) {
+  return React.createElement(ReportDocument, { data, branding }) as unknown as ReactElement<DocumentProps, JSXElementConstructor<DocumentProps>>
+}
+
 export async function generatePdfBuffer(
   data: MonthlyReportData,
   branding?: ReportBranding
 ): Promise<Buffer> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const element = React.createElement(ReportDocument, { data, branding }) as unknown as ReactElement<DocumentProps, JSXElementConstructor<DocumentProps>>
-  const buffer = await renderToBuffer(element)
-  return Buffer.from(buffer)
+  try {
+    const buffer = await renderToBuffer(buildDocumentElement(data, branding))
+    return Buffer.from(buffer)
+  } catch (err) {
+    // A user-supplied report_logo_url can be unreachable, non-image, or
+    // rejected by the remote host — react-pdf's Image component fetches it
+    // during render and throws, which would otherwise take down the entire
+    // report generation. Fall back to the report without the logo rather
+    // than failing the whole request for a broken branding asset.
+    if (branding?.logoUrl) {
+      console.error('PDF render failed with custom logo, retrying without it:', err)
+      const buffer = await renderToBuffer(buildDocumentElement(data, { ...branding, logoUrl: undefined }))
+      return Buffer.from(buffer)
+    }
+    throw err
+  }
 }

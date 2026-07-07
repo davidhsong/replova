@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { ACTIVE_LOCATION_COOKIE } from '@/lib/activeLocation'
 
 export async function GET(req: NextRequest) {
   const cookieStore = await cookies()
@@ -12,11 +13,27 @@ export async function GET(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
-  const { data: restaurant } = await admin
-    .from('restaurants')
-    .select('id')
-    .eq('owner_email', user.email)
-    .single()
+  let restaurant: { id: string } | null = null
+  const activeId = cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value
+  if (activeId) {
+    const { data } = await admin
+      .from('restaurants')
+      .select('id')
+      .eq('id', activeId)
+      .eq('owner_email', user.email!)
+      .maybeSingle()
+    restaurant = data
+  }
+  if (!restaurant) {
+    const { data } = await admin
+      .from('restaurants')
+      .select('id')
+      .eq('owner_email', user.email!)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    restaurant = data
+  }
 
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
 

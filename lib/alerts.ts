@@ -30,7 +30,6 @@ function buildAlertHtml(opts: {
 }): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? BASE_URL
   const starColor = opts.rating <= 2 ? '#dc2626' : '#d97706'
-  const ratingLabel = opts.rating <= 2 ? 'red' : 'amber'
   const ratingBg = opts.rating <= 2 ? '#fee2e2' : '#fef3c7'
   const ratingText = opts.rating <= 2 ? '#dc2626' : '#d97706'
   const approveUrl = `${appUrl}/dashboard?reviewId=${opts.reviewId}&action=approve`
