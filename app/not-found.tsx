@@ -1,30 +1,56 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
+import Link from 'next/link'
 
 export const metadata: Metadata = {
   title: 'Page Not Found',
 }
 
+function Logo({ size = 20 }: { size?: number }) {
+  const box = size + 6
+  return (
+    <Image
+      src="/replova-logo.png"
+      alt="Replova"
+      width={box}
+      height={box}
+      style={{ borderRadius: Math.round(box * 0.35), flexShrink: 0 }}
+    />
+  )
+}
+
 export default function NotFound() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <header className="border-b border-zinc-200">
-        <div className="max-w-5xl mx-auto px-6 py-4">
-          <a href="/" className="text-lg font-semibold tracking-tight text-zinc-900">Replova</a>
+    <div style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <header style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 32px', height: 56, display: 'flex', alignItems: 'center' }}>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+            <Logo size={18} />
+            <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--t1)' }}>Replova</span>
+          </Link>
         </div>
       </header>
-      <div className="flex-1 flex items-center justify-center px-6">
-        <div className="text-center">
-          <p className="text-7xl font-bold text-zinc-100 mb-4">404</p>
-          <h1 className="text-xl font-semibold text-zinc-900 mb-2">Page not found</h1>
-          <p className="text-zinc-500 text-sm mb-8">The page you're looking for doesn't exist.</p>
-          <a
-            href="/"
-            className="inline-block rounded-full bg-zinc-900 text-white text-sm font-medium px-6 py-2.5 hover:bg-zinc-700 transition-colors"
-          >
+
+      <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+        <div className="fade-up" style={{ textAlign: 'center', maxWidth: 400 }}>
+          <p className="t-mono c-t4" style={{ fontSize: 13, marginBottom: 8 }}>Error 404</p>
+          <h1 className="t-serif" style={{ fontSize: 44, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: 14 }}>
+            Nothing<br /><span style={{ fontStyle: 'italic', color: 'var(--t3)' }}>here.</span>
+          </h1>
+          <p className="t-sm c-t2" style={{ marginBottom: 28, lineHeight: 1.6 }}>
+            The page you&apos;re looking for doesn&apos;t exist or has moved.
+          </p>
+          <Link href="/" className="btn btn-primary btn-press" style={{ textDecoration: 'none', display: 'inline-flex' }}>
             Go home
-          </a>
+          </Link>
         </div>
-      </div>
+      </main>
+
+      <footer style={{ borderTop: '1px solid var(--line)', background: 'var(--surface)' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto', padding: '20px 32px', textAlign: 'center' }}>
+          <span className="t-xs c-t4">© {new Date().getFullYear()} Replova</span>
+        </div>
+      </footer>
     </div>
   )
 }

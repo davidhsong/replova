@@ -56,8 +56,8 @@ function Stars({ rating }: { rating: number }) {
     <span style={{ display: 'flex', gap: 1 }}>
       {Array.from({ length: 5 }, (_, i) => (
         <svg key={i} width="11" height="11" viewBox="0 0 24 24"
-          fill={i < rating ? '#f59e0b' : 'none'}
-          stroke={i < rating ? '#f59e0b' : 'var(--line-hi)'}
+          fill={i < rating ? 'var(--gold)' : 'none'}
+          stroke={i < rating ? 'var(--gold)' : 'var(--line-hi)'}
           strokeWidth="1.5"
         >
           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
@@ -174,6 +174,7 @@ function ReviewRow({
             onClick={handleToggle}
             disabled={toggling}
             title={isReplied ? 'Mark as needs reply' : 'Mark as replied'}
+            aria-label={isReplied ? 'Mark as needs reply' : 'Mark as replied'}
             className={`check-btn ${isReplied ? 'done' : ''}`}
             style={{ opacity: toggling ? 0.4 : 1 }}
           >

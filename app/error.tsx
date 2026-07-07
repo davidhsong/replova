@@ -1,5 +1,20 @@
 'use client'
 
+import Image from 'next/image'
+
+function Logo({ size = 20 }: { size?: number }) {
+  const box = size + 6
+  return (
+    <Image
+      src="/replova-logo.png"
+      alt="Replova"
+      width={box}
+      height={box}
+      style={{ borderRadius: Math.round(box * 0.35), flexShrink: 0 }}
+    />
+  )
+}
+
 export default function Error({
   reset,
 }: {
@@ -7,33 +22,41 @@ export default function Error({
   reset: () => void
 }) {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
-      <header className="border-b border-zinc-200">
-        <div className="max-w-5xl mx-auto px-6 py-4">
-          <a href="/" className="text-lg font-semibold tracking-tight text-zinc-900">Replova</a>
+    <div style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+      <header style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 32px', height: 56, display: 'flex', alignItems: 'center' }}>
+          <a href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+            <Logo size={18} />
+            <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--t1)' }}>Replova</span>
+          </a>
         </div>
       </header>
-      <div className="flex-1 flex items-center justify-center px-6">
-        <div className="text-center">
-          <p className="text-7xl font-bold text-zinc-100 mb-4">500</p>
-          <h1 className="text-xl font-semibold text-zinc-900 mb-2">Something went wrong</h1>
-          <p className="text-zinc-500 text-sm mb-8">An unexpected error occurred. Please try again.</p>
-          <div className="flex items-center justify-center gap-3">
-            <button
-              onClick={reset}
-              className="rounded-full bg-zinc-900 text-white text-sm font-medium px-6 py-2.5 hover:bg-zinc-700 transition-colors"
-            >
+
+      <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+        <div className="fade-up" style={{ textAlign: 'center', maxWidth: 400 }}>
+          <p className="t-mono c-t4" style={{ fontSize: 13, marginBottom: 8 }}>Error 500</p>
+          <h1 className="t-serif" style={{ fontSize: 44, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: 14 }}>
+            Something<br /><span style={{ fontStyle: 'italic', color: 'var(--t3)' }}>broke.</span>
+          </h1>
+          <p className="t-sm c-t2" style={{ marginBottom: 28, lineHeight: 1.6 }}>
+            An unexpected error occurred. Try again, or head back home.
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+            <button onClick={reset} className="btn btn-primary btn-press">
               Try again
             </button>
-            <a
-              href="/"
-              className="rounded-full border border-zinc-200 text-zinc-700 text-sm font-medium px-6 py-2.5 hover:bg-zinc-50 transition-colors"
-            >
+            <a href="/" className="btn btn-ghost btn-press" style={{ textDecoration: 'none' }}>
               Go home
             </a>
           </div>
         </div>
-      </div>
+      </main>
+
+      <footer style={{ borderTop: '1px solid var(--line)', background: 'var(--surface)' }}>
+        <div style={{ maxWidth: 1140, margin: '0 auto', padding: '20px 32px', textAlign: 'center' }}>
+          <span className="t-xs c-t4">© {new Date().getFullYear()} Replova</span>
+        </div>
+      </footer>
     </div>
   )
 }

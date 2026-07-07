@@ -183,6 +183,7 @@ export default function DashboardSidebar({
           <button
             onClick={handleSignOut}
             title="Sign out"
+            aria-label="Sign out"
             className="btn-quiet btn-sm"
             style={{ padding: 4, borderRadius: 4, display: 'flex', alignItems: 'center' }}
           >

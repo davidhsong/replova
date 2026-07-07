@@ -607,6 +607,16 @@ textarea.field { padding: 10px 12px; height: auto; min-height: 80px; resize: ver
   .lp-pricing-h2 { font-size: 28px; }
 }
 
+/* ── Reduced motion ───────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 @media (max-width: 600px) {
   .lp-nav-inner   { padding: 0 16px; }
   .lp-strip-inner { padding: 9px 16px; gap: 12px; }
