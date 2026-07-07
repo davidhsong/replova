@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export const metadata: Metadata = {
   title: { absolute: "AI Review Management for Med Spas & Aesthetic Clinics | Replova" },
@@ -220,6 +221,7 @@ export default function Home() {
             <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--t1)' }}>Replova</span>
           </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <ThemeToggle />
             <a href="/signin" className="lp-signin" style={{ fontSize: 13, color: 'var(--t3)', padding: '6px 12px', textDecoration: 'none' }}>
               Sign in
             </a>
