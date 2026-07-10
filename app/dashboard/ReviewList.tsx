@@ -71,12 +71,12 @@ function Stars({ rating }: { rating: number }) {
 function ReviewRow({
   review,
   effectiveStatus,
-  onToggle,
+  onSetStatus,
   index,
 }: {
   review: Review
   effectiveStatus: string | null
-  onToggle: () => void
+  onSetStatus: (status: string) => void
   index: number
 }) {
   const [open, setOpen] = useState(false)
@@ -92,13 +92,15 @@ function ReviewRow({
   async function handleToggle(e: React.MouseEvent) {
     e.stopPropagation()
     setToggling(true)
-    onToggle()
+    const previousStatus = effectiveStatus ?? 'drafted'
+    const nextStatus = isReplied ? 'drafted' : 'replied'
+    onSetStatus(nextStatus)
     const res = await fetch('/api/reviews/mark-replied', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ reviewId: review.id, completed: !isReplied }),
     })
-    if (!res.ok) onToggle()
+    if (!res.ok) onSetStatus(previousStatus)
     setToggling(false)
   }
 
@@ -251,7 +253,7 @@ function ReviewRow({
                       <PostReplyButton
                         replyText={activeText}
                         reviewId={review.id}
-                        onReplied={() => { if (!isReplied) onToggle() }}
+                        onReplied={() => { if (!isReplied) onSetStatus('replied') }}
                       />
                     </div>
                   </div>
@@ -309,10 +311,8 @@ export default function ReviewList({
     return localStatus[review.id] ?? review.status
   }
 
-  function toggleStatus(review: Review) {
-    const current = getStatus(review)
-    const next = current === 'replied' ? 'drafted' : 'replied'
-    setLocalStatus(prev => ({ ...prev, [review.id]: next }))
+  function setReviewStatus(reviewId: string, status: string) {
+    setLocalStatus(prev => ({ ...prev, [reviewId]: status }))
   }
 
   const localNeedsReply = reviews.filter(r => getStatus(r) !== 'replied').length
@@ -339,7 +339,7 @@ export default function ReviewList({
         const aU = (localStatus[a.id] ?? a.status) !== 'replied' && a.rating != null && a.rating <= 2 ? 0 : 1
         const bU = (localStatus[b.id] ?? b.status) !== 'replied' && b.rating != null && b.rating <= 2 ? 0 : 1
         if (aU !== bU) return aU - bU
-        return isOverdue(a.created_at) ? -1 : isOverdue(b.created_at) ? 1 : 0
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
       })
     }
     return base
@@ -422,7 +422,7 @@ export default function ReviewList({
               key={review.id}
               review={review}
               effectiveStatus={getStatus(review)}
-              onToggle={() => toggleStatus(review)}
+              onSetStatus={(status) => setReviewStatus(review.id, status)}
               index={i}
             />
           ))
