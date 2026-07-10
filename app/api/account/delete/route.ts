@@ -29,12 +29,18 @@ export async function POST() {
   if (account?.stripe_customer_id) {
     try {
       const stripe = getStripe()
+      // status: 'active' misses trialing subscriptions — every new signup starts
+      // in trialing, so deleting an account mid-trial would leave the
+      // subscription running and charge the (now-deleted) customer later.
       const subscriptions = await stripe.subscriptions.list({
         customer: account.stripe_customer_id,
-        status: 'active',
+        status: 'all',
       })
+      const cancelable = subscriptions.data.filter(
+        sub => sub.status !== 'canceled' && sub.status !== 'incomplete_expired'
+      )
       await Promise.all(
-        subscriptions.data.map(sub => stripe.subscriptions.cancel(sub.id))
+        cancelable.map(sub => stripe.subscriptions.cancel(sub.id))
       )
     } catch (err) {
       console.error('[account/delete] Stripe cancellation failed:', err)
@@ -68,7 +74,7 @@ export async function POST() {
     await admin.from('competitors').delete().in('restaurant_id', restaurantIds)
     await admin.from('restaurant_settings').delete().in('restaurant_id', restaurantIds)
     await admin.from('reviews').delete().in('restaurant_id', restaurantIds)
-    await admin.from('restaurants').delete().in('restaurant_id', restaurantIds)
+    await admin.from('restaurants').delete().in('id', restaurantIds)
   }
 
   await admin.from('accounts').delete().eq('owner_email', user.email!)
