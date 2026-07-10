@@ -74,7 +74,13 @@ export default function SignInPage() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         email: email.trim().toLowerCase(),
-        redirectTo: `${window.location.origin}/auth/callback`,
+        // /api/auth/magic-link's server-side Supabase client defaults to
+        // implicit flow (unlike the PKCE-configured browser client used by
+        // onboarding), so the session lands as a #access_token hash fragment,
+        // not a ?code query param. Route back to /signin itself, which already
+        // has a client-side handler for that hash — not /auth/callback, which
+        // is a server route and can never see a URL fragment.
+        redirectTo: `${window.location.origin}/signin`,
       }),
     })
 

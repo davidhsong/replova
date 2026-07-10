@@ -45,11 +45,15 @@ export async function POST(req: NextRequest) {
     )
   }
 
+  // getPublicClient() defaults to implicit flow (unlike the PKCE-configured
+  // browser client), so the fallback must point at /signin — which has a
+  // client-side #access_token hash handler — not /auth/callback, which is a
+  // server route that can never see a URL fragment.
   const { error } = await getPublicClient().auth.signInWithOtp({
     email: normalizedEmail,
     options: {
       shouldCreateUser: false,
-      emailRedirectTo: redirectTo ?? `${BASE_URL}/auth/callback`,
+      emailRedirectTo: redirectTo ?? `${BASE_URL}/signin`,
     },
   })
 
