@@ -257,7 +257,7 @@ export default async function DashboardPage({
               <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
             </svg>
             <div>
-              <strong>{urgentCount} negative review{urgentCount > 1 ? 's' : ''} need a reply</strong>
+              <strong>{urgentCount} negative review{urgentCount > 1 ? 's' : ''} {urgentCount > 1 ? 'need' : 'needs'} a reply</strong>
               <span style={{ color: 'inherit', opacity: 0.8, marginLeft: 8 }}>
                 A reply within 24 hours is the difference between recovery and a permanent 1-star.
               </span>
