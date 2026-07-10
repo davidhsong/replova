@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
         ? Math.round((data.sentimentSum / data.sentimentCount) * 100) / 100
         : 0,
     }))
-    .sort((a, b) => b.totalMentions - a.totalMentions)
+    .sort((a, b) => b.totalMentions - a.totalMentions || b.sentimentScore - a.sentimentScore)
 
   return NextResponse.json({ providers })
 }
