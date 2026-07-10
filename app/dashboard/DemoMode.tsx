@@ -68,7 +68,7 @@ function Stars({ rating }: { rating: number }) {
   return (
     <span style={{ fontSize: 11, letterSpacing: 1 }}>
       {Array.from({ length: 5 }, (_, i) => (
-        <span key={i} style={{ color: i < rating ? 'var(--gold)' : 'var(--border-hi)' }}>★</span>
+        <span key={i} style={{ color: i < rating ? '#f59e0b' : 'var(--border-hi)' }}>★</span>
       ))}
     </span>
   )
@@ -193,7 +193,7 @@ export default function DemoMode() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 10, marginBottom: 20 }}>
         {[
           { label: 'Needs reply',   value: '2',    color: 'var(--t1)',  danger: false },
-          { label: 'Avg rating',    value: '★ 3.0', color: 'var(--gold)',   danger: false },
+          { label: 'Avg rating',    value: '★ 3.0', color: '#f59e0b',   danger: false },
           { label: 'Response rate', value: '0%',    color: 'var(--t1)',  danger: false },
           { label: 'Urgent',        value: '2',     color: 'var(--err)', danger: true },
         ].map((s, i) => (

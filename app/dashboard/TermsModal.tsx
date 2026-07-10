@@ -4,9 +4,9 @@ import { useState } from 'react'
 import type { Plan } from '@/lib/planLimits'
 
 const PLAN_META: Record<Plan, { label: string; price: number; color: string }> = {
-  starter: { label: 'Starter', price: 39,  color: '#8a8175' },
-  growth:  { label: 'Growth',  price: 99,  color: '#a86b2e' },
-  agency:  { label: 'Agency',  price: 199, color: '#b4901f' },
+  starter: { label: 'Starter', price: 39,  color: '#6366f1' },
+  growth:  { label: 'Growth',  price: 99,  color: '#3b82f6' },
+  agency:  { label: 'Agency',  price: 199, color: '#8b5cf6' },
 }
 
 const PLAN_FEATURES: Record<Plan, string[]> = {

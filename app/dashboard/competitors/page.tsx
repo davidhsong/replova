@@ -50,7 +50,7 @@ type ComparisonData = {
   totalTracked: number
 }
 
-const MEDAL_COLORS: Record<number, string> = { 1: 'var(--gold)', 2: '#948f82', 3: '#9c6b3e' }
+const MEDAL_COLORS: Record<number, string> = { 1: '#c08725', 2: '#7c7569', 3: '#a06430' }
 
 export default function CompetitorsPage() {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)

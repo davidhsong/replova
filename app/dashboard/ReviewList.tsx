@@ -104,13 +104,13 @@ function ReviewRow({
 
   const initials = (review.author ?? 'A').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
 
-  const stripe = isReplied ? null :
-    review.rating !== null && review.rating <= 2 ? 'neg' :
-    review.rating === 3 ? 'warn' : null
+  const rowBg = isReplied ? 'var(--surface)' :
+    review.rating !== null && review.rating <= 2 ? 'var(--neg-sub)' :
+    review.rating === 3 ? 'var(--warn-sub)' : 'var(--surface)'
 
   return (
-    <article className={stripe ? `edge-stripe ${stripe}` : undefined} style={{
-      background: 'var(--surface)',
+    <article style={{
+      background: rowBg,
       borderTop: '1px solid var(--line)',
       opacity: isReplied ? 0.5 : 1,
       transition: 'opacity 0.15s',
@@ -158,7 +158,7 @@ function ReviewRow({
 
           {/* Date + chevron */}
           <div style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 5 }}>
-            <span className="t-mono t-xs c-t3">{reviewDate}</span>
+            <span className="t-xs c-t3">{reviewDate}</span>
             <svg
               style={{ color: 'var(--t3)', transition: 'transform 0.2s', transform: open ? 'rotate(180deg)' : 'rotate(0)' }}
               width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
@@ -222,10 +222,10 @@ function ReviewRow({
                     key={field}
                     onClick={() => setActiveTab(field)}
                     style={{
-                      padding: '5px 12px', borderRadius: 'var(--r-3)', fontSize: 10.5, fontWeight: 600,
+                      padding: '5px 12px', borderRadius: 'var(--r-3)', fontSize: 11, fontWeight: 600,
                       background: activeTab === field ? 'var(--t1)' : 'transparent',
                       color: activeTab === field ? 'var(--bg)' : 'var(--t3)',
-                      border: 'none', cursor: 'pointer', fontFamily: 'var(--font-mono)',
+                      border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                       letterSpacing: '0.02em', transition: 'all 0.1s',
                     }}
                   >
@@ -379,7 +379,7 @@ export default function ReviewList({
                   fontSize: 11, fontWeight: 500, fontFamily: 'inherit', transition: 'all 0.1s',
                   background: ratingFilter === f.value ? 'var(--surface)' : 'transparent',
                   color: ratingFilter === f.value ? 'var(--t1)' : 'var(--t3)',
-                  boxShadow: ratingFilter === f.value ? 'var(--shadow-1)' : 'none',
+                  boxShadow: ratingFilter === f.value ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
                 }}
               >
                 {f.label}

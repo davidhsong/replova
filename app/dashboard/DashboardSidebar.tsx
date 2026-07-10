@@ -9,7 +9,6 @@ import {
 } from '@/components/icons'
 import { getSupabaseBrowser } from '@/lib/supabase'
 import LocationSwitcherClient from '@/components/dashboard/LocationSwitcherClient'
-import ThemeToggle from '@/components/ThemeToggle'
 import type { Plan } from '@/lib/planLimits'
 
 type Location = { id: string; name: string }
@@ -181,7 +180,6 @@ export default function DashboardSidebar({
               {userEmail}
             </div>
           </div>
-          <ThemeToggle />
           <button
             onClick={handleSignOut}
             title="Sign out"

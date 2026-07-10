@@ -3,56 +3,55 @@
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--t1);
-  --font-sans: var(--font-public-sans);
-  --font-mono: var(--font-plex-mono);
+  --font-sans: var(--font-inter);
+  --font-mono: var(--font-jetbrains-mono);
 }
 
 /* ─────────── REPLOVA DESIGN SYSTEM ───────────
-   Visual register: "Instrument" — clinical-precision instrument panel
-   Cool graphite/paper neutrals, bronze accent, Fraunces + Public Sans + IBM Plex Mono
-   Light = "Ledger", Dark = "Instrument" — same system, switched via [data-theme]
+   Visual register: Mercury × Stripe × Linear × Things 3
+   Warm neutrals, terracotta accent, Inter + Instrument Serif
 */
 
 :root {
-  /* Surfaces — cool paper, not warm cream */
-  --bg:           #edefec;
+  /* Surfaces — warm neutrals, off-white paper */
+  --bg:           #faf9f6;
   --surface:      #ffffff;
-  --surface-2:    #e3e7e3;
-  --surface-3:    #d6dbd5;
+  --surface-2:    #f4f2ec;
+  --surface-3:    #ebe8df;
 
   /* Hairlines */
-  --line:         rgba(20, 26, 22, 0.10);
-  --line-md:      rgba(20, 26, 22, 0.16);
-  --line-hi:      rgba(20, 26, 22, 0.26);
+  --line:         rgba(20, 18, 12, 0.08);
+  --line-md:      rgba(20, 18, 12, 0.14);
+  --line-hi:      rgba(20, 18, 12, 0.22);
 
-  /* Text — cool graphite, slight green-black bias */
-  --t1:           #16201c;
-  --t2:           #4c5850;
-  --t3:           #7c8880;
-  --t4:           #abb3ac;
+  /* Text — warm graphite */
+  --t1:           #14120c;
+  --t2:           #4d4a40;
+  --t3:           #807c70;
+  --t4:           #b6b1a3;
 
-  /* Accent — bronze, not terracotta */
-  --accent:       #9c5f27;
-  --accent-hi:    #7f4c1d;
-  --accent-sub:   rgba(156, 95, 39, 0.10);
-  --accent-line:  rgba(156, 95, 39, 0.28);
+  /* Accent — terracotta */
+  --accent:       #b94a2c;
+  --accent-hi:    #a23d22;
+  --accent-sub:   rgba(185, 74, 44, 0.10);
+  --accent-line:  rgba(185, 74, 44, 0.28);
 
   /* Sentiment — muted, not crayon */
-  --neg:          #b23b2e;
-  --neg-sub:      rgba(178, 59, 46, 0.09);
-  --neg-line:     rgba(178, 59, 46, 0.22);
-  --warn:         #a6791f;
-  --warn-sub:     rgba(166, 121, 31, 0.10);
-  --warn-line:    rgba(166, 121, 31, 0.24);
-  --pos:          #2e6b4e;
-  --pos-sub:      rgba(46, 107, 78, 0.09);
-  --pos-line:     rgba(46, 107, 78, 0.22);
-  --gold:         #a6791f;
+  --neg:          #b73a2a;
+  --neg-sub:      rgba(183, 58, 42, 0.09);
+  --neg-line:     rgba(183, 58, 42, 0.22);
+  --warn:         #b07b1a;
+  --warn-sub:     rgba(176, 123, 26, 0.10);
+  --warn-line:    rgba(176, 123, 26, 0.24);
+  --pos:          #1f6f4a;
+  --pos-sub:      rgba(31, 111, 74, 0.09);
+  --pos-line:     rgba(31, 111, 74, 0.22);
+  --gold:         #c08725;
 
   /* Shadows — hairlines first, shadows minimal */
-  --shadow-1:     0 1px 0 rgba(16,22,18,0.05);
-  --shadow-2:     0 4px 16px rgba(16,22,18,0.07), 0 1px 2px rgba(16,22,18,0.05);
-  --shadow-3:     0 24px 64px rgba(16,22,18,0.11), 0 2px 4px rgba(16,22,18,0.05);
+  --shadow-1:     0 1px 0 rgba(20,18,12,0.04);
+  --shadow-2:     0 4px 16px rgba(20,18,12,0.06), 0 1px 2px rgba(20,18,12,0.04);
+  --shadow-3:     0 24px 64px rgba(20,18,12,0.10), 0 2px 4px rgba(20,18,12,0.04);
 
   /* Radii — sharp on data tables, soft on inputs/CTAs */
   --r-0:    0;
@@ -66,9 +65,9 @@
   --r-pill: 999px;
 
   /* Font family vars (populated by next/font in layout.tsx) */
-  --font-ui:     var(--font-public-sans), system-ui, -apple-system, sans-serif;
-  --font-serif:  var(--font-fraunces), Georgia, serif;
-  --font-mono:   var(--font-plex-mono), 'SF Mono', Menlo, monospace;
+  --font-ui:     var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-serif:  var(--font-instrument-serif), 'Tiempos', Georgia, serif;
+  --font-mono:   var(--font-jetbrains-mono), 'SF Mono', Menlo, monospace;
 
   /* ── Legacy aliases — keep un-ported components working ── */
   --border:             var(--line);
@@ -91,33 +90,33 @@
 /* Dark theme — also applied via .dark-app for incremental porting */
 [data-theme="dark"],
 .dark-app {
-  --bg:          #14181a;
-  --surface:     #1b2124;
-  --surface-2:   #232b2e;
-  --surface-3:   #2c363a;
-  --line:        rgba(230, 236, 232, 0.10);
-  --line-md:     rgba(230, 236, 232, 0.16);
-  --line-hi:     rgba(230, 236, 232, 0.24);
-  --t1:          #eceeea;
-  --t2:          #aeb6b0;
-  --t3:          #76827c;
-  --t4:          #4b5450;
-  --accent:      #c0813a;
-  --accent-hi:   #d9a25e;
-  --accent-sub:  rgba(192, 129, 58, 0.16);
-  --accent-line: rgba(192, 129, 58, 0.34);
-  --neg:         #e2695a;
-  --neg-sub:     rgba(226, 105, 90, 0.12);
-  --neg-line:    rgba(226, 105, 90, 0.28);
-  --warn:        #d9b34e;
-  --warn-sub:    rgba(217, 179, 78, 0.12);
-  --warn-line:   rgba(217, 179, 78, 0.28);
-  --pos:         #7cc091;
-  --pos-sub:     rgba(124, 192, 145, 0.12);
-  --pos-line:    rgba(124, 192, 145, 0.28);
-  --gold:        #d9b34e;
-  --shadow-2:    0 4px 16px rgba(0,0,0,0.36), 0 1px 2px rgba(0,0,0,0.28);
-  --shadow-3:    0 24px 64px rgba(0,0,0,0.46), 0 2px 4px rgba(0,0,0,0.28);
+  --bg:          #0e0d0a;
+  --surface:     #15140f;
+  --surface-2:   #1d1b15;
+  --surface-3:   #28251c;
+  --line:        rgba(255, 250, 235, 0.07);
+  --line-md:     rgba(255, 250, 235, 0.12);
+  --line-hi:     rgba(255, 250, 235, 0.20);
+  --t1:          #f5f1e6;
+  --t2:          #aea89a;
+  --t3:          #807a6c;
+  --t4:          #4d493f;
+  --accent:      #d65f3e;
+  --accent-hi:   #e87655;
+  --accent-sub:  rgba(214, 95, 62, 0.14);
+  --accent-line: rgba(214, 95, 62, 0.32);
+  --neg:         #e57363;
+  --neg-sub:     rgba(229, 115, 99, 0.10);
+  --neg-line:    rgba(229, 115, 99, 0.24);
+  --warn:        #d4a23e;
+  --warn-sub:    rgba(212, 162, 62, 0.10);
+  --warn-line:   rgba(212, 162, 62, 0.24);
+  --pos:         #6cba8b;
+  --pos-sub:     rgba(108, 186, 139, 0.10);
+  --pos-line:    rgba(108, 186, 139, 0.24);
+  --gold:        #e0a445;
+  --shadow-2:    0 4px 16px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-3:    0 24px 64px rgba(0,0,0,0.5), 0 2px 4px rgba(0,0,0,0.3);
 
   /* Legacy aliases in dark context */
   --border:             var(--line);
@@ -132,16 +131,6 @@
   --card-shadow:        var(--shadow-2);
   --card-shadow-hover:  var(--shadow-3);
 }
-
-/* ── Edge stripe — urgency/severity marker on stat tiles + review rows ───── */
-.edge-stripe { position: relative; }
-.edge-stripe::before {
-  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-  border-radius: var(--r-1) 0 0 var(--r-1);
-}
-.edge-stripe.neg::before  { background: var(--neg); }
-.edge-stripe.warn::before { background: var(--warn); }
-.edge-stripe.pos::before  { background: var(--pos); }
 
 /* ── Reset + base ─────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
@@ -527,16 +516,6 @@ textarea.field { padding: 10px 12px; height: auto; min-height: 80px; resize: ver
 /* ── Btn press (legacy) ───────────────────────────────────────────────────── */
 .btn-press { transition: transform 120ms ease, opacity 120ms ease; }
 .btn-press:active { transform: translateY(1px) scale(0.98); }
-
-/* ── Theme toggle ─────────────────────────────────────────────────────────── */
-.theme-toggle {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 30px; height: 30px; flex-shrink: 0;
-  border-radius: var(--r-4); background: transparent;
-  border: 1px solid var(--line-md); color: var(--t2); cursor: pointer;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
-}
-.theme-toggle:hover { background: var(--surface-2); color: var(--t1); border-color: var(--line-hi); }
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 @media (max-width: 720px) {
