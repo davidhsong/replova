@@ -42,6 +42,7 @@ export default function TermsModal({ plan, trialEndDate }: Props) {
   const [agreed, setAgreed] = useState(false)
   const [loading, setLoading] = useState(false)
   const [done, setDone] = useState(false)
+  const [error, setError] = useState(false)
 
   const meta = PLAN_META[plan]
   const features = PLAN_FEATURES[plan]
@@ -49,9 +50,13 @@ export default function TermsModal({ plan, trialEndDate }: Props) {
   async function handleAccept() {
     if (!agreed || loading) return
     setLoading(true)
+    setError(false)
     try {
-      await fetch('/api/terms/accept', { method: 'POST' })
+      const res = await fetch('/api/terms/accept', { method: 'POST' })
+      if (!res.ok) throw new Error('Failed to accept terms')
       setDone(true)
+    } catch {
+      setError(true)
     } finally {
       setLoading(false)
     }
@@ -189,6 +194,12 @@ export default function TermsModal({ plan, trialEndDate }: Props) {
               <a href="/refunds" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--t1)', fontWeight: 600, textDecoration: 'underline' }}>Refund Policy</a>.
             </span>
           </label>
+
+          {error && (
+            <p style={{ fontSize: 12, color: 'var(--err)', textAlign: 'center', marginBottom: 12 }}>
+              Something went wrong saving your agreement. Please try again.
+            </p>
+          )}
 
           {/* CTA */}
           <button

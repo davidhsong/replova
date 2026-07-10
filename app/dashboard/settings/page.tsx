@@ -216,6 +216,7 @@ export default function SettingsPage() {
         setGoogleNotice('Google Business location linked successfully.')
         setGoogleNoticeType('success')
         setLocations(null)
+        router.refresh()
       } else {
         const data = await res.json()
         setGoogleNotice(data.error ?? 'Failed to save location.')
@@ -304,6 +305,7 @@ export default function SettingsPage() {
         }
       } else {
         setReplySettingsResult({ ok: true, msg: 'Settings saved.' })
+        router.refresh()
       }
     } catch (err) {
       setReplySettingsResult({ ok: false, msg: err instanceof Error ? err.message : 'Save failed.' })
