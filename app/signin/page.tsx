@@ -56,11 +56,22 @@ export default function SignInPage() {
     const params = new URLSearchParams(hash.slice(1))
     const accessToken = params.get('access_token')
     const refreshToken = params.get('refresh_token')
-    if (!accessToken || !refreshToken) return
+    if (!accessToken || !refreshToken) {
+      console.error('[signin] hash had access_token but was missing a required field:', hash)
+      setError('Sign-in link was malformed. Request a new one.')
+      setState('error')
+      return
+    }
     void (async () => {
       const supabase = getSupabaseBrowser()
-      const { error } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-      if (!error) router.replace('/dashboard')
+      const { error: sessionError } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+      if (!sessionError) {
+        router.replace('/dashboard')
+      } else {
+        console.error('[signin] setSession failed:', sessionError.message)
+        setError(`Sign-in failed: ${sessionError.message}`)
+        setState('error')
+      }
     })()
   }, [router])
 
