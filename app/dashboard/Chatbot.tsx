@@ -38,9 +38,9 @@ interface ChatContext {
 }
 
 const PLAN_PRICE: Record<string, string> = {
-  starter: '$39/mo',
-  growth: '$99/mo',
-  agency: '$199/mo',
+  starter: '$79/mo',
+  growth: '$179/mo',
+  agency: '$349/mo',
 }
 
 const CHIPS = [
@@ -704,28 +704,28 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'compare plan', 'plan comparison', 'difference between plan', 'which plan should', 'what plan is best', 'plan difference', 'starter vs', 'growth vs')) {
     return {
-      text: `Starter ($39): 1 location, AI replies, alerts, digest. Growth ($99): 5 locations + score, sentiment, competitors, PDF. Agency ($199): 15 locations + custom persona, white-label. You're currently on ${planLabel}.`,
+      text: `Starter ($79): 1 location, AI replies, alerts, digest. Growth ($179): 5 locations + score, sentiment, competitors, PDF. Agency ($349): 15 locations + custom persona, white-label. You're currently on ${planLabel}.`,
       link: { label: 'View Plans', href: '/dashboard/billing' },
     }
   }
 
   if (m(q, 'starter') && m(q, 'plan', 'include', 'feature', 'what', 'get', 'have', 'offer')) {
     return {
-      text: `Starter ($39/mo): 1 location, 3 competitor slots, AI reply drafts (3 tones), urgent review alerts, weekly digest, review request campaigns.${ctx.plan === 'starter' ? ' This is your current plan.' : ''}`,
+      text: `Starter ($79/mo): 1 location, 3 competitor slots, AI reply drafts (3 tones), urgent review alerts, weekly digest, review request campaigns.${ctx.plan === 'starter' ? ' This is your current plan.' : ''}`,
       link: { label: 'View Billing', href: '/dashboard/billing' },
     }
   }
 
   if (m(q, 'growth') && m(q, 'plan', 'include', 'feature', 'what', 'get', 'have', 'offer')) {
     return {
-      text: `Growth ($99/mo): Everything in Starter + up to 5 locations, 5 competitor slots/location, reputation score, sentiment analysis, competitor tracking, monthly PDF reports.${ctx.plan === 'growth' ? ' This is your current plan.' : ''}`,
+      text: `Growth ($179/mo): Everything in Starter + up to 5 locations, 5 competitor slots/location, reputation score, sentiment analysis, competitor tracking, monthly PDF reports.${ctx.plan === 'growth' ? ' This is your current plan.' : ''}`,
       link: { label: 'View Billing', href: '/dashboard/billing' },
     }
   }
 
   if (m(q, 'agency') && m(q, 'plan', 'include', 'feature', 'what', 'get', 'have', 'offer')) {
     return {
-      text: `Agency ($199/mo): Everything in Growth + up to 15 locations, 10 competitor slots/location, custom reply persona, white-label PDF reports.${ctx.plan === 'agency' ? ' This is your current plan.' : ''}`,
+      text: `Agency ($349/mo): Everything in Growth + up to 15 locations, 10 competitor slots/location, custom reply persona, white-label PDF reports.${ctx.plan === 'agency' ? ' This is your current plan.' : ''}`,
       link: { label: 'View Billing', href: '/dashboard/billing' },
     }
   }
@@ -761,7 +761,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
   if (m(q, 'billing', 'pricing', 'how much', 'cost', 'price', 'subscription fee', 'monthly fee')) {
     const renewal = ctx.renewalDate ? ` Next charge: ${ctx.renewalDate}.` : ` Trial ends ${ctx.trialEndDate}.`
     return {
-      text: `You're on ${planLabel} (${planPrice}).${renewal} Plans: Starter $39 · Growth $99 · Agency $199/mo.`,
+      text: `You're on ${planLabel} (${planPrice}).${renewal} Plans: Starter $79 · Growth $179 · Agency $349/mo.`,
       link: { label: 'Go to Billing', href: '/dashboard/billing' },
     }
   }

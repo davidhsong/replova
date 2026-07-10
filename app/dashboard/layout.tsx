@@ -41,17 +41,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!activeRestaurant.active) {
     const plans = [
       {
-        key: 'starter', label: 'Starter', price: '$39', sub: '1 location',
+        key: 'starter', label: 'Starter', price: '$79', sub: '1 location',
         features: ['1 location', '3 competitor slots', 'AI reply drafts', 'Review alerts & digests'],
         primary: false,
       },
       {
-        key: 'growth', label: 'Growth', price: '$99', sub: 'Up to 5 locations',
+        key: 'growth', label: 'Growth', price: '$179', sub: 'Up to 5 locations',
         features: ['Up to 5 locations', '5 competitor slots', 'AI reply drafts', 'Sentiment & scoring', 'PDF reports'],
         primary: true,
       },
       {
-        key: 'agency', label: 'Agency', price: '$199', sub: 'Up to 15 locations',
+        key: 'agency', label: 'Agency', price: '$349', sub: 'Up to 15 locations',
         features: ['Up to 15 locations', '10 competitor slots', 'AI reply drafts', 'Custom persona', 'White-label reports'],
         primary: false,
       },
