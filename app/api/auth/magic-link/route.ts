@@ -28,11 +28,15 @@ export async function POST(req: NextRequest) {
   const normalizedEmail = email.trim().toLowerCase()
 
   // Only send a magic link to users who already have an account.
-  const { data: account } = await getAdminClient()
+  const { data: account, error: lookupError } = await getAdminClient()
     .from('accounts')
     .select('owner_email')
     .eq('owner_email', normalizedEmail)
     .maybeSingle()
+
+  if (lookupError) {
+    return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
+  }
 
   if (!account) {
     return NextResponse.json(

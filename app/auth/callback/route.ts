@@ -33,24 +33,29 @@ export async function GET(req: NextRequest) {
       }
     )
 
-    let authError: Error | null = null
-    if (code) {
-      const { error } = await supabase.auth.exchangeCodeForSession(code)
-      authError = error
-    } else if (tokenHash && type) {
-      const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
-      authError = error
-    }
+    try {
+      let authError: Error | null = null
+      if (code) {
+        const { error } = await supabase.auth.exchangeCodeForSession(code)
+        authError = error
+      } else if (tokenHash && type) {
+        const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type })
+        authError = error
+      }
 
-    if (authError) {
-      console.error('[auth/callback] error:', authError.message)
-      // Swap activeResponse BEFORE signOut so clear-cookie headers land on the error redirect.
-      activeResponse = errorResponse
-      await supabase.auth.signOut()
+      if (authError) {
+        console.error('[auth/callback] error:', authError.message)
+        // Swap activeResponse BEFORE signOut so clear-cookie headers land on the error redirect.
+        activeResponse = errorResponse
+        await supabase.auth.signOut()
+        return errorResponse
+      }
+
+      return successResponse
+    } catch (err) {
+      console.error('[auth/callback] unexpected error:', err)
       return errorResponse
     }
-
-    return successResponse
   }
 
   return errorResponse
