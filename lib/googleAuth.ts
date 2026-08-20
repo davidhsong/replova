@@ -36,7 +36,7 @@ export async function getValidGoogleToken(
     console.error('Google token refresh failed:', body)
 
     // A 4xx response (e.g. invalid_grant) means the refresh token itself is
-    // dead — usually because the user revoked access from their Google
+    // dead, usually because the user revoked access from their Google
     // account. Clear the stored tokens so the app stops retrying a doomed
     // refresh on every sync and the Settings page correctly shows
     // "not connected" / prompts the user to reconnect, instead of silently

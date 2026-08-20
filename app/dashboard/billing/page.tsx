@@ -184,7 +184,7 @@ export default async function BillingPage() {
 
       <div className="page-body" style={{ maxWidth: 1040 }}>
 
-        {/* Status card — 2-column */}
+        {/* Two-column status card */}
         <div className="card fade-up" style={{
           padding: 28, marginBottom: 32,
           display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32,
@@ -375,8 +375,8 @@ export default async function BillingPage() {
           borderRadius: 'var(--r-5)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
         }}>
           <div>
-            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>Need help choosing?</div>
-            <div className="t-xs c-t3">Email a real human. Usually back within an hour.</div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 2 }}>Not sure which plan fits?</div>
+            <div className="t-xs c-t3">Email support and tell us how many locations you manage.</div>
           </div>
           <a href="mailto:support@replova.app" className="btn btn-ghost btn-sm">
             support@replova.app <IconExternal s={11} />

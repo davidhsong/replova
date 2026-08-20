@@ -158,7 +158,7 @@ export async function processReplyQueue(): Promise<{ sent: number; errors: strin
       }
 
       if (!review.google_review_name) {
-        errors.push(`[${item.id}] google_review_name is null — cannot post to GMB`)
+        errors.push(`[${item.id}] google_review_name is null, so the reply cannot be posted to GMB`)
         continue
       }
 

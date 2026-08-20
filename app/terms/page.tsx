@@ -6,7 +6,7 @@ export const metadata: Metadata = { title: 'Terms of Service | Replova' }
 
 const sections: LegalSection[] = [
   {
-    heading: 'The thing you signed up for',
+    heading: 'About the service',
     content: (
       <p>
         By accessing or using Replova (&ldquo;the Service&rdquo;), you agree to be bound by these Terms and our{' '}
@@ -111,14 +111,14 @@ const sections: LegalSection[] = [
     heading: 'Account termination',
     content: (
       <p>
-        You may delete your account at any time from Settings → Danger zone. Upon deletion, all associated data
+        You may delete your account at any time from the Danger zone section in Settings. Upon deletion, all associated data
         including businesses, reviews, and reply drafts is permanently removed. This action cannot be undone.
         We may also terminate accounts for violation of these Terms.
       </p>
     ),
   },
   {
-    heading: 'The boring legal bits',
+    heading: 'Warranty and liability',
     content: (
       <p>
         Service is provided &ldquo;as is.&rdquo; To the maximum extent permitted by applicable law, we disclaim all

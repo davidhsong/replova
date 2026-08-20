@@ -153,7 +153,7 @@ export async function PATCH(req: NextRequest) {
     if (otherKeys.length === 0) return NextResponse.json({ success: true })
   }
 
-  // Gate: report_logo_url requires Agency plan — update restaurants table separately
+  // Gate: report_logo_url requires Agency plan, so update the restaurants table separately
   if ('report_logo_url' in body) {
     if (plan !== 'agency') {
       return NextResponse.json(

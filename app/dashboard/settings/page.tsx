@@ -75,7 +75,7 @@ function LockedNotice({ children, plan = 'Agency' }: { children: React.ReactNode
           <IconLock s={10} /> {plan} plan
         </span>
         <a href="/dashboard/billing" style={{ fontSize: 12, fontWeight: 600, color: 'var(--t1)', textDecoration: 'underline' }}>
-          Upgrade →
+          View plans
         </a>
       </div>
     </div>

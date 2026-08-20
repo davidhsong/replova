@@ -59,7 +59,7 @@ export default function ProviderCard({ provider, rank }: ProviderCardProps) {
         </div>
         <div>
           <div style={{ fontSize: 22, fontWeight: 700, color: 'var(--t1)', lineHeight: 1 }}>
-            {avgRating > 0 ? avgRating.toFixed(1) : '—'}
+            {avgRating > 0 ? avgRating.toFixed(1) : 'N/A'}
             {avgRating > 0 && (
               <span style={{ color: 'var(--gold)', fontSize: 16, marginLeft: 2 }}>★</span>
             )}

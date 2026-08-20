@@ -8,48 +8,48 @@ import AutoDismissBanner from './AutoDismissBanner'
 const DEMO_REVIEWS = [
   {
     id: 'demo-1',
-    author: 'Sarah M.',
+    author: 'Talia R.',
     rating: 2,
     review_text: 'Had a consultation here for Botox. The appointment was rushed, the provider barely looked at my face before recommending a full treatment plan, and I felt pressured to book on the spot. Left feeling uncertain. Will try somewhere else.',
-    reply_draft_1: 'Hi Sarah, thank you for sharing your experience with us. I sincerely apologize. Feeling rushed during your consultation and leaving without clear answers is not the experience we aim to provide. This does not reflect our standards. I would appreciate the opportunity to speak with you directly. Please reach out to us at hello@yourspa.com so we can make this right.',
-    reply_draft_2: 'Sarah, I\'m truly sorry your consultation fell so far short. Feeling pressured and uncertain after an appointment is never acceptable. Our goal is always for you to leave feeling informed and confident. We\'d love the opportunity to make this right. Please reach out and we\'ll take care of you properly.',
-    reply_draft_3: 'Hi Sarah, this is not the experience we want for our guests and I sincerely apologize. Please contact us directly so we can make this right.',
+    reply_draft_1: 'Hi Talia, I\'m sorry the consultation felt rushed. You should have had time to ask questions and think through the recommendations without feeling pressured. Please call our office and ask for the practice manager so we can learn more about what happened.',
+    reply_draft_2: 'Talia, I\'m sorry you left the consultation feeling uncertain. A treatment plan should come after a careful conversation about your goals, and you should never feel pushed to book. If you\'re open to it, please contact our office so I can follow up with you directly.',
+    reply_draft_3: 'Hi Talia, I\'m sorry the consultation felt rushed and pressured. Please contact our office so we can discuss what happened.',
     review_timestamp: Math.floor(Date.now() / 1000) - 7200,
     created_at: new Date(Date.now() - 7200000).toISOString(),
     status: 'drafted',
   },
   {
     id: 'demo-2',
-    author: 'Maria S.',
-    rating: 2,
-    review_text: 'The pasta used to be amazing here but something has changed. It tasted bland and overcooked. Service was fine. I really hope they go back to the old recipe.',
-    reply_draft_1: 'Hi Maria, thank you for your honest feedback. I\'m sorry to hear the pasta didn\'t meet your expectations. Consistency is something we take seriously, and we\'ve recently updated our prep process. I\'ve passed your feedback directly to our kitchen. We\'d love to have you back and show you we can do better.',
-    reply_draft_2: 'Maria, thank you for being a loyal guest and for speaking up. Hearing that something you used to love isn\'t the same is hard, and we take that seriously. Your feedback is going straight to our chef. We\'d love to invite you back for a complimentary bowl to win you over again.',
-    reply_draft_3: 'Hi Maria, thank you for the feedback. We\'re looking into the pasta consistency right away. We\'d love to have you back and make it right.',
+    author: 'Priya K.',
+    rating: 3,
+    review_text: 'My Hydrafacial was great and the provider was very thorough, but I waited almost 30 minutes past my appointment time. I wish someone had let me know they were running behind.',
+    reply_draft_1: 'Hi Priya, I\'m glad you were happy with the Hydrafacial, but you should not have been left waiting without an update. We\'re reviewing how our front desk communicates delays so clients know what to expect. Thank you for pointing this out.',
+    reply_draft_2: 'Priya, I\'m glad the treatment itself went well. I\'m sorry no one kept you updated during the wait. A quick heads-up would have made a difference, and we\'ll address that with our front desk team.',
+    reply_draft_3: 'Hi Priya, I\'m glad you liked the Hydrafacial. I\'m sorry about the wait and the lack of an update. We\'ll address it with our team.',
     review_timestamp: Math.floor(Date.now() / 1000) - 86400,
     created_at: new Date(Date.now() - 86400000).toISOString(),
     status: 'drafted',
   },
   {
     id: 'demo-3',
-    author: 'Sofia L.',
+    author: 'Elena V.',
     rating: 5,
-    review_text: 'Absolutely the best dinner I\'ve had in months. The tiramisu was out of this world and our server Carlos was so attentive and warm. We celebrated our anniversary here and it was perfect.',
-    reply_draft_1: 'Thank you so much, Sofia! It truly means everything to hear that your anniversary dinner was perfect. Carlos will be thrilled to read your kind words, and we\'ll pass them along. The tiramisu is a labour of love and we\'re so glad it made the night special. We hope to see you both again soon.',
-    reply_draft_2: 'Sofia, what a wonderful review to read. Thank you! Anniversaries are precious and we\'re so honoured you chose us to celebrate yours. Carlos is one of our favourites and we\'ll make sure he knows. We can\'t wait to welcome you both back.',
-    reply_draft_3: 'Thank you, Sofia! So happy your anniversary was perfect. We\'ll be sure to tell Carlos. See you again soon!',
+    review_text: 'Maya was wonderful during my first laser treatment. She explained every step, checked in throughout the appointment, and gave me clear aftercare instructions. I already booked my next session.',
+    reply_draft_1: 'Thank you, Elena. We\'re glad Maya made your first laser appointment comfortable and explained the aftercare clearly. We\'ll share your note with her, and we look forward to seeing you at your next session.',
+    reply_draft_2: 'Elena, thanks for taking the time to mention Maya. She\'s careful about explaining each step, especially for a first appointment. We\'re glad you felt comfortable and will see you at the next session.',
+    reply_draft_3: 'Thanks, Elena. We\'re glad Maya made your first laser treatment comfortable and clear. See you at your next session.',
     review_timestamp: Math.floor(Date.now() / 1000) - 172800,
     created_at: new Date(Date.now() - 172800000).toISOString(),
     status: 'drafted',
   },
   {
     id: 'demo-4',
-    author: 'Marco R.',
+    author: 'Danielle B.',
     rating: 4,
-    review_text: 'Great food, really solid menu. My only complaint is that it gets very loud on weekends, hard to have a conversation. Would love a quieter corner option. Will definitely return.',
-    reply_draft_1: 'Thank you for the kind words, Marco, and for the honest feedback about noise levels on weekends. You\'re right that it gets lively. We\'re actually exploring some acoustic improvements for the dining room. Next time, ask to be seated near the back or in our corner alcove, it\'s noticeably quieter. We look forward to seeing you again.',
-    reply_draft_2: 'Marco, thank you! So glad you enjoyed the menu. We love a full house but totally understand wanting to actually hear your dinner companion! Ask us for the back corner next visit, much more peaceful. Can\'t wait to have you back.',
-    reply_draft_3: 'Thanks, Marco! Ask for our back corner next time, it\'s much quieter. See you soon!',
+    review_text: 'Really happy with my facial and the esthetician was excellent. Checkout was hectic though, and it took a while to schedule my follow-up. I\'ll still be back.',
+    reply_draft_1: 'Hi Danielle, we\'re glad you enjoyed the facial and your time with the esthetician. I\'m sorry checkout and scheduling took longer than they should have. We\'re looking at that handoff with our front desk team. Thank you for letting us know.',
+    reply_draft_2: 'Danielle, thanks for the honest note. It\'s good to hear the facial went well, but checkout should have been much smoother. We\'ll review the scheduling process with the front desk before your next visit.',
+    reply_draft_3: 'Thanks, Danielle. We\'re glad you enjoyed the facial, and we\'ll work on making checkout and follow-up scheduling quicker.',
     review_timestamp: Math.floor(Date.now() / 1000) - 259200,
     created_at: new Date(Date.now() - 259200000).toISOString(),
     status: 'drafted',
@@ -134,7 +134,7 @@ function DemoReviewRow({ review, defaultOpen = false }: { review: DemoReview; de
         <div className="fade-in" style={{ padding: '0 16px 16px', borderTop: '1px solid var(--border)' }}>
           {isLowRating && (
             <div style={{ display: 'flex', gap: 12, margin: '16px 0', fontSize: 12 }}>
-              <span style={{ color: 'var(--err)', fontWeight: 500 }}>⚠ Prioritise this response</span>
+              <span style={{ color: 'var(--err)', fontWeight: 500 }}>Priority: reply soon</span>
             </div>
           )}
 
@@ -176,7 +176,7 @@ function DemoReviewRow({ review, defaultOpen = false }: { review: DemoReview; de
 export default function DemoMode() {
   return (
     <div>
-      {/* Demo banner — auto-dismisses after 6 s so it doesn't pile up with the success banner */}
+      {/* The demo banner auto-dismisses after 6 seconds to avoid stacking with the success banner */}
       <AutoDismissBanner className="banner banner-amber fade-up" delay={6000}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
           <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -184,7 +184,7 @@ export default function DemoMode() {
         <span>
           This is a preview with sample reviews. Connect your Google Business account to see your real ones.{' '}
           <a href="/dashboard/settings" style={{ color: 'inherit', fontWeight: 700, textDecoration: 'underline' }}>
-            Connect now →
+            Connect now
           </a>
         </span>
       </AutoDismissBanner>
@@ -221,7 +221,7 @@ export default function DemoMode() {
         <button className="tab-btn">All <span className="badge badge-zinc" style={{ padding: '1px 6px', fontSize: 10 }}>4</span></button>
       </div>
 
-      {/* Demo reviews — first one open by default */}
+      {/* The first demo review is open by default */}
       {DEMO_REVIEWS.map((review, i) => (
         <DemoReviewRow key={review.id} review={review} defaultOpen={i === 0} />
       ))}

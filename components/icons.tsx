@@ -1,4 +1,4 @@
-// Shared stroke-consistent icons — 1.6px stroke, 14×14 default
+// Shared stroke-consistent icons: 1.6px stroke, 14×14 default
 // Usage: <IconMessage /> or <IconMessage s={16} sw={2} />
 
 import React from 'react'

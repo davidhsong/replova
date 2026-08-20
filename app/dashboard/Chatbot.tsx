@@ -96,8 +96,8 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
   if (m(q, 'my plan', 'current plan', 'what plan', 'which plan', 'my subscription', 'my tier', 'am i on the', 'what am i paying', 'my current plan', 'plan am i on', 'am i subscribed')) {
     const upsell =
       ctx.plan === 'starter' ? ' You can upgrade to Growth or Agency for more features.'
-      : ctx.plan === 'growth' ? ' Upgrade to Agency to unlock custom persona and white-label reports.'
-      : " You're on our top tier. All features are unlocked."
+      : ctx.plan === 'growth' ? ' Custom reply personas and white-label reports are included with Agency.'
+      : " You're on the Agency plan, which includes every Replova feature."
     const renewal = ctx.renewalDate ? ` Renews on ${ctx.renewalDate}.` : ` Trial ends ${ctx.trialEndDate}.`
     return {
       text: `You're on the ${planLabel} plan (${planPrice}).${renewal}${upsell}`,
@@ -184,12 +184,12 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     }
     if (ctx.googleConnected && !ctx.googleLocationName) {
       return {
-        text: `Google is authorized but no location has been selected yet. Go to Settings → Google Business to pick your location.`,
+        text: `Google is authorized but no location has been selected yet. Open Settings, then choose your location under Google Business.`,
         link: { label: 'Select Location', href: '/dashboard/settings' },
       }
     }
     return {
-      text: `Google Business is not connected. Go to Settings → Google Business and click "Connect Google" to link your account.`,
+      text: `Google Business is not connected. Open Settings and click "Connect Google" under Google Business.`,
       link: { label: 'Connect Google', href: '/dashboard/settings' },
     }
   }
@@ -216,7 +216,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     return {
       text: ctx.googleConnected
         ? `Google Business is already connected${ctx.googleLocationName ? ` to ${ctx.googleLocationName}` : '. Select a location in Settings to finish setup'}.`
-        : `Go to Settings → Google Business and click "Connect Google." Authorize Replova via OAuth, then select your business location. Reviews sync automatically every 6 hours once connected.`,
+        : `Open Settings and click "Connect Google" under Google Business. After you approve access, select the location you want to use. Replova will check for new reviews every 6 hours.`,
       link: { label: ctx.googleConnected ? 'Go to Settings' : 'Connect in Settings', href: '/dashboard/settings' },
     }
   }
@@ -244,7 +244,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     }
     return {
       text: ctx.plan === 'starter'
-        ? `Reputation scores are a Growth/Agency feature. Upgrade to unlock your 0–100 composite score.`
+        ? `Reputation scores are included with Growth and Agency plans.`
         : `Your score hasn't been calculated yet. It runs daily. Check back tomorrow, or sync your reviews first.`,
       link: ctx.plan === 'starter' ? { label: 'Upgrade Plan', href: '/dashboard/billing' } : { label: 'Go to Settings', href: '/dashboard/settings' },
     }
@@ -331,7 +331,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     }
     return {
       text: ctx.plan === 'starter'
-        ? `Sentiment analysis is a Growth/Agency feature. Upgrade to unlock AI-powered sentiment scoring.`
+        ? `Sentiment analysis is included with Growth and Agency plans.`
         : `Sentiment data hasn't been calculated yet. It runs nightly. Check back after your first batch.`,
     }
   }
@@ -342,7 +342,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     return {
       text: ctx.autoReplyEnabled
         ? `Auto-reply is ON. Approved reply drafts are automatically posted to Google after a ${ctx.autoReplyDelayHours}-hour delay.`
-        : `Auto-reply is OFF. Enable it in Settings → Reply settings if you want drafts to post automatically.`,
+        : `Auto-reply is off. You can turn it on under Reply settings in Settings.`,
       link: { label: 'Go to Settings', href: '/dashboard/settings' },
     }
   }
@@ -351,7 +351,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     return {
       text: ctx.autoReplyEnabled
         ? `Auto-reply is currently ON with a ${ctx.autoReplyDelayHours}-hour delay. Approved drafts post to Google automatically after that window. You can still cancel or edit before it fires.`
-        : `Auto-reply is OFF. Enable it in Settings → Reply settings and set your delay (1–24 hours). Approved drafts will then post to Google automatically.`,
+        : `Auto-reply is off. Turn it on under Reply settings in Settings, then choose a delay between 1 and 24 hours.`,
       link: { label: 'Go to Settings', href: '/dashboard/settings' },
     }
   }
@@ -372,7 +372,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
       }
     }
     return {
-      text: `You're on Agency but no persona is set yet. Add one in Settings → Reply settings to give the AI your specific tone and style.`,
+      text: `You're on Agency but haven't added a reply persona yet. Open Reply settings in Settings and describe how you want replies to sound.`,
       link: { label: 'Set Persona', href: '/dashboard/settings' },
     }
   }
@@ -383,7 +383,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     return {
       text: ctx.notifyNegativeReviews
         ? `Alerts are ON. You'll receive an email with a suggested reply for any review ${ctx.negativeThreshold} stars or below.`
-        : `Alerts are OFF. Enable them in Settings → Reply settings to get instant emails for negative reviews.`,
+        : `Alerts are off. Turn them on under Reply settings in Settings to receive an email when a low-rating review arrives.`,
       link: { label: 'Go to Settings', href: '/dashboard/settings' },
     }
   }
@@ -428,7 +428,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
   // ── Getting started ───────────────────────────────────────────────────────
 
   if (m(q, 'get started', 'first step', 'getting started', 'set up', 'setup', 'just signed up', 'brand new', 'starting out', 'where do i start', 'how do i start')) {
-    const step1 = ctx.googleConnected ? '✓ Google Business connected' : '1) Connect Google Business in Settings'
+    const step1 = ctx.googleConnected ? 'Google Business is connected' : '1) Connect Google Business in Settings'
     const step2 = ctx.googleConnected ? (ctx.awaitingReplyCount > 0 ? `2) Reply to your ${ctx.awaitingReplyCount} awaiting review${ctx.awaitingReplyCount !== 1 ? 's' : ''}` : '2) Reviews will sync automatically') : '2) Sync reviews'
     const step3 = '3) Send review requests to grow your Google rating'
     return {
@@ -456,7 +456,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     return {
       text: ctx.googleConnected
         ? `Google is connected. Click "Sync now" in Settings to force a fresh pull. Reviews auto-sync every 6 hours but a manual sync should fix it immediately.`
-        : `Google Business isn't connected, which is why reviews aren't showing. Connect it in Settings → Google Business.`,
+        : `Reviews aren't showing because Google Business isn't connected. You can connect it from Settings.`,
       link: { label: 'Go to Settings', href: '/dashboard/settings' },
     }
   }
@@ -470,7 +470,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'score not updating', 'score wrong', "score hasn't changed", 'score not changing', 'score stuck')) {
     return {
-      text: `The score updates once per day around 3am.${ctx.reputationScore !== null ? ` Your current score is ${ctx.reputationScore}/100.` : ''} If it looks wrong, sync your reviews first (Settings → Sync now) then wait for the next daily cycle.`,
+      text: `The score updates once per day around 3am.${ctx.reputationScore !== null ? ` Your current score is ${ctx.reputationScore}/100.` : ''} If it looks wrong, click "Sync now" in Settings, then wait for the next daily update.`,
     }
   }
 
@@ -516,7 +516,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'delete account', 'cancel account', 'remove account', 'close account', 'delete my account', 'deactivate')) {
     return {
-      text: `To delete your account (${ctx.userEmail}), go to Settings → Danger zone. You'll need to confirm twice. This permanently removes all data for "${ctx.restaurantName}". It can't be undone.`,
+      text: `To delete your account (${ctx.userEmail}), open the Danger zone section in Settings. You'll need to confirm twice. This permanently removes all data for "${ctx.restaurantName}" and cannot be undone.`,
       link: { label: 'Go to Settings', href: '/dashboard/settings' },
     }
   }
@@ -541,7 +541,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     }
     if (ctx.plan === 'agency') {
       return {
-        text: `As an Agency user, you can set your own logo for white-label reports in Settings → Report branding. Download your monthly report from the dashboard.`,
+        text: `Your Agency plan lets you add a logo under Report branding in Settings. You can download the monthly report from the dashboard.`,
         link: { label: 'Report Branding', href: '/dashboard/settings' },
       }
     }
@@ -641,7 +641,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
   if (m(q, 'intelligence panel', 'keyword cloud', 'keyword', 'sidebar panel', 'menu mention')) {
     return {
       text: ctx.plan === 'starter'
-        ? `The Intelligence Panel is a Growth/Agency feature. Upgrade to unlock reputation score, keyword cloud, sentiment trends, and staff shoutouts.`
+        ? `The Intelligence Panel is included with Growth and Agency. It covers your reputation score, common review topics, sentiment trends, and staff mentions.`
         : `The Intelligence Panel (dashboard sidebar) shows your Replova score, response rate, sentiment trend, top keywords, staff shoutouts, and a competitor link.`,
       link: ctx.plan === 'starter' ? { label: 'Upgrade Plan', href: '/dashboard/billing' } : { label: 'Go to Dashboard', href: '/dashboard' },
     }
@@ -700,7 +700,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     }
   }
 
-  // ── Billing — plan comparison ─────────────────────────────────────────────
+  // ── Billing plan comparison ───────────────────────────────────────────────
 
   if (m(q, 'compare plan', 'plan comparison', 'difference between plan', 'which plan should', 'what plan is best', 'plan difference', 'starter vs', 'growth vs')) {
     return {

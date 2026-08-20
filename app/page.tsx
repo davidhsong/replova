@@ -9,9 +9,9 @@ export const metadata: Metadata = {
 }
 
 const plans = [
-  { name: 'Starter', key: 'starter', price: 39, description: '1 location · essential review tools', featured: false },
-  { name: 'Growth', key: 'growth', price: 99, description: '5 locations · reputation intelligence', featured: true },
-  { name: 'Agency', key: 'agency', price: 199, description: '15 locations · custom branding', featured: false },
+  { name: 'Starter', key: 'starter', price: 39, description: 'For one location, with the core review tools', featured: false },
+  { name: 'Growth', key: 'growth', price: 99, description: 'For up to five locations, with tracking and reports', featured: true },
+  { name: 'Agency', key: 'agency', price: 199, description: 'For up to 15 locations, with custom branding', featured: false },
 ] as const
 
 function Logo() {
@@ -40,9 +40,9 @@ export default function Home() {
         <section className="lp-hero" style={{ alignItems: 'center' }}>
           <div className="fade-up">
             <div className="t-eyebrow c-accent" style={{ marginBottom: 18 }}>Google review management for med spas and aesthetic clinics</div>
-            <h1 className="t-serif lp-h1">Turn every review into a better reputation.</h1>
+            <h1 className="t-serif lp-h1">Stay on top of every Google review.</h1>
             <p style={{ maxWidth: 560, margin: '22px 0 28px', fontSize: 17, lineHeight: 1.7, color: 'var(--t2)' }}>
-              Replova monitors your Google reviews, drafts three on-brand replies, surfaces urgent feedback, and shows which treatments and team members clients consistently praise—or want improved.
+              Replova checks for new Google reviews, drafts three replies in your preferred tone, flags low ratings, and tracks what clients say about your treatments and staff.
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <Link href="/onboard" className="btn btn-primary btn-lg btn-press" style={{ textDecoration: 'none' }}>Find my business</Link>
@@ -51,12 +51,12 @@ export default function Home() {
           </div>
 
           <div className="card fade-up" style={{ padding: 28, boxShadow: 'var(--shadow-2)' }}>
-            <div className="t-eyebrow" style={{ marginBottom: 16 }}>One calm review center</div>
+            <div className="t-eyebrow" style={{ marginBottom: 16 }}>Everything in one review inbox</div>
             {[
-              ['AI reply drafts', 'Professional, warm, and brief options for each review.'],
-              ['Reputation intelligence', 'Daily score, treatment sentiment, keywords, and staff shoutouts.'],
-              ['Direct Google replies', 'Review, edit, and publish without copy-pasting.'],
-              ['Competitor tracking', 'Know where you stand against nearby clinics.'],
+              ['Reply drafts', 'Choose a professional, warm, or brief reply, then edit it as needed.'],
+              ['Review trends', 'See your daily score, common topics, and staff mentions.'],
+              ['Direct Google replies', 'Review, edit, and publish a response from Replova.'],
+              ['Competitor tracking', 'Compare your rating with nearby clinics.'],
             ].map(([title, copy], index) => (
               <div key={title} style={{ padding: '16px 0', borderTop: index ? '1px solid var(--line)' : 'none' }}>
                 <div style={{ fontSize: 14, fontWeight: 650, marginBottom: 4 }}>{title}</div>
@@ -70,8 +70,8 @@ export default function Home() {
           <div className="lp-inner">
             <div style={{ maxWidth: 620, marginBottom: 36 }}>
               <div className="t-eyebrow c-accent">Simple pricing</div>
-              <h2 className="t-serif lp-h2">Start with the footprint you have.</h2>
-              <p className="t-sm c-t2">Every plan includes AI reply drafts, alerts, weekly digests, and review request campaigns.</p>
+              <h2 className="t-serif lp-h2">Choose the plan that fits your locations.</h2>
+              <p className="t-sm c-t2">Every plan includes reply drafts, low-rating alerts, weekly reports, and review request emails.</p>
             </div>
             <div className="lp-plan-grid">
               {plans.map(plan => (

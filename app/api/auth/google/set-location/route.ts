@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
   // Resolve the single restaurant this location picker was shown for. Updating
   // by owner_email alone would overwrite google_location_name on every
-  // restaurant that owner has — this must be scoped to exactly one row.
+  // restaurant that owner has. This must be scoped to exactly one row.
   let restaurant: { id: string } | null = null
   const activeId = cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value
   if (activeId) {

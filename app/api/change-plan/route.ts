@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
     proration_behavior: 'create_prorations',
   })
 
-  // Update immediately — webhook will confirm shortly after
+  // Update immediately. The webhook will confirm shortly after.
   const { error: updateError } = await admin
     .from('accounts')
     .update({ plan })

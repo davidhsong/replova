@@ -53,7 +53,6 @@ export async function recordUsage(
 
 async function sendAlert(percent: number, spent: number, budget: number): Promise<void> {
   const remaining = Math.max(0, budget - spent)
-  const emoji = percent >= 100 ? '🚨' : percent >= 75 ? '⚠️' : '📊'
   const label = percent >= 100 ? 'BUDGET EXHAUSTED' : `${percent}% used`
 
   const resend = new Resend(process.env.RESEND_API_KEY)
@@ -62,9 +61,9 @@ async function sendAlert(percent: number, spent: number, budget: number): Promis
   await resend.emails.send({
     from,
     to: ALERT_EMAIL,
-    subject: `${emoji} Replova API budget ${label} — $${spent.toFixed(2)} / $${budget.toFixed(2)}`,
+    subject: `Replova API budget ${label}: $${spent.toFixed(2)} / $${budget.toFixed(2)}`,
     html: `
-<h2 style="margin:0 0 16px">${emoji} API Budget Alert</h2>
+<h2 style="margin:0 0 16px">API budget alert</h2>
 <table style="border-collapse:collapse;font-family:monospace;font-size:14px">
   <tr><td style="padding:4px 16px 4px 0;color:#666">Spent</td>
       <td style="padding:4px 0"><strong>$${spent.toFixed(4)}</strong></td></tr>
@@ -76,7 +75,7 @@ async function sendAlert(percent: number, spent: number, budget: number): Promis
       <td style="padding:4px 0"><strong>${((spent / budget) * 100).toFixed(1)}%</strong></td></tr>
 </table>
 ${percent >= 100
-  ? '<p style="margin-top:16px;color:#c00"><strong>🚨 Budget exhausted. Increase DEV_BUDGET_USD or top up your Anthropic balance.</strong></p>'
+  ? '<p style="margin-top:16px;color:#c00"><strong>Budget exhausted. Increase DEV_BUDGET_USD or top up your Anthropic balance.</strong></p>'
   : ''}
     `.trim(),
   }).catch(err => console.error('[apiBudget] alert email failed:', err))

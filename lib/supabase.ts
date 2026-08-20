@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { createBrowserClient } from '@supabase/ssr'
 
-// Server-side admin client — uses service role key, only for API routes.
+// Server-side admin client. Uses the service role key only for API routes.
 // Exported as a function so it is never instantiated in the browser bundle.
 export function getSupabaseAdmin() {
   return createClient(
@@ -10,7 +10,7 @@ export function getSupabaseAdmin() {
   )
 }
 
-// Browser-side client — lazy singleton so it is only instantiated in the browser,
+// Browser-side client. This lazy singleton is only instantiated in the browser,
 // never during SSR or module evaluation on the server.
 let _browserClient: ReturnType<typeof createBrowserClient> | null = null
 

@@ -233,7 +233,7 @@ export default async function DashboardPage({
             <span>
               Connect your Google Business account to sync reviews and enable direct replies.{' '}
               <a href="/dashboard/settings" style={{ color: 'inherit', fontWeight: 700, textDecoration: 'underline' }}>
-                Go to Settings →
+                Go to Settings
               </a>
             </span>
           </div>
@@ -262,7 +262,7 @@ export default async function DashboardPage({
             <div>
               <strong>{urgentCount} negative review{urgentCount > 1 ? 's' : ''} {urgentCount > 1 ? 'need' : 'needs'} a reply</strong>
               <span style={{ color: 'inherit', opacity: 0.8, marginLeft: 8 }}>
-                A reply within 24 hours is the difference between recovery and a permanent 1-star.
+                Try to respond within 24 hours while the visit is still fresh.
               </span>
             </div>
           </div>
@@ -270,7 +270,7 @@ export default async function DashboardPage({
         {urgentCount === 0 && unrepliedCount > 0 && (
           <div className="banner banner-warn fade-up" style={{ marginBottom: 20 }}>
             <strong>{unrepliedCount} review{unrepliedCount === 1 ? '' : 's'} awaiting a reply.</strong>
-            <span> Clear the queue to keep your response rate healthy.</span>
+            <span> Reply when you have a moment.</span>
           </div>
         )}
         {unrepliedCount === 0 && (
@@ -310,7 +310,7 @@ export default async function DashboardPage({
             value={unrepliedCount}
             urgent={unrepliedCount > 0}
             allClear={unrepliedCount === 0}
-            sub={unrepliedCount === 0 ? '✓ All caught up' : `need${unrepliedCount === 1 ? 's' : ''} a reply`}
+            sub={unrepliedCount === 0 ? 'All caught up' : `need${unrepliedCount === 1 ? 's' : ''} a reply`}
           />
         </div>
 

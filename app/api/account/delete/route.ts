@@ -25,7 +25,7 @@ export async function POST() {
   if (account?.stripe_customer_id) {
     try {
       const stripe = getStripe()
-      // status: 'active' misses trialing subscriptions — every new signup starts
+      // status: 'active' misses trialing subscriptions because every new signup starts
       // in trialing, so deleting an account mid-trial would leave the
       // subscription running and charge the (now-deleted) customer later.
       const subscriptions = await stripe.subscriptions.list({

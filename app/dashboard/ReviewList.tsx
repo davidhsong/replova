@@ -192,12 +192,12 @@ function ReviewRow({
         <div className="fade-in" style={{ padding: '0 20px 20px 20px', borderTop: '1px solid var(--line)' }}>
           {/* Context hint */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, margin: '14px 0', fontSize: 12 }}>
-            {isLowRating && !isReplied && <span style={{ color: 'var(--neg)', fontWeight: 500 }}>⚠ Prioritise this response</span>}
-            {!isLowRating && isOverdueReview && <span style={{ color: 'var(--warn)', fontWeight: 500 }}>⏰ Waiting {OVERDUE_DAYS}+ days for a reply</span>}
-            {isReplied && <span style={{ color: 'var(--pos)', fontWeight: 500 }}>✓ Already replied on Google</span>}
+            {isLowRating && !isReplied && <span style={{ color: 'var(--neg)', fontWeight: 500 }}>Priority: reply soon</span>}
+            {!isLowRating && isOverdueReview && <span style={{ color: 'var(--warn)', fontWeight: 500 }}>Waiting {OVERDUE_DAYS}+ days for a reply</span>}
+            {isReplied && <span style={{ color: 'var(--pos)', fontWeight: 500 }}>Already replied on Google</span>}
           </div>
 
-          {/* Full review text — serif italic for negative */}
+          {/* Full review text, with italic styling for negative reviews */}
           {review.review_text ? (
             <div style={{ marginBottom: 16, paddingLeft: 14 }}>
               {isLowRating ? (
@@ -424,7 +424,7 @@ export default function ReviewList({
       <div style={{ border: '1px solid var(--line)', borderRadius: 'var(--r-6)', overflow: 'hidden', marginTop: 10, borderTopLeftRadius: 0, borderTopRightRadius: 0, borderTop: 'none' }}>
         {filtered.length === 0 ? (
           <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-            <p className="t-serif t-italic c-t3" style={{ fontSize: 18, marginBottom: 6 }}>Nothing here.</p>
+            <p className="t-serif t-italic c-t3" style={{ fontSize: 18, marginBottom: 6 }}>No reviews match this view.</p>
             <p className="t-xs c-t3">
               {tab === 'completed' ? 'Mark a review as replied to move it here.' : 'Try adjusting your search or filters.'}
             </p>
@@ -446,11 +446,11 @@ export default function ReviewList({
       {totalPages > 1 && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 20 }}>
           {currentPage > 1 && (
-            <a href={`/dashboard?page=${currentPage - 1}`} className="btn btn-ghost btn-sm">← Prev</a>
+            <a href={`/dashboard?page=${currentPage - 1}`} className="btn btn-ghost btn-sm">Previous</a>
           )}
           <span className="t-xs c-t3">Page {currentPage} of {totalPages}</span>
           {currentPage < totalPages && (
-            <a href={`/dashboard?page=${currentPage + 1}`} className="btn btn-ghost btn-sm">Next →</a>
+            <a href={`/dashboard?page=${currentPage + 1}`} className="btn btn-ghost btn-sm">Next</a>
           )}
         </div>
       )}

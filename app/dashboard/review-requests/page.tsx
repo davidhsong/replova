@@ -166,7 +166,7 @@ export default function ReviewRequestsPage() {
           <span>Review requests</span>
         </div>
         <h1 className="t-h1" style={{ marginBottom: 4 }}>Review requests</h1>
-        <p className="t-sm c-t3">Send a personal nudge to clients who already had a great experience.</p>
+        <p className="t-sm c-t3">Email past clients and ask them to leave a Google review.</p>
       </div>
 
       <div className="page-body">
@@ -306,8 +306,8 @@ export default function ReviewRequestsPage() {
 
             {requests.length === 0 ? (
               <div style={{ padding: '48px 24px', textAlign: 'center' }}>
-                <p className="t-serif t-italic c-t3" style={{ fontSize: 18, marginBottom: 6 }}>Nothing sent yet.</p>
-                <p className="t-xs c-t3">Upload a CSV to get started.</p>
+                <p className="t-serif t-italic c-t3" style={{ fontSize: 18, marginBottom: 6 }}>No review requests have been sent.</p>
+                <p className="t-xs c-t3">Upload a CSV when you&apos;re ready to send your first batch.</p>
               </div>
             ) : (
               <table className="dtable">

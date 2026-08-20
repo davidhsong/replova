@@ -1,4 +1,4 @@
-// This module is Node.js only — never import in browser bundles
+// This module is Node.js only. Never import it in browser bundles.
 
 import { Document, Page, Text, View, Image, StyleSheet, renderToBuffer, type DocumentProps } from '@react-pdf/renderer'
 import React, { type JSXElementConstructor, type ReactElement } from 'react'
@@ -471,7 +471,7 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
 
   return (
     <Document>
-      {/* PAGE 1 — Executive Summary */}
+      {/* PAGE 1: Executive Summary */}
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
@@ -479,7 +479,7 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
             {/* eslint-disable-next-line jsx-a11y/alt-text */}
             {logoUrl && <Image src={logoUrl} style={styles.logo} />}
             <View>
-              <Text style={styles.headerTitle}>{brandName ? `${brandName} — ` : ''}Reputation Report</Text>
+              <Text style={styles.headerTitle}>{brandName ? `${brandName}: ` : ''}Reputation Report</Text>
               <Text style={styles.headerSub}>{data.restaurantName}</Text>
             </View>
           </View>
@@ -493,7 +493,7 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
           <View style={styles.kpiGrid}>
             <View style={styles.kpiBox}>
               <Text style={styles.kpiLabel}>Reputation Score</Text>
-              <Text style={styles.kpiValue}>{data.thisMonthScore ?? '—'}</Text>
+              <Text style={styles.kpiValue}>{data.thisMonthScore ?? 'N/A'}</Text>
               {data.scoreDelta !== null && (
                 <Text style={{ ...styles.kpiDelta, color: data.scoreDelta >= 0 ? colors.green : colors.red }}>
                   {data.scoreDelta >= 0 ? '+' : ''}{data.scoreDelta.toFixed(1)} vs last month
@@ -503,7 +503,7 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
             <View style={styles.kpiBox}>
               <Text style={styles.kpiLabel}>Avg Rating</Text>
               <Text style={styles.kpiValue}>
-                {data.thisMonthAvgRating !== null ? data.thisMonthAvgRating.toFixed(1) : '—'}
+                {data.thisMonthAvgRating !== null ? data.thisMonthAvgRating.toFixed(1) : 'N/A'}
               </Text>
               {data.thisMonthAvgRating !== null && (
                 <Text style={{ ...styles.kpiDelta, color: colors.muted }}>★ out of 5</Text>
@@ -543,7 +543,7 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
         <Footer month={data.month} brandName={brandName} />
       </Page>
 
-      {/* PAGE 2 — Review Highlights */}
+      {/* PAGE 2: Review Highlights */}
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <View>
@@ -608,7 +608,7 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
         <Footer month={data.month} brandName={brandName} />
       </Page>
 
-      {/* PAGE 3 — Competitive Position (only if competitors exist) */}
+      {/* PAGE 3: Competitive Position (only if competitors exist) */}
       {data.competitors.length > 0 && (
         <Page size="A4" style={styles.page}>
           <View style={styles.header}>
@@ -633,7 +633,7 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
                 {data.restaurantName} (You)
               </Text>
               <Text style={{ ...styles.tableCellRating, fontFamily: 'Helvetica-Bold' }}>
-                {data.thisMonthAvgRating !== null ? data.thisMonthAvgRating.toFixed(1) : '—'}
+                {data.thisMonthAvgRating !== null ? data.thisMonthAvgRating.toFixed(1) : 'N/A'}
               </Text>
               <Text style={{ ...styles.tableCellReviews, fontFamily: 'Helvetica-Bold' }}>
                 {data.totalReviewsThisMonth}
@@ -644,10 +644,10 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
               <View key={i} style={styles.tableRow}>
                 <Text style={styles.tableCellName}>{comp.name}</Text>
                 <Text style={styles.tableCellRating}>
-                  {comp.avgRating !== null ? comp.avgRating.toFixed(1) : '—'}
+                  {comp.avgRating !== null ? comp.avgRating.toFixed(1) : 'N/A'}
                 </Text>
                 <Text style={styles.tableCellReviews}>
-                  {comp.totalReviews !== null ? comp.totalReviews : '—'}
+                  {comp.totalReviews !== null ? comp.totalReviews : 'N/A'}
                 </Text>
               </View>
             ))}
@@ -679,7 +679,7 @@ export async function generatePdfBuffer(
     return Buffer.from(buffer)
   } catch (err) {
     // A user-supplied report_logo_url can be unreachable, non-image, or
-    // rejected by the remote host — react-pdf's Image component fetches it
+    // rejected by the remote host because react-pdf's Image component fetches it
     // during render and throws, which would otherwise take down the entire
     // report generation. Fall back to the report without the logo rather
     // than failing the whole request for a broken branding asset.

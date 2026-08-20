@@ -64,13 +64,13 @@ export async function sendReviewRequestEmail(
           <tr>
             <td style="padding:36px 32px 28px;">
               <p style="margin:0 0 16px;font-size:22px;font-weight:700;color:#09090b;line-height:1.3;letter-spacing:-0.025em;">
-                ${safeCustomerName ? `Hey ${safeCustomerName},` : 'Hi there,'}
+                ${safeCustomerName ? `Hi ${safeCustomerName},` : 'Hi there,'}
               </p>
               <p style="margin:0 0 12px;font-size:15px;color:#3f3f46;line-height:1.65;">
-                Thanks for visiting <strong>${safeRestaurantName}</strong>! We'd love to hear about your experience.
+                Thanks for choosing <strong>${safeRestaurantName}</strong>. If you have a minute, would you mind sharing your experience on Google?
               </p>
               <p style="margin:0 0 28px;font-size:15px;color:#3f3f46;line-height:1.65;">
-                Your feedback helps us improve and helps other customers find us.
+                Your review helps us improve and gives other customers useful information before they visit.
               </p>
 
               <!-- CTA Button -->
@@ -79,14 +79,14 @@ export async function sendReviewRequestEmail(
                   <td>
                     <a href="${clickLink}"
                        style="display:inline-block;background:#09090b;color:#fafafa;font-size:14px;font-weight:700;padding:14px 28px;border-radius:999px;text-decoration:none;letter-spacing:-0.01em;">
-                      Leave Us a Google Review
+                      Write a Google review
                     </a>
                   </td>
                 </tr>
               </table>
 
               <p style="margin:0;font-size:13px;color:#a1a1aa;line-height:1.6;">
-                Takes less than a minute — your opinion means a lot to us.
+                The review form usually takes less than a minute.
               </p>
             </td>
           </tr>

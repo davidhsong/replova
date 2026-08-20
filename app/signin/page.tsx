@@ -106,7 +106,7 @@ export default function SignInPage() {
         // implicit flow (unlike the PKCE-configured browser client used by
         // onboarding), so the session lands as a #access_token hash fragment,
         // not a ?code query param. Route back to /signin itself, which already
-        // has a client-side handler for that hash — not /auth/callback, which
+        // has a client-side handler for that hash, unlike /auth/callback, which
         // is a server route and can never see a URL fragment.
         next: getNextPath(),
       }),
@@ -142,12 +142,10 @@ export default function SignInPage() {
         <div className="fade-up">
           <div className="t-eyebrow" style={{ marginBottom: 20 }}>Sign in</div>
           <h1 className="t-serif" style={{ fontSize: 54, lineHeight: 1.0, letterSpacing: '-0.02em', marginBottom: 20 }}>
-            Magic link.<br />No password.<br />
-            <span style={{ fontStyle: 'italic', color: 'var(--t3)' }}>Ever.</span>
+            Sign in without<br />a password.
           </h1>
           <p style={{ fontSize: 15, color: 'var(--t2)', maxWidth: 380, lineHeight: 1.65 }}>
-            We email a link straight to the address on your account. Click it; you&apos;re in.
-            Nothing to remember, nothing to reset.
+            Enter the email address on your account. We&apos;ll send you a secure link that signs you in.
           </p>
         </div>
 
@@ -169,7 +167,7 @@ export default function SignInPage() {
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
-              <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.01em', marginBottom: 6 }}>Welcome back.</h2>
+              <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.01em', marginBottom: 6 }}>Welcome back</h2>
               <p className="t-sm c-t3" style={{ marginBottom: 24 }}>Enter your work email.</p>
 
               <label className="t-eyebrow" style={{ display: 'block', marginBottom: 8 }}>Email</label>
@@ -193,7 +191,7 @@ export default function SignInPage() {
                     {error}
                     {error.includes('No account') && (
                       <a href="/onboard" style={{ color: 'var(--accent)', fontWeight: 600, marginLeft: 6, textDecoration: 'underline' }}>
-                        Start trial →
+                        Start a trial
                       </a>
                     )}
                   </div>

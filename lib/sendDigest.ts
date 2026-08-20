@@ -75,8 +75,9 @@ async function generateActionItems(opts: {
         'Return ONLY a JSON array of 2-3 strings. ' +
         'Each string is a specific, actionable recommendation under 20 words. ' +
         'Base recommendations on the actual data provided. ' +
+        'Use plain language. Do not use em dashes, hype, emojis, or generic business advice. ' +
         "Examples: 'Respond to the 2-star service complaint before it affects your score' " +
-        "or 'Wait-time complaints are trending negative this week — review staffing and handoffs'",
+        "or 'Wait-time complaints increased this week. Review staffing and handoffs'",
       messages: [
         {
           role: 'user',
@@ -103,7 +104,7 @@ async function generateActionItems(opts: {
 
   return [
     opts.unrepliedCount > 0 ? `Reply to your ${opts.unrepliedCount} unanswered review(s) today` : null,
-    (opts.ratingDelta ?? 0) < 0 ? 'Your rating dropped this week — check negative reviews' : null,
+    (opts.ratingDelta ?? 0) < 0 ? 'Your rating dropped this week. Check the negative reviews' : null,
   ].filter((x): x is string => x !== null)
 }
 
@@ -329,7 +330,7 @@ function buildHtml(data: DigestData): string {
 
   const ratingStr = data.avgRatingThisWeek !== null
     ? `${data.avgRatingThisWeek.toFixed(1)} ★`
-    : '—'
+    : 'N/A'
   const ratingDeltaHtml = data.ratingDelta !== null
     ? ` <span style="font-size:11px;color:${data.ratingDelta >= 0 ? '#16a34a' : '#dc2626'};font-weight:700;">${data.ratingDelta >= 0 ? '▲' : '▼'}${Math.abs(data.ratingDelta)}</span>`
     : ''
@@ -374,7 +375,7 @@ function buildHtml(data: DigestData): string {
     <tr>
       <td style="padding:0 0 16px 0;">
         <div style="padding:16px;border:1px solid #bbf7d0;border-radius:8px;background:#f0fdf4;">
-          <p style="margin:0 0 4px 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#16a34a;">⭐ Highlight of the week</p>
+          <p style="margin:0 0 4px 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#16a34a;">Best review this week</p>
           <p style="margin:4px 0 2px 0;font-size:18px;color:#15803d;letter-spacing:1px;">${stars(data.topPositiveReview.rating)}</p>
           <p style="margin:0 0 6px 0;font-size:14px;font-weight:600;color:#166534;">${escapeHtml(data.topPositiveReview.author)}</p>
           <p style="margin:0;font-size:14px;color:#166534;line-height:1.6;font-style:italic;">&quot;${escapeHtml(data.topPositiveReview.body.slice(0, 200))}${data.topPositiveReview.body.length > 200 ? '…' : ''}&quot;</p>
@@ -388,11 +389,11 @@ function buildHtml(data: DigestData): string {
     <tr>
       <td style="padding:0 0 16px 0;">
         <div style="padding:16px;border:1px solid #fecaca;border-radius:8px;background:#fff1f2;">
-          <p style="margin:0 0 4px 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#dc2626;">⚠️ Needs attention</p>
+          <p style="margin:0 0 4px 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#dc2626;">Needs a reply</p>
           <p style="margin:4px 0 2px 0;font-size:18px;color:#dc2626;letter-spacing:1px;">${stars(data.worstNegativeReview.rating)}</p>
           <p style="margin:0 0 6px 0;font-size:14px;font-weight:600;color:#991b1b;">${escapeHtml(data.worstNegativeReview.author)}</p>
           <p style="margin:0 0 10px 0;font-size:14px;color:#991b1b;line-height:1.6;font-style:italic;">&quot;${escapeHtml(data.worstNegativeReview.body.slice(0, 200))}${data.worstNegativeReview.body.length > 200 ? '…' : ''}&quot;</p>
-          <a href="${dashboardUrl}" style="font-size:13px;color:#dc2626;font-weight:700;text-decoration:none;">View &amp; Reply →</a>
+          <a href="${dashboardUrl}" style="font-size:13px;color:#dc2626;font-weight:700;text-decoration:none;">View and reply</a>
         </div>
       </td>
     </tr>`
@@ -422,7 +423,7 @@ function buildHtml(data: DigestData): string {
     <tr>
       <td style="padding:0 0 16px 0;">
         <div style="padding:16px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;">
-          <p style="margin:0 0 4px 0;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#d97706;">🌟 Team shoutouts this week</p>
+          <p style="margin:0 0 4px 0;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#d97706;">Staff mentioned this week</p>
           <p style="margin:4px 0 0 0;font-size:14px;color:#92400e;">${nameStr} ${names.length === 1 ? 'was' : 'were'} mentioned positively in reviews</p>
         </div>
       </td>
@@ -443,7 +444,7 @@ function buildHtml(data: DigestData): string {
           <tr>
             <td style="background:#1a1a2e;padding:28px 32px;border-radius:8px 8px 0 0;">
               <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#a5b4fc;">Replova</p>
-              <h1 style="margin:0 0 6px 0;font-size:22px;font-weight:800;color:#ffffff;">📊 Weekly Report — ${escapeHtml(data.restaurantName)}</h1>
+              <h1 style="margin:0 0 6px 0;font-size:22px;font-weight:800;color:#ffffff;">Weekly report for ${escapeHtml(data.restaurantName)}</h1>
               <p style="margin:0;font-size:13px;color:#c7d2fe;">Week of ${formatDate(data.weekStart)} – ${formatDate(data.weekEnd)}</p>
             </td>
           </tr>
@@ -505,7 +506,7 @@ export async function sendWeeklyDigest(restaurant: {
   const { error } = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL ?? 'Replova <onboarding@resend.dev>',
     to: restaurant.owner_email,
-    subject: `Weekly Reputation Report — ${data.restaurantName}`,
+    subject: `Weekly reputation report for ${data.restaurantName}`,
     html,
   })
 

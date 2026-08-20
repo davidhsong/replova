@@ -35,7 +35,7 @@ export default function NotFound() {
         <div className="fade-up" style={{ textAlign: 'center', maxWidth: 400 }}>
           <p className="t-mono c-t4" style={{ fontSize: 13, marginBottom: 8 }}>Error 404</p>
           <h1 className="t-serif" style={{ fontSize: 44, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: 14 }}>
-            Nothing<br /><span style={{ fontStyle: 'italic', color: 'var(--t3)' }}>here.</span>
+            We couldn&apos;t find<br />that page.
           </h1>
           <p className="t-sm c-t2" style={{ marginBottom: 28, lineHeight: 1.6 }}>
             The page you&apos;re looking for doesn&apos;t exist or has moved.

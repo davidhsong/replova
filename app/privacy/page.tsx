@@ -77,7 +77,7 @@ const sections: LegalSection[] = [
       <p>
         We retain your data for as long as your account is active. You may request deletion by emailing{' '}
         <a href="mailto:support@replova.app" style={{ color: 'var(--t1)', textDecoration: 'underline' }}>support@replova.app</a>{' '}
-        or using the Delete account option in Settings → Danger zone. We delete everything within 24 hours, including backups.
+        or using the Delete account option in the Danger zone section of Settings. We delete everything within 24 hours, including backups.
       </p>
     ),
   },

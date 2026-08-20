@@ -3,7 +3,7 @@
 // added in migrations 001–005.
 
 // ─────────────────────────────────────────────────────────────
-// Accounts table (migration 005) — one row per user/owner_email
+// Accounts table (migration 005): one row per user/owner_email
 // ─────────────────────────────────────────────────────────────
 
 export interface Account {

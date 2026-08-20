@@ -63,7 +63,7 @@ ${businessTypeContext}
 Select up to ${maxResults} competitors (or all candidates if fewer than ${maxResults} exist).
 Rank them: direct competitors first (same type, similar positioning), then indirect.
 
-Return ONLY a valid JSON array — no markdown, no explanation:
+Return only a valid JSON array. Do not include markdown or an explanation:
 [{"placeId":"...","reason":"one sentence","competitorType":"direct"}]`,
       }],
     })
@@ -86,7 +86,7 @@ Return ONLY a valid JSON array — no markdown, no explanation:
         .slice(0, maxResults)
     }
   } catch {
-    // Claude failed — fall through to fill slots from candidates
+    // Claude failed, so fill the remaining slots from candidates
   }
 
   // Fill any remaining slots with highest-rated candidates Claude didn't pick

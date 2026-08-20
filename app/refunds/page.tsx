@@ -103,7 +103,7 @@ export default function RefundPage() {
     <LegalLayout
       page="refunds"
       title="Refunds"
-      kicker="Plain English"
+      kicker="Refund Policy"
       sections={sections}
     />
   )

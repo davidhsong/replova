@@ -25,7 +25,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const admin = getSupabaseAdmin()
 
-  // Fetch all locations for this user — include Google fields for chatbot
+  // Fetch all locations for this user, including Google fields for the chatbot
   const { data: restaurants } = await admin
     .from('restaurants')
     .select('id, name, active, google_access_token, google_location_name')
@@ -113,7 +113,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     )
   }
 
-  // Get account — plan, terms acceptance, stripe id
+  // Get account plan, terms acceptance, and Stripe ID
   const { data: account } = await admin
     .from('accounts')
     .select('plan, terms_accepted_at, stripe_customer_id')
@@ -138,7 +138,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
   const trialEndDate = trialEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 
-  // Stripe subscription — renewal date + status
+  // Get Stripe subscription renewal date and status
   let renewalDate: string | null = null
   let subscriptionStatus = 'trialing'
   if (account?.stripe_customer_id) {

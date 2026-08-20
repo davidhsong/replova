@@ -21,7 +21,7 @@ export async function GET() {
   const admin = getSupabaseAdmin()
 
   // Resolve the active location (from the location-switcher cookie) rather than
-  // always defaulting to the account's oldest restaurant — otherwise "Connect
+  // always defaulting to the account's oldest restaurant. Otherwise "Connect
   // Google" for a non-primary location on a multi-location plan silently links
   // tokens to the wrong restaurant.
   let restaurant: { id: string } | null = null

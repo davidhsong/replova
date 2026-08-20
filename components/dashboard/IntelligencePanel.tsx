@@ -116,7 +116,7 @@ export default function IntelligencePanel({
       {isStarter ? (
         <UpgradeLock
           title="Reputation Score"
-          description="Track your composite score over time. Available on Growth and above."
+          description="See how your rating, review volume, response rate, and sentiment change over time."
         />
       ) : (
         <div style={CARD}>
@@ -138,10 +138,10 @@ export default function IntelligencePanel({
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {([
-              { l: 'Rating',        v: avgRating        != null ? `${avgRating.toFixed(1)}★`          : '—', s: bars.rating,    w: 35 },
-              { l: 'Volume',        v: reviewsThisMonth != null ? `${reviewsThisMonth}/mo`             : '—', s: bars.volume,    w: 20 },
-              { l: 'Response rate', v: responseRate     != null ? `${Math.round(responseRate * 100)}%` : '—', s: bars.response,  w: 25 },
-              { l: 'Sentiment',     v: avgSentiment     != null ? `${Math.round(((avgSentiment + 1) / 2) * 100)}%` : '—', s: bars.sentiment, w: 20 },
+              { l: 'Rating',        v: avgRating        != null ? `${avgRating.toFixed(1)}★`          : 'N/A', s: bars.rating,    w: 35 },
+              { l: 'Volume',        v: reviewsThisMonth != null ? `${reviewsThisMonth}/mo`             : 'N/A', s: bars.volume,    w: 20 },
+              { l: 'Response rate', v: responseRate     != null ? `${Math.round(responseRate * 100)}%` : 'N/A', s: bars.response,  w: 25 },
+              { l: 'Sentiment',     v: avgSentiment     != null ? `${Math.round(((avgSentiment + 1) / 2) * 100)}%` : 'N/A', s: bars.sentiment, w: 20 },
             ] as const).map(r => (
               <div key={r.l}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
@@ -174,7 +174,7 @@ export default function IntelligencePanel({
       {isStarter ? (
         <UpgradeLock
           title="Sentiment Analysis"
-          description="See what customers mention most. Available on Growth and above."
+          description="See the topics and staff names that appear most often in your reviews."
         />
       ) : topKeywords.length > 0 ? (
         <div style={CARD}>

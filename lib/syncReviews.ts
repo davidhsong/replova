@@ -70,7 +70,7 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
       .map(r => [r.google_review_name as string, r])
   )
   // Fallback key for old records imported without a google_review_name.
-  // Scoped to rows that themselves have no google_review_name — a row that
+  // Scoped to rows that themselves have no google_review_name. A row that
   // already has its own canonical name is uniquely identified by
   // existingByGmbName above, so it must never be matched here too (two
   // different reviews sharing an author + same-second timestamp, e.g. two
@@ -172,7 +172,7 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
   // Insert reviews that already have a Google reply (no AI draft needed).
   // Upsert + ignoreDuplicates guards against a concurrent sync (manual sync
   // racing the cron, or two overlapping cron runs) both treating the same
-  // Google review as new and double-inserting it — the DB-level unique
+  // Google review as new and double-inserting it. The DB-level unique
   // index on (restaurant_id, google_review_name) is the source of truth,
   // the in-memory existingByGmbName check above is only a fast-path.
   const alreadyReplied = toInsert.filter(r => r.hasGoogleReply)
@@ -203,7 +203,7 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
   if (needDraft.length > 0) {
     // Upsert + ignoreDuplicates: if a concurrent sync already inserted one of
     // these reviews, ON CONFLICT DO NOTHING means it's silently skipped and
-    // (critically) NOT returned below — so we never generate a second AI
+    // (critically) NOT returned below, so we never generate a second AI
     // draft or send a second negative-review alert for the same review.
     const conflictTarget = source === 'gmb'
       ? 'restaurant_id,google_review_name'
@@ -274,7 +274,7 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
               }
             } else {
               draftsFailed++
-              // Status stays 'pending' — visible in UI as "Draft not yet generated"
+              // Status stays 'pending' and appears in the UI as "Draft not yet generated"
             }
 
             await sendNegativeReviewAlert(row.id).catch(err =>
@@ -310,7 +310,7 @@ async function generateWithRetry(
       const isRateLimit =
         err instanceof Error && (err.message.includes('429') || err.message.toLowerCase().includes('rate'))
       if (attempt < maxAttempts) {
-        // Exponential backoff: 2s, 4s, 8s — extra delay for rate limit errors
+        // Exponential backoff: 2s, 4s, 8s, with extra delay for rate limit errors
         const delay = (isRateLimit ? 4000 : 2000) * Math.pow(2, attempt - 1)
         await new Promise(res => setTimeout(res, delay))
       } else {

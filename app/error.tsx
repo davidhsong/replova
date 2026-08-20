@@ -37,7 +37,7 @@ export default function Error({
         <div className="fade-up" style={{ textAlign: 'center', maxWidth: 400 }}>
           <p className="t-mono c-t4" style={{ fontSize: 13, marginBottom: 8 }}>Error 500</p>
           <h1 className="t-serif" style={{ fontSize: 44, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: 14 }}>
-            Something<br /><span style={{ fontStyle: 'italic', color: 'var(--t3)' }}>broke.</span>
+            We ran into<br />a problem.
           </h1>
           <p className="t-sm c-t2" style={{ marginBottom: 28, lineHeight: 1.6 }}>
             An unexpected error occurred. Try again, or head back home.

@@ -202,16 +202,16 @@ function OnboardPageContent() {
   }
 
   const headings: Record<Step, string> = {
-    search: addMode ? 'Add a new location.' : 'Find your business.',
+    search: addMode ? 'Add a new location' : 'Find your business',
     confirm: 'Is this your business?',
-    email: 'Where should we send the replies?',
+    email: 'What is your work email?',
     success: '',
   }
 
   const subheadings: Record<Step, string> = {
     search: addMode ? 'Search for the location you want to add.' : 'We use Google Places to connect your business listing and start syncing reviews.',
     confirm: 'Verify we found the right listing.',
-    email: "We'll send you AI suggested replies whenever new reviews come in.",
+    email: "We'll use this address for sign-in links, review alerts, and weekly reports.",
     success: '',
   }
 
@@ -231,7 +231,7 @@ function OnboardPageContent() {
             Click it to continue securely to checkout and start your trial.
           </p>
           <p className="t-xs c-t4" style={{ marginTop: 16 }}>
-            You&apos;ll get AI-drafted replies and alerts as new reviews come in.
+            Replova will prepare reply drafts and alert you when new reviews arrive.
           </p>
         </div>
       </div>
@@ -350,7 +350,7 @@ function OnboardPageContent() {
                 className="btn btn-quiet"
                 onClick={() => { setStep('search'); setResult(null); setSearchError(null) }}
               >
-                ← Search again
+                Search again
               </button>
               <button
                 onClick={handleConfirm}
@@ -394,7 +394,7 @@ function OnboardPageContent() {
                 placeholder="owner@yourpractice.com"
                 autoFocus
               />
-              <p className="t-xs c-t4" style={{ marginTop: 6 }}>Suggested replies will be sent here whenever new reviews come in.</p>
+              <p className="t-xs c-t4" style={{ marginTop: 6 }}>We&apos;ll send sign-in links and account emails to this address.</p>
             </div>
 
             {submitError && (
@@ -405,7 +405,7 @@ function OnboardPageContent() {
 
             <div style={{ marginTop: 4, paddingTop: 24, borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between' }}>
               <button type="button" className="btn btn-quiet" onClick={() => setStep('confirm')}>
-                ← Back
+                Back
               </button>
               <button
                 type="submit"

@@ -33,7 +33,7 @@ export async function calculateReputationScore(restaurantId: string): Promise<Re
   const window = reviews ?? []
   const totalReviews = window.length
 
-  // Component A — Average Rating (35%)
+  // Component A: Average Rating (35%)
   const ratedReviews = window.filter(review => review.rating != null)
   const avgRating =
     ratedReviews.length === 0
@@ -41,7 +41,7 @@ export async function calculateReputationScore(restaurantId: string): Promise<Re
       : ratedReviews.reduce((sum, review) => sum + (review.rating ?? 0), 0) / ratedReviews.length
   const ratingScore = ratedReviews.length === 0 ? 0 : Math.max(0, Math.min(100, ((avgRating - 1) / 4) * 100))
 
-  // Component B — Review Volume (20%)
+  // Component B: Review Volume (20%)
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
   const monthStartTs = Math.floor(monthStart.getTime() / 1000)
   const reviewsThisMonth = window.filter((r) => r.review_timestamp >= monthStartTs).length
@@ -66,12 +66,12 @@ export async function calculateReputationScore(restaurantId: string): Promise<Re
     volumeScore = (ratio / 2.0) * 100
   }
 
-  // Component C — Response Rate (25%)
+  // Component C: Response Rate (25%)
   const repliedCount = window.filter((r) => r.status === 'replied').length
   const responseRate = totalReviews === 0 ? 0 : repliedCount / totalReviews
   const responseScore = responseRate * 100
 
-  // Component D — Sentiment (20%)
+  // Component D: Sentiment (20%)
   const sentimentReviews = window.filter(
     (r) => r.sentiment_score !== null && r.sentiment_score !== undefined
   )

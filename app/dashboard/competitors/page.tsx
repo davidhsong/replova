@@ -267,9 +267,9 @@ export default function CompetitorsPage() {
         <div className="page-body">
           <div className="card" style={{ maxWidth: 620, padding: 32 }}>
             <div className="t-eyebrow" style={{ marginBottom: 10 }}>Growth feature</div>
-            <h2 className="t-h2" style={{ marginBottom: 10 }}>Unlock competitor tracking</h2>
+            <h2 className="t-h2" style={{ marginBottom: 10 }}>Competitor tracking is available on Growth and Agency</h2>
             <p className="t-sm c-t3" style={{ marginBottom: 20 }}>
-              Upgrade to Growth or Agency to discover nearby competitors and compare ratings, review volume, and rank.
+              These plans let you add nearby businesses and compare ratings, review counts, and local rank.
             </p>
             <a className="btn btn-primary" href="/dashboard/billing">View plans</a>
           </div>
@@ -415,7 +415,7 @@ export default function CompetitorsPage() {
         {atLimit && (
           <div className="banner banner-warn" style={{ marginBottom: 12 }}>
             Competitor limit reached.{' '}
-            <a href="/dashboard/billing" style={{ color: 'inherit', fontWeight: 700, textDecoration: 'underline' }}>Upgrade to add more →</a>
+            <a href="/dashboard/billing" style={{ color: 'inherit', fontWeight: 700, textDecoration: 'underline' }}>View plans</a>
           </div>
         )}
 
@@ -550,8 +550,8 @@ export default function CompetitorsPage() {
           </div>
         ) : (
           <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
-            <p className="t-serif t-italic c-t3" style={{ fontSize: 18, marginBottom: 6 }}>No competitors tracked yet.</p>
-            <p className="t-xs c-t3">Search above, or use auto-discover to find nearby competitors.</p>
+            <p className="t-serif t-italic c-t3" style={{ fontSize: 18, marginBottom: 6 }}>You haven&apos;t added any competitors yet.</p>
+            <p className="t-xs c-t3">Search for a business above or let Replova find nearby options.</p>
           </div>
         )}
 

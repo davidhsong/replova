@@ -14,7 +14,7 @@
 */
 
 :root {
-  /* Surfaces — warm neutrals, off-white paper */
+  /* Surfaces: warm neutrals and off-white paper */
   --bg:           #faf9f6;
   --surface:      #ffffff;
   --surface-2:    #f4f2ec;
@@ -25,19 +25,19 @@
   --line-md:      rgba(20, 18, 12, 0.14);
   --line-hi:      rgba(20, 18, 12, 0.22);
 
-  /* Text — warm graphite */
+  /* Text: warm graphite */
   --t1:           #14120c;
   --t2:           #4d4a40;
   --t3:           #807c70;
   --t4:           #b6b1a3;
 
-  /* Accent — terracotta */
+  /* Accent: terracotta */
   --accent:       #b94a2c;
   --accent-hi:    #a23d22;
   --accent-sub:   rgba(185, 74, 44, 0.10);
   --accent-line:  rgba(185, 74, 44, 0.28);
 
-  /* Sentiment — muted, not crayon */
+  /* Sentiment: muted, not crayon */
   --neg:          #b73a2a;
   --neg-sub:      rgba(183, 58, 42, 0.09);
   --neg-line:     rgba(183, 58, 42, 0.22);
@@ -49,12 +49,12 @@
   --pos-line:     rgba(31, 111, 74, 0.22);
   --gold:         #c08725;
 
-  /* Shadows — hairlines first, shadows minimal */
+  /* Shadows: hairlines first, shadows minimal */
   --shadow-1:     0 1px 0 rgba(20,18,12,0.04);
   --shadow-2:     0 4px 16px rgba(20,18,12,0.06), 0 1px 2px rgba(20,18,12,0.04);
   --shadow-3:     0 24px 64px rgba(20,18,12,0.10), 0 2px 4px rgba(20,18,12,0.04);
 
-  /* Radii — sharp on data tables, soft on inputs/CTAs */
+  /* Radii: sharp on data tables, soft on inputs/CTAs */
   --r-0:    0;
   --r-1:    2px;
   --r-2:    4px;
@@ -70,7 +70,7 @@
   --font-serif:  var(--font-noto-sans), system-ui, -apple-system, sans-serif;
   --font-mono:   var(--font-noto-sans), system-ui, -apple-system, sans-serif;
 
-  /* ── Legacy aliases — keep un-ported components working ── */
+  /* ── Legacy aliases to keep un-ported components working ── */
   --border:             var(--line);
   --border-md:          var(--line-md);
   --border-hi:          var(--line-hi);
@@ -88,7 +88,7 @@
   --card-shadow-hover:  var(--shadow-3);
 }
 
-/* Dark theme — also applied via .dark-app for incremental porting */
+/* Dark theme, also applied via .dark-app for incremental porting */
 [data-theme="dark"],
 .dark-app {
   --bg:          #0e0d0a;
@@ -307,7 +307,7 @@ textarea.field { padding: 10px 12px; height: auto; min-height: 80px; resize: ver
   border-radius: 6px;
 }
 
-/* ── App shell — sidebar layout ───────────────────────────────────────────── */
+/* ── App shell: sidebar layout ───────────────────────────────────────────── */
 .app { display: flex; min-height: 100dvh; background: var(--bg); }
 /* Legacy alias */
 .app-shell { display: flex; min-height: 100dvh; background: var(--bg); }
@@ -442,7 +442,7 @@ textarea.field { padding: 10px 12px; height: auto; min-height: 80px; resize: ver
 .badge-zinc               { background: var(--surface-2); color: var(--t2);  border: 1px solid var(--line); }
 .badge-accent             { background: var(--accent-sub); color: var(--accent); border: 1px solid var(--accent-line); }
 
-/* ── Review rows (legacy — used until Phase 3 port) ───────────────────────── */
+/* ── Review rows (legacy, used until Phase 3 port) ───────────────────────── */
 .review-row {
   border: 1px solid var(--line);
   border-radius: var(--r-5); margin-bottom: 5px;
@@ -566,7 +566,7 @@ textarea.field { padding: 10px 12px; height: auto; min-height: 80px; resize: ver
   gap: 1px; background: var(--line);
   border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
 }
-/* pricing grid — border-right between cells */
+/* Pricing grid with a right border between cells */
 .lp-plan-grid {
   display: grid; grid-template-columns: repeat(3, 1fr);
   border: 1px solid var(--line-md); border-radius: 14px; overflow: hidden;
@@ -579,7 +579,7 @@ textarea.field { padding: 10px 12px; height: auto; min-height: 80px; resize: ver
   display: flex; align-items: center; justify-content: space-between;
   gap: 16px; flex-wrap: wrap;
 }
-/* type scale — defined here so media queries can override inline values */
+/* Type scale defined here so media queries can override inline values */
 .lp-h1 { font-size: 56px; line-height: 1.05; letter-spacing: -0.02em; margin-bottom: 22px; }
 .lp-h2 { font-size: 40px; line-height: 1.05; letter-spacing: -0.02em; margin-top: 8px; }
 .lp-cta-h2 { font-size: 48px; line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 18px; }

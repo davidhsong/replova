@@ -41,7 +41,7 @@ function buildAlertHtml(opts: {
         <td style="padding:24px 0 0 0;">
           <div style="padding:16px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;">
             <p style="margin:0 0 6px 0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:#16a34a;">
-              Recovery Offer Ready to Send
+              Optional recovery message
             </p>
             <p style="margin:0;font-size:14px;color:#166534;line-height:1.6;">${escapeHtml(opts.recoveryOfferText)}</p>
           </div>
@@ -62,7 +62,7 @@ function buildAlertHtml(opts: {
           <tr>
             <td style="background:#1a1a2e;padding:24px 32px;border-radius:8px 8px 0 0;">
               <p style="margin:0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#a5b4fc;">Replova</p>
-              <h1 style="margin:6px 0 0 0;font-size:22px;font-weight:700;color:#ffffff;">⚠️ New Review Alert</h1>
+              <h1 style="margin:6px 0 0 0;font-size:22px;font-weight:700;color:#ffffff;">New review alert</h1>
               <p style="margin:4px 0 0 0;font-size:14px;color:#c7d2fe;">${escapeHtml(opts.restaurantName)}</p>
             </td>
           </tr>
@@ -196,7 +196,7 @@ export async function sendNegativeReviewAlert(reviewId: string): Promise<void> {
   const { error: sendError } = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL ?? 'Replova <onboarding@resend.dev>',
     to: restaurant.owner_email,
-    subject: `⚠️ New ${review.rating}-star review at ${restaurant.name}`,
+    subject: `New ${review.rating}-star review at ${restaurant.name}`,
     html,
   })
 

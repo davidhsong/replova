@@ -164,7 +164,7 @@ export async function getCompetitorComparison(restaurantId: string): Promise<Com
   )
 
   // Rank all entries by rating descending (nulls last). Keyed by id, not
-  // name — two tracked competitors can share an identical name (common for
+  // name because two tracked competitors can share an identical name (common for
   // chains/franchises), or a competitor's name can coincidentally match the
   // user's own business name, which would silently collide and misattribute
   // ranks if keyed by name instead.
