@@ -3,13 +3,14 @@
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--t1);
-  --font-sans: var(--font-inter);
-  --font-mono: var(--font-jetbrains-mono);
+  --font-sans: var(--font-noto-sans);
+  --font-serif: var(--font-noto-sans);
+  --font-mono: var(--font-noto-sans);
 }
 
 /* ─────────── REPLOVA DESIGN SYSTEM ───────────
    Visual register: Mercury × Stripe × Linear × Things 3
-   Warm neutrals, terracotta accent, Inter + Instrument Serif
+   Warm neutrals, terracotta accent, Noto Sans
 */
 
 :root {
@@ -65,9 +66,9 @@
   --r-pill: 999px;
 
   /* Font family vars (populated by next/font in layout.tsx) */
-  --font-ui:     var(--font-inter), system-ui, -apple-system, sans-serif;
-  --font-serif:  var(--font-instrument-serif), 'Tiempos', Georgia, serif;
-  --font-mono:   var(--font-jetbrains-mono), 'SF Mono', Menlo, monospace;
+  --font-ui:     var(--font-noto-sans), system-ui, -apple-system, sans-serif;
+  --font-serif:  var(--font-noto-sans), system-ui, -apple-system, sans-serif;
+  --font-mono:   var(--font-noto-sans), system-ui, -apple-system, sans-serif;
 
   /* ── Legacy aliases — keep un-ported components working ── */
   --border:             var(--line);
