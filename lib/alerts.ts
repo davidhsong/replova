@@ -32,9 +32,7 @@ function buildAlertHtml(opts: {
   const starColor = opts.rating <= 2 ? '#dc2626' : '#d97706'
   const ratingBg = opts.rating <= 2 ? '#fee2e2' : '#fef3c7'
   const ratingText = opts.rating <= 2 ? '#dc2626' : '#d97706'
-  const approveUrl = `${appUrl}/dashboard?reviewId=${opts.reviewId}&action=approve`
-  const editUrl = `${appUrl}/dashboard?reviewId=${opts.reviewId}&action=edit`
-  const dismissUrl = `${appUrl}/dashboard?reviewId=${opts.reviewId}&action=dismiss`
+  const reviewCenterUrl = `${appUrl}/dashboard`
 
   const recoverySection =
     opts.recoveryOfferEnabled && opts.recoveryOfferText
@@ -113,22 +111,8 @@ function buildAlertHtml(opts: {
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td align="center" style="padding:0 6px 12px 6px;">
-                          <a href="${approveUrl}" style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:9999px;">
-                            Approve &amp; Send Reply
-                          </a>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td align="center" style="padding:0 6px 12px 6px;">
-                          <a href="${editUrl}" style="display:inline-block;padding:12px 24px;background:#ffffff;color:#4f46e5;font-size:14px;font-weight:600;text-decoration:none;border-radius:9999px;border:2px solid #4f46e5;">
-                            Edit Reply
-                          </a>
-                        </td>
-                      </tr>
-                      <tr>
-                        <td align="center" style="padding:0 6px 0 6px;">
-                          <a href="${dismissUrl}" style="display:inline-block;padding:12px 24px;background:#ffffff;color:#6b7280;font-size:14px;font-weight:600;text-decoration:none;border-radius:9999px;border:2px solid #e5e7eb;">
-                            Dismiss
+                          <a href="${reviewCenterUrl}" style="display:inline-block;padding:12px 24px;background:#4f46e5;color:#ffffff;font-size:14px;font-weight:600;text-decoration:none;border-radius:9999px;">
+                            Open Review Center
                           </a>
                         </td>
                       </tr>
@@ -164,7 +148,7 @@ export async function sendNegativeReviewAlert(reviewId: string): Promise<void> {
 
   const { data: review, error: reviewError } = await admin
     .from('reviews')
-    .select('id, restaurant_id, author, rating, review_text')
+    .select('id, restaurant_id, author, rating, review_text, reply_draft_2')
     .eq('id', reviewId)
     .single()
 
@@ -177,54 +161,44 @@ export async function sendNegativeReviewAlert(reviewId: string): Promise<void> {
     .single()
 
   if (restError || !restaurant) throw new Error(`Restaurant not found for review ${reviewId}`)
+  if (!restaurant.active) return
 
   const { data: settings } = await admin
     .from('restaurant_settings')
     .select('notify_negative_reviews, negative_threshold, recovery_offer_enabled, recovery_offer_text')
     .eq('restaurant_id', review.restaurant_id)
-    .single()
+    .maybeSingle()
 
-  if (!settings || settings.notify_negative_reviews === false) return
+  if (settings?.notify_negative_reviews === false) return
 
-  const threshold: number = settings.negative_threshold ?? 3
+  const threshold: number = settings?.negative_threshold ?? 3
   if ((review.rating ?? 0) > threshold) return
 
-  const replies = await generateReplies({
-    restaurantName: restaurant.name,
-    author: review.author ?? 'Anonymous',
-    rating: review.rating ?? 0,
-    reviewText: review.review_text ?? '',
-  })
-
-  await admin.from('reply_queue').insert({
-    review_id: reviewId,
-    restaurant_id: review.restaurant_id,
-    generated_reply: replies.warm,
-    approved: null,
-    scheduled_send_at: null,
-    sent: false,
-  })
+  const suggestedReply = review.reply_draft_2 ?? (await generateReplies({
+      restaurantName: restaurant.name,
+      author: review.author ?? 'Anonymous',
+      rating: review.rating ?? 0,
+      reviewText: review.review_text ?? '',
+    })).warm
 
   const html = buildAlertHtml({
     restaurantName: restaurant.name,
     author: review.author ?? 'Anonymous',
     rating: review.rating ?? 0,
     reviewText: review.review_text ?? '',
-    suggestedReply: replies.warm,
-    recoveryOfferEnabled: settings.recovery_offer_enabled ?? false,
-    recoveryOfferText: settings.recovery_offer_text ?? null,
+    suggestedReply,
+    recoveryOfferEnabled: settings?.recovery_offer_enabled ?? false,
+    recoveryOfferText: settings?.recovery_offer_text ?? null,
     reviewId,
   })
 
   const resend = new Resend(process.env.RESEND_API_KEY)
   const { error: sendError } = await resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL ?? 'alerts@replova.com',
+    from: process.env.RESEND_FROM_EMAIL ?? 'Replova <onboarding@resend.dev>',
     to: restaurant.owner_email,
     subject: `⚠️ New ${review.rating}-star review at ${restaurant.name}`,
     html,
   })
 
   if (sendError) throw new Error(`Failed to send alert email: ${sendError.message}`)
-
-  console.log(`Negative review alert sent to ${restaurant.owner_email} for review ${reviewId}`)
 }

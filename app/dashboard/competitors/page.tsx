@@ -79,6 +79,7 @@ export default function CompetitorsPage() {
       if (!res.ok) { setAuthError(true); return }
       const r: Restaurant = await res.json()
       setRestaurant(r)
+      if (r.plan === 'starter') return
       const loaded = await loadData(r.id)
       if (loaded.competitorCount === 0) await runAutoDiscover(r.id, true)
     }
@@ -253,6 +254,27 @@ export default function CompetitorsPage() {
       <div className="page-body" style={{ textAlign: 'center', paddingTop: 64 }}>
         <p className="t-sm c-t3">Please sign in to view this page.</p>
       </div>
+    )
+  }
+
+  if (restaurant?.plan === 'starter') {
+    return (
+      <>
+        <div className="page-header">
+          <h1 className="t-h1" style={{ marginBottom: 4 }}>Competitors</h1>
+          <p className="t-sm c-t3">Compare your reputation with nearby businesses.</p>
+        </div>
+        <div className="page-body">
+          <div className="card" style={{ maxWidth: 620, padding: 32 }}>
+            <div className="t-eyebrow" style={{ marginBottom: 10 }}>Growth feature</div>
+            <h2 className="t-h2" style={{ marginBottom: 10 }}>Unlock competitor tracking</h2>
+            <p className="t-sm c-t3" style={{ marginBottom: 20 }}>
+              Upgrade to Growth or Agency to discover nearby competitors and compare ratings, review volume, and rank.
+            </p>
+            <a className="btn btn-primary" href="/dashboard/billing">View plans</a>
+          </div>
+        </div>
+      </>
     )
   }
 

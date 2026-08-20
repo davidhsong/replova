@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
       .select('id')
       .eq('id', activeId)
       .eq('owner_email', user.email!)
+      .eq('active', true)
       .maybeSingle()
     restaurant = data
   }
@@ -29,6 +30,7 @@ export async function GET(req: NextRequest) {
       .from('restaurants')
       .select('id')
       .eq('owner_email', user.email!)
+      .eq('active', true)
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle()
@@ -42,10 +44,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { data: rows } = await admin
+  const { data: rows, error } = await admin
     .from('review_requests')
     .select('status')
     .eq('restaurant_id', restaurant.id)
+  if (error) return NextResponse.json({ error: 'Unable to load review request statistics.' }, { status: 500 })
 
   const all = rows ?? []
   const total   = all.length

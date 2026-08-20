@@ -18,7 +18,7 @@ export interface SyncResult {
 type RestaurantRecord = {
   id: string
   name: string
-  place_id: string
+  place_id: string | null
   google_location_name: string | null
   google_access_token: string | null
   google_refresh_token: string | null
@@ -45,11 +45,12 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
     .eq('id', restaurantId)
     .single<RestaurantRecord>()
 
-  const { data: settings } = await admin
+  const { data: settings, error: settingsError } = await admin
     .from('restaurant_settings')
-    .select('reply_persona')
+    .select('reply_persona, auto_reply_enabled, auto_reply_delay_hours')
     .eq('restaurant_id', restaurantId)
-    .single<{ reply_persona: string | null }>()
+    .maybeSingle<{ reply_persona: string | null; auto_reply_enabled: boolean; auto_reply_delay_hours: number }>()
+  if (settingsError) throw settingsError
   const persona = settings?.reply_persona ?? null
 
   if (restError || !restaurant) {
@@ -57,10 +58,11 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
   }
 
   // Load existing reviews for de-duplication
-  const { data: existingRows } = await admin
+  const { data: existingRows, error: existingRowsError } = await admin
     .from('reviews')
     .select('id, google_review_name, review_timestamp, author, status')
     .eq('restaurant_id', restaurantId)
+  if (existingRowsError) throw existingRowsError
 
   const existingByGmbName = new Map(
     (existingRows ?? [])
@@ -86,31 +88,30 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
   let candidates: ReviewCandidate[] = []
   let source: 'gmb' | 'places' = 'places'
 
-  // Prefer Google My Business API (returns all reviews + reply status)
+  // Prefer Google Business Profile API (returns all reviews + reply status).
+  // Once a location is linked, never fall back to the five-review Places sample:
+  // sampled rows lack canonical review IDs and would duplicate existing GMB rows.
   if (restaurant.google_location_name) {
     const accessToken = await getValidGoogleToken(restaurant, admin)
-    if (accessToken) {
-      try {
-        const gmbReviews = await fetchAllGmbReviews(accessToken, restaurant.google_location_name)
-        source = 'gmb'
-        candidates = gmbReviews.map(r => ({
-          google_review_name: r.name,
-          author: r.reviewer?.isAnonymous
-            ? 'Anonymous'
-            : (r.reviewer?.displayName ?? 'Anonymous'),
-          rating: starRatingToNumber(r.starRating),
-          review_text: r.comment ?? '',
-          review_timestamp: Math.floor(new Date(r.createTime).getTime() / 1000),
-          hasGoogleReply: Boolean(r.reviewReply),
-        }))
-      } catch (err) {
-        console.error('GMB API failed, falling back to Places API:', err)
-      }
-    }
+    if (!accessToken) throw new Error('Google Business authorization expired. Reconnect in Settings.')
+
+    const gmbReviews = await fetchAllGmbReviews(accessToken, restaurant.google_location_name)
+    source = 'gmb'
+    candidates = gmbReviews.map(r => ({
+      google_review_name: r.name,
+      author: r.reviewer?.isAnonymous
+        ? 'Anonymous'
+        : (r.reviewer?.displayName ?? 'Anonymous'),
+      rating: starRatingToNumber(r.starRating),
+      review_text: r.comment ?? '',
+      review_timestamp: Math.floor(new Date(r.createTime).getTime() / 1000),
+      hasGoogleReply: Boolean(r.reviewReply),
+    }))
   }
 
   // Fall back to Places API (hard cap of 5 reviews, no reply detection)
   if (source === 'places') {
+    if (!restaurant.place_id) throw new Error('This business is missing its Google Place ID.')
     const placeData = await getPlaceReviews(restaurant.place_id)
     candidates = placeData.reviews.map(r => ({
       google_review_name: '',
@@ -151,18 +152,21 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
   }
 
   // Batch back-fill names
-  await Promise.all(
+  const backfillResults = await Promise.all(
     toBackfillName.map(({ id, name }) =>
       admin.from('reviews').update({ google_review_name: name }).eq('id', id)
     )
   )
+  const backfillError = backfillResults.find(result => result.error)?.error
+  if (backfillError) throw backfillError
 
   // Batch auto-reply status updates
   if (toMarkReplied.length > 0) {
-    await admin
+    const { error } = await admin
       .from('reviews')
       .update({ status: 'replied', replied_at: new Date().toISOString() })
       .in('id', toMarkReplied)
+    if (error) throw error
   }
 
   // Insert reviews that already have a Google reply (no AI draft needed).
@@ -172,8 +176,9 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
   // index on (restaurant_id, google_review_name) is the source of truth,
   // the in-memory existingByGmbName check above is only a fast-path.
   const alreadyReplied = toInsert.filter(r => r.hasGoogleReply)
+  let newlyStored = 0
   if (alreadyReplied.length > 0) {
-    await admin.from('reviews').upsert(
+    const { data: inserted, error } = await admin.from('reviews').upsert(
       alreadyReplied.map(r => ({
         restaurant_id: restaurantId,
         google_review_name: r.google_review_name || null,
@@ -185,12 +190,13 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
         replied_at: new Date().toISOString(),
       })),
       { onConflict: 'restaurant_id,google_review_name', ignoreDuplicates: true }
-    )
+    ).select('id')
+    if (error) throw error
+    newlyStored += inserted?.length ?? 0
   }
 
   // Insert new reviews that need AI drafts
   const needDraft = toInsert.filter(r => !r.hasGoogleReply)
-  let newlyStored = alreadyReplied.length
   let repliesGenerated = 0
   let draftsFailed = 0
 
@@ -199,7 +205,10 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
     // these reviews, ON CONFLICT DO NOTHING means it's silently skipped and
     // (critically) NOT returned below — so we never generate a second AI
     // draft or send a second negative-review alert for the same review.
-    const { data: inserted } = await admin
+    const conflictTarget = source === 'gmb'
+      ? 'restaurant_id,google_review_name'
+      : 'restaurant_id,places_dedupe_key'
+    const { data: inserted, error: insertError } = await admin
       .from('reviews')
       .upsert(
         needDraft.map(r => ({
@@ -211,9 +220,11 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
           review_timestamp: r.review_timestamp,
           status: 'pending',
         })),
-        { onConflict: 'restaurant_id,google_review_name', ignoreDuplicates: true }
+        { onConflict: conflictTarget, ignoreDuplicates: true }
       )
-      .select('id, author, rating, review_text')
+      .select('id, author, rating, review_text, google_review_name')
+
+    if (insertError) throw insertError
 
     newlyStored += inserted?.length ?? 0
 
@@ -237,7 +248,7 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
             })
 
             if (success) {
-              await admin
+              const { error: draftUpdateError } = await admin
                 .from('reviews')
                 .update({
                   reply_draft_1: success.professional,
@@ -246,17 +257,29 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
                   status: 'drafted',
                 })
                 .eq('id', row.id)
+              if (draftUpdateError) throw draftUpdateError
               repliesGenerated++
+
+              if (settings?.auto_reply_enabled && (row.rating ?? 0) >= 4 && row.google_review_name) {
+                const delayHours = settings.auto_reply_delay_hours ?? 2
+                const { error: queueError } = await admin.from('reply_queue').insert({
+                  review_id: row.id,
+                  restaurant_id: restaurantId,
+                  generated_reply: success.warm,
+                  scheduled_send_at: new Date(Date.now() + delayHours * 60 * 60 * 1000).toISOString(),
+                  sent: false,
+                  approved: null,
+                })
+                if (queueError) throw queueError
+              }
             } else {
               draftsFailed++
               // Status stays 'pending' — visible in UI as "Draft not yet generated"
             }
 
-            if ((row.rating ?? 0) <= 3) {
-              void sendNegativeReviewAlert(row.id).catch(err =>
-                console.error('Alert failed for review', row.id, err)
-              )
-            }
+            await sendNegativeReviewAlert(row.id).catch(err =>
+              console.error('Alert failed for review', row.id, err)
+            )
           } catch (err) {
             draftsFailed++
             console.error('Failed to process review', row.id, err)

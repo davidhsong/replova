@@ -103,8 +103,8 @@ export default function RootLayout({
       <body data-theme="light" data-density="comfortable">
         {children}
       </body>
-      {process.env.NODE_ENV === "production" && (
-        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID!} />
+      {process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_GA_ID && (
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
       )}
     </html>
   );

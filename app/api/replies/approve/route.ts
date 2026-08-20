@@ -39,12 +39,13 @@ export async function POST(req: NextRequest) {
 
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id')
+    .select('id, active')
     .eq('id', queueEntry.restaurant_id)
     .eq('owner_email', user.email)
-    .single<{ id: string }>()
+    .single<{ id: string; active: boolean }>()
 
   if (!restaurant) return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+  if (!restaurant.active) return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
   const update: Record<string, unknown> = { approved }
   if (editedReply && typeof editedReply === 'string') {

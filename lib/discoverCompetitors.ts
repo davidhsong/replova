@@ -68,11 +68,23 @@ Return ONLY a valid JSON array — no markdown, no explanation:
       }],
     })
 
-    recordUsage('claude-haiku-4-5-20251001', 'competitor_discovery', message.usage.input_tokens, message.usage.output_tokens)
+    await recordUsage('claude-haiku-4-5-20251001', 'competitor_discovery', message.usage.input_tokens, message.usage.output_tokens)
     const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : '[]'
     const cleaned = raw.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim()
-    const parsed: DiscoveredCompetitor[] = JSON.parse(cleaned)
-    if (Array.isArray(parsed)) claudeResults = parsed.slice(0, maxResults)
+    const parsed: unknown = JSON.parse(cleaned)
+    const allowedIds = new Set(candidates.map(candidate => candidate.placeId))
+    if (Array.isArray(parsed)) {
+      claudeResults = parsed
+        .filter((item): item is DiscoveredCompetitor => {
+          if (!item || typeof item !== 'object') return false
+          const candidate = item as Partial<DiscoveredCompetitor>
+          return typeof candidate.placeId === 'string'
+            && allowedIds.has(candidate.placeId)
+            && typeof candidate.reason === 'string'
+            && (candidate.competitorType === 'direct' || candidate.competitorType === 'indirect')
+        })
+        .slice(0, maxResults)
+    }
   } catch {
     // Claude failed — fall through to fill slots from candidates
   }

@@ -11,7 +11,7 @@ import { getSupabaseBrowser } from '@/lib/supabase'
 import LocationSwitcherClient from '@/components/dashboard/LocationSwitcherClient'
 import type { Plan } from '@/lib/planLimits'
 
-type Location = { id: string; name: string }
+type Location = { id: string; name: string; active: boolean }
 
 interface Props {
   restaurantName: string
@@ -150,6 +150,8 @@ export default function DashboardSidebar({
       <div style={{ borderTop: '1px solid var(--line)', padding: 10 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 8px', borderRadius: 8 }}>
           {avatarUrl ? (
+            // User avatars can be hosted on arbitrary OAuth provider domains.
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={avatarUrl}
               alt={displayName}

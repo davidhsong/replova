@@ -1,12 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
+import { safeRedirectPath } from '@/lib/safeRedirect'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const code = searchParams.get('code')
   const tokenHash = searchParams.get('token_hash')
   const type = searchParams.get('type') as 'magiclink' | 'signup' | 'email' | null
-  const next = searchParams.get('next') ?? '/dashboard'
+  const next = safeRedirectPath(searchParams.get('next'))
 
   const errorResponse = NextResponse.redirect(new URL('/signin?error=invalid_link', req.url))
   const successResponse = NextResponse.redirect(new URL(next, req.url))

@@ -20,16 +20,28 @@ export async function GET(request: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
+  const { data: account } = await admin
+    .from('accounts')
+    .select('plan')
+    .eq('owner_email', user.email!)
+    .maybeSingle()
+  if (!account || account.plan === 'starter') {
+    return NextResponse.json({ error: 'Provider reputation requires Growth plan or higher.' }, { status: 403 })
+  }
+
   // Verify the restaurant belongs to the authenticated user
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id')
+    .select('id, active')
     .eq('id', restaurantId)
     .eq('owner_email', user.email)
     .maybeSingle()
 
   if (!restaurant) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+  if (!restaurant.active) {
+    return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
   }
 
   const thirtyDaysAgo = Math.floor((Date.now() - 30 * 24 * 60 * 60 * 1000) / 1000)

@@ -1,12 +1,8 @@
 import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import Stripe from 'stripe'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
-
-function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!)
-}
+import { getStripe } from '@/lib/stripe'
 
 export async function POST() {
   const cookieStore = await cookies()
@@ -44,45 +40,66 @@ export async function POST() {
       )
     } catch (err) {
       console.error('[account/delete] Stripe cancellation failed:', err)
+      return NextResponse.json(
+        { error: 'We could not cancel your subscription, so nothing was deleted. Please try again or contact support.' },
+        { status: 502 }
+      )
     }
   }
 
   // Get all restaurants owned by this user
-  const { data: restaurants } = await admin
+  const { data: restaurants, error: restaurantsError } = await admin
     .from('restaurants')
     .select('id')
     .eq('owner_email', user.email!)
+  if (restaurantsError) {
+    return NextResponse.json({ error: 'Unable to load account data for deletion.' }, { status: 500 })
+  }
 
   const restaurantIds = (restaurants ?? []).map(r => r.id)
 
   if (restaurantIds.length > 0) {
     // Get competitor IDs so we can delete their snapshots
-    const { data: competitors } = await admin
+    const { data: competitors, error: competitorsError } = await admin
       .from('competitors')
       .select('id')
       .in('restaurant_id', restaurantIds)
+    if (competitorsError) {
+      return NextResponse.json({ error: 'Unable to load competitor data for deletion.' }, { status: 500 })
+    }
 
     const competitorIds = (competitors ?? []).map(c => c.id)
     if (competitorIds.length > 0) {
-      await admin.from('competitor_snapshots').delete().in('competitor_id', competitorIds)
+      const { error } = await admin.from('competitor_snapshots').delete().in('competitor_id', competitorIds)
+      if (error) return NextResponse.json({ error: 'Unable to delete competitor history.' }, { status: 500 })
     }
 
     // Delete all child rows before restaurants (FK constraints)
-    await admin.from('review_requests').delete().in('restaurant_id', restaurantIds)
-    await admin.from('reply_queue').delete().in('restaurant_id', restaurantIds)
-    await admin.from('reputation_scores').delete().in('restaurant_id', restaurantIds)
-    await admin.from('competitors').delete().in('restaurant_id', restaurantIds)
-    await admin.from('restaurant_settings').delete().in('restaurant_id', restaurantIds)
-    await admin.from('reviews').delete().in('restaurant_id', restaurantIds)
-    await admin.from('restaurants').delete().in('id', restaurantIds)
+    for (const table of ['review_requests', 'reply_queue', 'reputation_scores', 'competitors', 'restaurant_settings', 'reviews'] as const) {
+      const { error } = await admin.from(table).delete().in('restaurant_id', restaurantIds)
+      if (error) {
+        console.error(`[account/delete] Failed deleting ${table}:`, error)
+        return NextResponse.json({ error: 'Account deletion could not be completed. Please contact support.' }, { status: 500 })
+      }
+    }
+    const { error: restaurantDeleteError } = await admin.from('restaurants').delete().in('id', restaurantIds)
+    if (restaurantDeleteError) {
+      return NextResponse.json({ error: 'Unable to delete restaurant data.' }, { status: 500 })
+    }
   }
 
-  await admin.from('accounts').delete().eq('owner_email', user.email!)
+  const { error: accountDeleteError } = await admin.from('accounts').delete().eq('owner_email', user.email!)
+  if (accountDeleteError) {
+    return NextResponse.json({ error: 'Unable to delete the account record.' }, { status: 500 })
+  }
 
   const { error: deleteUserError } = await admin.auth.admin.deleteUser(user.id)
   if (deleteUserError) {
     console.error('[account/delete] Failed to delete auth user:', deleteUserError.message)
-    return NextResponse.json({ error: 'Failed to delete account. Please contact support.' }, { status: 500 })
+    // The account and all customer data are gone, so treat this as complete
+    // from the customer's perspective; the orphaned auth identity cannot pass
+    // the account lookup used by the magic-link route.
+    return NextResponse.json({ success: true, warning: 'Authentication cleanup is pending.' })
   }
 
   return NextResponse.json({ success: true })

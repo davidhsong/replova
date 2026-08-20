@@ -12,8 +12,8 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { reviewId } = await req.json()
-  if (!reviewId) return NextResponse.json({ error: 'reviewId required' }, { status: 400 })
+  const { reviewId } = await req.json().catch(() => ({ reviewId: null }))
+  if (!reviewId || typeof reviewId !== 'string') return NextResponse.json({ error: 'reviewId required' }, { status: 400 })
 
   const admin = getSupabaseAdmin()
 
@@ -42,12 +42,13 @@ export async function POST(req: NextRequest) {
 
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id')
+    .select('id, active')
     .eq('id', review.restaurant_id)
     .eq('owner_email', user.email!)
     .maybeSingle()
 
   if (!restaurant) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+  if (!restaurant.active) return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
   const result = await analyzeAndSaveReview(reviewId)
 

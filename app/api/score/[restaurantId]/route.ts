@@ -20,7 +20,7 @@ export async function GET(
 
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id, owner_email')
+    .select('id, owner_email, active')
     .eq('id', restaurantId)
     .single()
 
@@ -28,6 +28,7 @@ export async function GET(
   if (restaurant.owner_email !== user.email) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
+  if (!restaurant.active) return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
   // Gate: scores require Growth or above
   const { data: account } = await admin

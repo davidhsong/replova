@@ -10,8 +10,9 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { reviewId, completed } = await req.json()
-  if (!reviewId) return NextResponse.json({ error: 'reviewId required' }, { status: 400 })
+  const { reviewId, completed } = await req.json().catch(() => ({ reviewId: null, completed: null }))
+  if (!reviewId || typeof reviewId !== 'string') return NextResponse.json({ error: 'reviewId required' }, { status: 400 })
+  if (typeof completed !== 'boolean') return NextResponse.json({ error: 'completed must be a boolean' }, { status: 400 })
 
   const admin = getSupabaseAdmin()
 
@@ -27,18 +28,21 @@ export async function POST(req: NextRequest) {
   // Verify the restaurant belongs to this user
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id')
+    .select('id, active')
     .eq('id', review.restaurant_id)
     .eq('owner_email', user.email!)
     .maybeSingle()
 
   if (!restaurant) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+  if (!restaurant.active) return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
   const updateData: Record<string, unknown> = {
     status: completed ? 'replied' : 'drafted',
   }
   if (completed) {
     updateData.replied_at = new Date().toISOString()
+  } else {
+    updateData.replied_at = null
   }
 
   const { error } = await admin

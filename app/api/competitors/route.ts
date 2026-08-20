@@ -3,7 +3,7 @@ import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { addCompetitor } from '@/lib/competitors'
-import { getPlanLimits } from '@/lib/planLimits'
+import { getPlanLimits, hasCompetitorTracking } from '@/lib/planLimits'
 import type { Plan } from '@/lib/planLimits'
 
 async function getAuthedRestaurant(user: { email?: string }, restaurantId: string) {
@@ -12,8 +12,18 @@ async function getAuthedRestaurant(user: { email?: string }, restaurantId: strin
     .select('id, owner_email')
     .eq('id', restaurantId)
     .eq('owner_email', user.email)
+    .eq('active', true)
     .single()
   return data
+}
+
+async function getPlan(email: string): Promise<Plan> {
+  const { data } = await getSupabaseAdmin()
+    .from('accounts')
+    .select('plan')
+    .eq('owner_email', email)
+    .maybeSingle()
+  return (data?.plan as Plan) ?? 'starter'
 }
 
 export async function GET(req: NextRequest) {
@@ -27,6 +37,9 @@ export async function GET(req: NextRequest) {
 
   const owned = await getAuthedRestaurant(user, restaurantId)
   if (!owned) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  if (!hasCompetitorTracking(await getPlan(user.email!))) {
+    return NextResponse.json({ error: 'Competitor tracking requires Growth or Agency.' }, { status: 403 })
+  }
 
   const admin = getSupabaseAdmin()
   const { data: competitors } = await admin
@@ -71,9 +84,9 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json()
+  const body = await req.json().catch(() => ({}))
   const { restaurantId, placeId } = body ?? {}
-  if (!restaurantId || !placeId) {
+  if (typeof restaurantId !== 'string' || typeof placeId !== 'string' || !restaurantId || !placeId) {
     return NextResponse.json({ error: 'Missing restaurantId or placeId' }, { status: 400 })
   }
 
@@ -83,13 +96,10 @@ export async function POST(req: NextRequest) {
   const admin = getSupabaseAdmin()
 
   // Enforce competitor slot limit for this plan
-  const { data: account } = await admin
-    .from('accounts')
-    .select('plan')
-    .eq('owner_email', user.email!)
-    .maybeSingle()
-
-  const plan: Plan = (account?.plan as Plan) ?? 'starter'
+  const plan = await getPlan(user.email!)
+  if (!hasCompetitorTracking(plan)) {
+    return NextResponse.json({ error: 'Competitor tracking requires Growth or Agency.' }, { status: 403 })
+  }
   const limits = getPlanLimits(plan)
 
   const { count: currentCount } = await admin
@@ -129,6 +139,9 @@ export async function DELETE(req: NextRequest) {
     if (!restaurantId) return NextResponse.json({ error: 'Missing restaurantId' }, { status: 400 })
     const owned = await getAuthedRestaurant(user, restaurantId)
     if (!owned) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    if (!hasCompetitorTracking(await getPlan(user.email!))) {
+      return NextResponse.json({ error: 'Competitor tracking requires Growth or Agency.' }, { status: 403 })
+    }
     await admin.from('competitors').update({ active: false }).eq('restaurant_id', restaurantId).eq('active', true)
     return NextResponse.json({ success: true })
   }
@@ -147,6 +160,9 @@ export async function DELETE(req: NextRequest) {
 
   const owned = await getAuthedRestaurant(user, competitor.restaurant_id)
   if (!owned) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  if (!hasCompetitorTracking(await getPlan(user.email!))) {
+    return NextResponse.json({ error: 'Competitor tracking requires Growth or Agency.' }, { status: 403 })
+  }
 
   await admin.from('competitors').update({ active: false }).eq('id', competitorId)
 

@@ -36,17 +36,13 @@ export async function analyzeSentiment(
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 512,
       system:
-        'You are a med spa and local service business review analyzer. Return ONLY a valid JSON object with no markdown, ' +
+        'You are a review analyzer for clinics, salons, restaurants, and other local businesses. Return ONLY a valid JSON object with no markdown, ' +
         'no code fences, no explanation. Analyze the review text and return exactly these fields: ' +
         'score (float -1.0 to 1.0), label (positive/neutral/negative), ' +
         'summary (one sentence describing the main sentiment and topics), ' +
-        'keywords (array, pick relevant from: treatment results, staff expertise, ' +
-        'consultation quality, cleanliness, pain level, pricing transparency, ' +
-        'results longevity, booking experience, before/after photos, product recommendations), ' +
-        'staffMentions (array of first names of injectors, estheticians, or staff mentioned by name), ' +
-        'treatmentMentions (array of specific treatments or services mentioned, e.g. Botox, filler, ' +
-        'HydraFacial, laser hair removal, microneedling, chemical peel, CoolSculpting, PRP, Sculptra, ' +
-        'lip filler, lash lift, brow lamination, waxing, facial, massage, body contouring).',
+        'keywords (array of concise topics such as food quality, service, wait time, cleanliness, atmosphere, value, booking, or results), ' +
+        'staffMentions (array of first names of staff mentioned by name), ' +
+        'treatmentMentions (array of specific menu items, products, treatments, or services mentioned).',
       messages: [
         {
           role: 'user',
@@ -55,7 +51,7 @@ export async function analyzeSentiment(
       ],
     })
 
-    recordUsage('claude-haiku-4-5-20251001', 'sentiment', message.usage.input_tokens, message.usage.output_tokens)
+    await recordUsage('claude-haiku-4-5-20251001', 'sentiment', message.usage.input_tokens, message.usage.output_tokens)
     const raw = message.content[0].type === 'text' ? message.content[0].text : ''
     const cleaned = raw
       .replace(/^```json\s*/i, '')
@@ -77,12 +73,12 @@ export async function analyzeSentiment(
     }
 
     return {
-      score: parsed.score,
+      score: Math.max(-1, Math.min(1, parsed.score)),
       label: parsed.label,
-      summary: parsed.summary,
-      keywords: parsed.keywords.filter((k: unknown) => typeof k === 'string'),
-      staffMentions: parsed.staffMentions.filter((k: unknown) => typeof k === 'string'),
-      treatmentMentions: parsed.treatmentMentions.filter((k: unknown) => typeof k === 'string'),
+      summary: parsed.summary.slice(0, 500),
+      keywords: parsed.keywords.filter((k: unknown) => typeof k === 'string').slice(0, 12),
+      staffMentions: parsed.staffMentions.filter((k: unknown) => typeof k === 'string').slice(0, 12),
+      treatmentMentions: parsed.treatmentMentions.filter((k: unknown) => typeof k === 'string').slice(0, 12),
     }
   } catch {
     return fallbackFromRating(rating)
@@ -115,7 +111,7 @@ export async function analyzeAndSaveReview(reviewId: string): Promise<SentimentR
 
   const result = await analyzeSentiment(review.review_text, review.rating)
 
-  await admin
+  const { error: updateError } = await admin
     .from('reviews')
     .update({
       sentiment_score: result.score,
@@ -126,6 +122,7 @@ export async function analyzeAndSaveReview(reviewId: string): Promise<SentimentR
       menu_mentions: result.treatmentMentions,
     })
     .eq('id', reviewId)
+  if (updateError) throw updateError
 
   return result
 }
@@ -134,14 +131,17 @@ export async function batchAnalyzePendingReviews(): Promise<{ processed: number;
   const admin = getSupabaseAdmin()
 
   // Only analyze reviews for growth/agency accounts
-  const { data: allRestaurants } = await admin
+  const { data: allRestaurants, error: restaurantsError } = await admin
     .from('restaurants')
     .select('id, owner_email')
+    .eq('active', true)
+  if (restaurantsError) throw restaurantsError
 
   const emails = [...new Set((allRestaurants ?? []).map(r => r.owner_email))]
-  const { data: eligibleAccounts } = emails.length > 0
+  const { data: eligibleAccounts, error: accountsError } = emails.length > 0
     ? await admin.from('accounts').select('owner_email').in('plan', ['growth', 'agency']).in('owner_email', emails)
-    : { data: [] }
+    : { data: [], error: null }
+  if (accountsError) throw accountsError
 
   const eligibleEmails = new Set(eligibleAccounts?.map(a => a.owner_email) ?? [])
   const eligibleIds = (allRestaurants ?? [])

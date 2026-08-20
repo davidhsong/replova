@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
-  let restaurant: { id: string; place_id: string; active: boolean } | null = null
+  let restaurant: { id: string; place_id: string | null; active: boolean } | null = null
   const activeId = cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value
   if (activeId) {
     const { data } = await admin
@@ -25,6 +25,7 @@ export async function POST(req: NextRequest) {
       .select('id, place_id, active')
       .eq('id', activeId)
       .eq('owner_email', user.email!)
+      .eq('active', true)
       .maybeSingle()
     restaurant = data
   }
@@ -33,6 +34,7 @@ export async function POST(req: NextRequest) {
       .from('restaurants')
       .select('id, place_id, active')
       .eq('owner_email', user.email!)
+      .eq('active', true)
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle()
@@ -45,9 +47,21 @@ export async function POST(req: NextRequest) {
   const formData = await req.formData()
   const file = formData.get('file') as File | null
   if (!file) return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+  if (!file.name.toLowerCase().endsWith('.csv')) {
+    return NextResponse.json({ error: 'Upload a .csv file' }, { status: 400 })
+  }
+  if (file.size > 2 * 1024 * 1024) {
+    return NextResponse.json({ error: 'CSV files must be 2 MB or smaller' }, { status: 413 })
+  }
 
   const text = await file.text()
   const result = Papa.parse<Record<string, string>>(text, { header: true, skipEmptyLines: true })
+  if (result.errors.length > 0) {
+    return NextResponse.json({ error: `Invalid CSV: ${result.errors[0].message}` }, { status: 400 })
+  }
+  if (result.data.length > 500) {
+    return NextResponse.json({ error: 'Upload at most 500 contacts at a time.' }, { status: 400 })
+  }
 
   // Normalize headers to lowercase
   const rows = result.data.map(row => {
@@ -62,9 +76,17 @@ export async function POST(req: NextRequest) {
   const sampleKeys = rows[0] ? Object.keys(rows[0]) : []
   const emailKey = sampleKeys.find(k => k === 'email') ?? null
   const nameKey  = sampleKeys.find(k => k === 'name')  ?? null
+  if (!emailKey) {
+    return NextResponse.json({ error: 'CSV must include an email column.' }, { status: 400 })
+  }
+  if (!restaurant.place_id) {
+    return NextResponse.json({ error: 'Connect this restaurant to a Google place before sending review requests.' }, { status: 400 })
+  }
 
   let noEmail = 0
   let invalidEmail = 0
+  let duplicateInFile = 0
+  const seenEmails = new Set<string>()
   const validRows: { email: string; name: string | null }[] = []
 
   for (const row of rows) {
@@ -72,34 +94,41 @@ export async function POST(req: NextRequest) {
     const name  = nameKey  ? row[nameKey] || null : null
 
     if (!email) { noEmail++; continue }
-    if (!EMAIL_RE.test(email)) { invalidEmail++; continue }
-    validRows.push({ email: email.toLowerCase(), name })
+    if (email.length > 320 || !EMAIL_RE.test(email)) { invalidEmail++; continue }
+    const normalizedEmail = email.toLowerCase()
+    if (seenEmails.has(normalizedEmail)) { duplicateInFile++; continue }
+    seenEmails.add(normalizedEmail)
+    validRows.push({ email: normalizedEmail, name: name?.slice(0, 200) ?? null })
   }
 
   if (validRows.length === 0) {
     return NextResponse.json({
       imported: 0,
-      skipped: noEmail + invalidEmail,
-      reasons: { noEmail, invalidEmail, duplicate: 0 },
+      skipped: noEmail + invalidEmail + duplicateInFile,
+      reasons: { noEmail, invalidEmail, duplicate: duplicateInFile },
     })
   }
 
   // Check for recent duplicates (within 30 days)
   const emails = validRows.map(r => r.email)
-  const { data: existing } = await admin
+  const { data: existing, error: existingError } = await admin
     .from('review_requests')
     .select('customer_email')
     .eq('restaurant_id', restaurant.id)
     .in('customer_email', emails)
     .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+  if (existingError) {
+    console.error('Failed to check duplicate review requests:', existingError)
+    return NextResponse.json({ error: 'Unable to validate contacts right now.' }, { status: 500 })
+  }
 
   const recentEmails = new Set((existing ?? []).map((r: { customer_email: string }) => r.customer_email))
-  const duplicate = validRows.filter(r => recentEmails.has(r.email)).length
+  const duplicate = validRows.filter(r => recentEmails.has(r.email)).length + duplicateInFile
   const toInsert = validRows.filter(r => !recentEmails.has(r.email))
 
   if (toInsert.length > 0) {
     const reviewLink = buildGoogleReviewLink(restaurant.place_id)
-    await admin.from('review_requests').insert(
+    const { error } = await admin.from('review_requests').insert(
       toInsert.map(r => ({
         restaurant_id: restaurant.id,
         customer_name: r.name,
@@ -108,6 +137,7 @@ export async function POST(req: NextRequest) {
         status: 'pending',
       }))
     )
+    if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
   return NextResponse.json({

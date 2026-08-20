@@ -28,7 +28,8 @@ export async function GET(req: NextRequest) {
 
   // Verify CSRF state
   const savedState = cookieStore.get('google_oauth_state')?.value
-  if (!savedState || savedState !== state) {
+  const restaurantId = cookieStore.get('google_oauth_restaurant')?.value
+  if (!savedState || savedState !== state || !restaurantId) {
     return NextResponse.redirect(
       `${BASE_URL}/dashboard/settings?google_error=state_mismatch`
     )
@@ -42,12 +43,14 @@ export async function GET(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
-  // Verify the state matches the user's restaurant (not someone else's)
+  // Verify the restaurant stored alongside the random OAuth state belongs to
+  // the authenticated user.
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id, place_id')
-    .eq('id', state)
+    .select('id, place_id, google_refresh_token')
+    .eq('id', restaurantId)
     .eq('owner_email', user.email)
+    .eq('active', true)
     .single()
 
   if (!restaurant) {
@@ -70,7 +73,7 @@ export async function GET(req: NextRequest) {
   })
 
   if (!tokenRes.ok) {
-    console.error('Google token exchange failed:', await tokenRes.text())
+    console.error('Google token exchange failed with status', tokenRes.status)
     return NextResponse.redirect(
       `${BASE_URL}/dashboard/settings?google_error=token_exchange_failed`
     )
@@ -83,12 +86,13 @@ export async function GET(req: NextRequest) {
     expires_in,
   } = tokenData as {
     access_token: string
-    refresh_token: string
+    refresh_token?: string
     expires_in: number
   }
 
-  if (!access_token || !refresh_token) {
-    console.error('Missing tokens in Google response:', tokenData)
+  const effectiveRefreshToken = refresh_token ?? restaurant.google_refresh_token
+  if (!access_token || !effectiveRefreshToken) {
+    console.error('Google token exchange did not return usable offline credentials')
     return NextResponse.redirect(
       `${BASE_URL}/dashboard/settings?google_error=missing_tokens`
     )
@@ -103,15 +107,22 @@ export async function GET(req: NextRequest) {
   )
 
   // Store tokens (and location if found)
-  await admin
+  const { error: saveError } = await admin
     .from('restaurants')
     .update({
       google_access_token: access_token,
-      google_refresh_token: refresh_token,
+      google_refresh_token: effectiveRefreshToken,
       google_token_expires_at: expiresAt,
       ...(locationName ? { google_location_name: locationName } : {}),
     })
     .eq('id', restaurant.id)
+
+  if (saveError) {
+    console.error('Failed to save Google Business credentials:', saveError.message)
+    return NextResponse.redirect(
+      `${BASE_URL}/dashboard/settings?google_error=save_failed`
+    )
+  }
 
   // Clear the state cookie
   const response = NextResponse.redirect(
@@ -120,6 +131,7 @@ export async function GET(req: NextRequest) {
       : `${BASE_URL}/dashboard/settings?google_success=true&google_warning=location_not_found`
   )
   response.cookies.delete('google_oauth_state')
+  response.cookies.delete('google_oauth_restaurant')
   return response
 }
 
@@ -138,16 +150,12 @@ async function findLocationByPlaceId(
       { headers: { Authorization: `Bearer ${accessToken}` } }
     )
     const accountsBody = await accountsRes.text()
-    console.log('[GMB callback] Accounts status:', accountsRes.status)
-    console.log('[GMB callback] Accounts body:', accountsBody)
-
     if (!accountsRes.ok) {
-      console.error('[GMB callback] Failed to list accounts:', accountsRes.status, accountsBody)
+      console.error('[GMB callback] Failed to list accounts:', accountsRes.status)
       return null
     }
 
     const { accounts } = JSON.parse(accountsBody) as { accounts?: { name: string }[] }
-    console.log('[GMB callback] Accounts found:', accounts?.length ?? 0)
     if (!accounts?.length) return null
 
     const allLocations: { name: string; metadata?: { placeId?: string } }[] = []
@@ -165,11 +173,8 @@ async function findLocationByPlaceId(
         const locUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?${params.toString()}`
         const locRes = await fetch(locUrl, { headers: { Authorization: `Bearer ${accessToken}` } })
         const locBody = await locRes.text()
-        console.log('[GMB callback] Locations status:', locRes.status, 'for', account.name)
-        console.log('[GMB callback] Locations body:', locBody)
-
         if (!locRes.ok) {
-          console.error('[GMB callback] Locations fetch failed:', locRes.status, locBody)
+          console.error('[GMB callback] Locations fetch failed:', locRes.status)
           break
         }
 
@@ -182,8 +187,6 @@ async function findLocationByPlaceId(
         pageToken = locData.nextPageToken
       } while (pageToken)
     }
-
-    console.log('[GMB callback] Total locations found:', allLocations.length, '— looking for placeId:', placeId)
 
     // First: exact placeId match
     const exact = allLocations.find(loc => loc.metadata?.placeId === placeId)

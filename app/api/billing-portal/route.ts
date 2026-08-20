@@ -1,16 +1,11 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { NextRequest } from 'next/server'
-import Stripe from 'stripe'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { BASE_URL } from '@/lib/baseUrl'
+import { getStripe } from '@/lib/stripe'
 
-function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!)
-}
-
-export async function GET(req: NextRequest) {
+export async function GET() {
   const cookieStore = await cookies()
   const supabase = createClient(cookieStore)
 

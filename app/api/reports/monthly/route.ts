@@ -29,13 +29,16 @@ export async function GET(req: NextRequest) {
   // Verify ownership
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id, name, report_logo_url')
+    .select('id, name, active, report_logo_url')
     .eq('id', restaurantId)
     .eq('owner_email', user.email)
     .single()
 
   if (!restaurant) {
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
+  }
+  if (!restaurant.active) {
+    return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
   }
 
   // Gate: PDF reports require Growth or above
@@ -53,10 +56,10 @@ export async function GET(req: NextRequest) {
     )
   }
 
-  const date = new Date(`${monthParam}-01`)
-  if (isNaN(date.getTime())) {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(monthParam)) {
     return NextResponse.json({ error: 'Invalid month format' }, { status: 400 })
   }
+  const date = new Date(`${monthParam}-01T00:00:00.000Z`)
 
   // Agency plan: use custom branding if a logo URL is set
   const logoUrl = plan === 'agency' ? (restaurant.report_logo_url ?? undefined) : undefined

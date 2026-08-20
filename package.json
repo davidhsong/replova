@@ -9,13 +9,13 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.87.0",
-    "@next/third-parties": "^16.2.6",
+    "@anthropic-ai/sdk": "^0.120.0",
+    "@next/third-parties": "^16.3.1",
     "@react-pdf/renderer": "^4.5.1",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",
     "@types/papaparse": "^5.5.2",
-    "next": "16.2.3",
+    "next": "^16.3.1",
     "p-limit": "^7.3.0",
     "papaparse": "^5.5.3",
     "react": "19.2.4",
@@ -29,7 +29,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.3",
+    "eslint-config-next": "^16.3.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

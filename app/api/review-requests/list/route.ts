@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
       .select('id')
       .eq('id', activeId)
       .eq('owner_email', user.email!)
+      .eq('active', true)
       .maybeSingle()
     restaurant = data
   }
@@ -29,6 +30,7 @@ export async function GET(req: NextRequest) {
       .from('restaurants')
       .select('id')
       .eq('owner_email', user.email!)
+      .eq('active', true)
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle()
@@ -42,12 +44,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const { data: rows } = await admin
+  const { data: rows, error } = await admin
     .from('review_requests')
     .select('id, customer_name, customer_email, status, sent_at, created_at')
     .eq('restaurant_id', restaurant.id)
     .order('created_at', { ascending: false })
     .limit(50)
+  if (error) return NextResponse.json({ error: 'Unable to load review requests.' }, { status: 500 })
 
   return NextResponse.json(rows ?? [])
 }

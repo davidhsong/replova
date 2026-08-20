@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-type Location = { id: string; name: string }
+type Location = { id: string; name: string; active: boolean }
 
 type Props = {
   locations: Location[]
@@ -22,11 +22,12 @@ export default function LocationSwitcherClient({ locations, activeLocationId, lo
     if (newId === activeLocationId) return
     setSwitching(true)
     try {
-      await fetch('/api/active-location', {
+      const response = await fetch('/api/active-location', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ restaurantId: newId }),
       })
+      if (!response.ok) return
       router.refresh()
     } finally {
       setSwitching(false)
@@ -58,7 +59,9 @@ export default function LocationSwitcherClient({ locations, activeLocationId, lo
         }}
       >
         {locations.map(loc => (
-          <option key={loc.id} value={loc.id}>{loc.name}</option>
+          <option key={loc.id} value={loc.id} disabled={!loc.active}>
+            {loc.name}{loc.active ? '' : ' (not included in current plan)'}
+          </option>
         ))}
       </select>
 

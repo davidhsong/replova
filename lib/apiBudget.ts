@@ -16,25 +16,26 @@ export function calculateCost(model: string, inputTokens: number, outputTokens: 
   return costs.input * inputTokens + costs.output * outputTokens
 }
 
-export function recordUsage(
+export async function recordUsage(
   model: string,
   operation: string,
   inputTokens: number,
   outputTokens: number
-): void {
+): Promise<void> {
   const cost = calculateCost(model, inputTokens, outputTokens)
   const admin = getSupabaseAdmin()
 
-  // Fire-and-forget: log individual call
-  void (async () => {
+  await Promise.all([
+    (async () => {
     try {
-      await admin.from('api_usage_log')
+      const { error } = await admin.from('api_usage_log')
         .insert({ model, operation, input_tokens: inputTokens, output_tokens: outputTokens, cost_usd: cost })
+      if (error) throw error
     } catch (err) { console.error('[apiBudget] log insert failed:', err) }
-  })()
+    })(),
 
-  // Atomically increment spend and check thresholds
-  void (async () => {
+    // Atomically increment spend and check thresholds.
+    (async () => {
     try {
       const { data, error } = await admin.rpc('increment_api_spend', { amount: cost })
       if (error || !data?.[0]) { console.error('[apiBudget] increment failed:', error); return }
@@ -42,11 +43,12 @@ export function recordUsage(
         new_spent_usd: number; budget_usd: number
         crossed_50: boolean; crossed_75: boolean; crossed_100: boolean
       }
-      if (row.crossed_50)  void sendAlert(50,  row.new_spent_usd, row.budget_usd)
-      if (row.crossed_75)  void sendAlert(75,  row.new_spent_usd, row.budget_usd)
-      if (row.crossed_100) void sendAlert(100, row.new_spent_usd, row.budget_usd)
+      if (row.crossed_50)  await sendAlert(50,  row.new_spent_usd, row.budget_usd)
+      if (row.crossed_75)  await sendAlert(75,  row.new_spent_usd, row.budget_usd)
+      if (row.crossed_100) await sendAlert(100, row.new_spent_usd, row.budget_usd)
     } catch (err) { console.error('[apiBudget] increment failed:', err) }
-  })()
+    })(),
+  ])
 }
 
 async function sendAlert(percent: number, spent: number, budget: number): Promise<void> {

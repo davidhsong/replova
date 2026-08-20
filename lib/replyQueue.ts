@@ -5,6 +5,7 @@ import { generateSingleReply } from '@/lib/generateSingleReply'
 type RestaurantRow = {
   id: string
   name: string
+  active: boolean
   google_access_token: string | null
   google_refresh_token: string | null
   google_token_expires_at: number | null
@@ -54,11 +55,21 @@ export async function queueReplyForReview(reviewId: string): Promise<{ queueId: 
 
   const { data: restaurant, error: restErr } = await admin
     .from('restaurants')
-    .select('id, name, google_access_token, google_refresh_token, google_token_expires_at, google_location_name')
+    .select('id, name, active, google_access_token, google_refresh_token, google_token_expires_at, google_location_name')
     .eq('id', review.restaurant_id)
     .single<RestaurantRow>()
 
   if (restErr || !restaurant) throw new Error(`Restaurant not found for review ${reviewId}`)
+  if (!restaurant.active) throw new Error('Subscription required')
+
+  const { data: existingQueue } = await admin
+    .from('reply_queue')
+    .select('id')
+    .eq('review_id', review.id)
+    .eq('sent', false)
+    .limit(1)
+    .maybeSingle<{ id: string }>()
+  if (existingQueue) return { queueId: existingQueue.id }
 
   const { data: settings } = await admin
     .from('restaurant_settings')
@@ -116,11 +127,7 @@ export async function processReplyQueue(): Promise<{ sent: number; errors: strin
   let sent = 0
 
   const { data: items, error: fetchErr } = await admin
-    .from('reply_queue')
-    .select('id, review_id, restaurant_id, generated_reply, edited_reply')
-    .eq('sent', false)
-    .or('approved.is.null,approved.eq.true')
-    .lte('scheduled_send_at', new Date().toISOString())
+    .rpc('claim_due_replies', { batch_size: 50 })
 
   if (fetchErr) throw new Error(`Failed to fetch reply_queue: ${fetchErr.message}`)
   if (!items?.length) return { sent: 0, errors: [] }
@@ -129,7 +136,7 @@ export async function processReplyQueue(): Promise<{ sent: number; errors: strin
     try {
       const { data: restaurant, error: restErr } = await admin
         .from('restaurants')
-        .select('id, name, google_access_token, google_refresh_token, google_token_expires_at, google_location_name')
+        .select('id, name, active, google_access_token, google_refresh_token, google_token_expires_at, google_location_name')
         .eq('id', item.restaurant_id)
         .single<RestaurantRow>()
 
@@ -137,6 +144,7 @@ export async function processReplyQueue(): Promise<{ sent: number; errors: strin
         errors.push(`[${item.id}] Restaurant not found`)
         continue
       }
+      if (!restaurant.active) continue
 
       const { data: review, error: revErr } = await admin
         .from('reviews')
@@ -164,12 +172,13 @@ export async function processReplyQueue(): Promise<{ sent: number; errors: strin
 
       await postReplyToGmb(review.google_review_name, replyText, accessToken)
 
-      await admin
+      const { error: queueUpdateError } = await admin
         .from('reply_queue')
-        .update({ sent: true, sent_at: new Date().toISOString() })
+        .update({ sent: true, sent_at: new Date().toISOString(), processing_started_at: null })
         .eq('id', item.id)
+      if (queueUpdateError) throw queueUpdateError
 
-      await admin
+      const { error: reviewUpdateError } = await admin
         .from('reviews')
         .update({
           status: 'replied',
@@ -177,9 +186,11 @@ export async function processReplyQueue(): Promise<{ sent: number; errors: strin
           owner_reply_text: replyText,
         })
         .eq('id', item.review_id)
+      if (reviewUpdateError) throw reviewUpdateError
 
       sent++
     } catch (err) {
+      await admin.from('reply_queue').update({ processing_started_at: null }).eq('id', item.id)
       errors.push(`[${item.id}] ${err instanceof Error ? err.message : String(err)}`)
     }
   }

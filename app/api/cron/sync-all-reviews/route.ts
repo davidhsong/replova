@@ -1,11 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { syncRestaurantReviews } from '@/lib/syncReviews'
-import { batchAnalyzePendingReviews } from '@/lib/sentiment'
+import { isAuthorizedCron } from '@/lib/cronAuth'
 
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get('authorization')
-  if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!isAuthorizedCron(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -26,7 +25,6 @@ export async function GET(req: NextRequest) {
     try {
       const result = await syncRestaurantReviews(restaurant.id)
       totalNewReviews += result.newlyStored
-      await batchAnalyzePendingReviews()
       synced++
     } catch (err) {
       const msg = `${restaurant.name} (${restaurant.id}): ${err instanceof Error ? err.message : String(err)}`

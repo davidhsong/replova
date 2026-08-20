@@ -11,8 +11,11 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { restaurantId } = await req.json()
-  if (!restaurantId) return NextResponse.json({ error: 'Missing restaurantId' }, { status: 400 })
+  const body = await req.json().catch(() => ({})) as { restaurantId?: unknown }
+  const restaurantId = body.restaurantId
+  if (!restaurantId || typeof restaurantId !== 'string') {
+    return NextResponse.json({ error: 'Missing restaurantId' }, { status: 400 })
+  }
 
   // Verify this restaurant belongs to the user
   const { data: restaurant } = await getSupabaseAdmin()
@@ -20,6 +23,7 @@ export async function POST(req: NextRequest) {
     .select('id')
     .eq('id', restaurantId)
     .eq('owner_email', user.email)
+    .eq('active', true)
     .single()
 
   if (!restaurant) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -28,6 +32,7 @@ export async function POST(req: NextRequest) {
   response.cookies.set(ACTIVE_LOCATION_COOKIE, restaurantId, {
     path: '/',
     httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: 60 * 60 * 24 * 365,
   })

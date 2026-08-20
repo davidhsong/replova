@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
+import { recordUsage } from '@/lib/apiBudget'
 import { Resend } from 'resend'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { BASE_URL } from '@/lib/baseUrl'
@@ -70,12 +71,12 @@ async function generateActionItems(opts: {
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 256,
       system:
-        'You are a reputation advisor for med spas, salons, and local service businesses. ' +
+        'You are a reputation advisor for clinics, salons, restaurants, and other local businesses. ' +
         'Return ONLY a JSON array of 2-3 strings. ' +
         'Each string is a specific, actionable recommendation under 20 words. ' +
         'Base recommendations on the actual data provided. ' +
-        "Examples: 'Respond to the 2-star consultation complaint before it affects your score' " +
-        "or 'Laser treatment reviews are trending negative this week — review provider protocols'",
+        "Examples: 'Respond to the 2-star service complaint before it affects your score' " +
+        "or 'Wait-time complaints are trending negative this week — review staffing and handoffs'",
       messages: [
         {
           role: 'user',
@@ -90,6 +91,7 @@ async function generateActionItems(opts: {
         },
       ],
     })
+    await recordUsage('claude-haiku-4-5-20251001', 'weekly_digest', message.usage.input_tokens, message.usage.output_tokens)
 
     const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
     const cleaned = raw.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim()
@@ -509,5 +511,4 @@ export async function sendWeeklyDigest(restaurant: {
 
   if (error) throw new Error(`Failed to send weekly digest: ${error.message}`)
 
-  console.log(`Weekly digest sent to ${restaurant.owner_email} for ${data.restaurantName}`)
 }

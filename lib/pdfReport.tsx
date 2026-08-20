@@ -475,6 +475,8 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
+            {/* This is @react-pdf/renderer Image; the DOM alt rule does not apply. */}
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
             {logoUrl && <Image src={logoUrl} style={styles.logo} />}
             <View>
               <Text style={styles.headerTitle}>{brandName ? `${brandName} — ` : ''}Reputation Report</Text>

@@ -11,6 +11,7 @@ export interface Account {
   owner_email: string
   plan: 'starter' | 'growth' | 'agency'
   stripe_customer_id: string | null
+  terms_accepted_at: string | null
   created_at: string
 }
 
@@ -37,6 +38,7 @@ export interface Review {
   id: string
   restaurant_id: string
   google_review_name: string | null       // GMB canonical name, used for dedup
+  places_dedupe_key: string | null         // Generated key for Places sample dedup
   author: string | null
   rating: number | null                   // 1–5
   review_text: string | null
@@ -85,6 +87,7 @@ export interface ReplyQueue {
   sent: boolean
   sent_at: string | null
   approved: boolean | null                // null=pending, true=approved, false=rejected
+  processing_started_at: string | null
   created_at: string
 }
 

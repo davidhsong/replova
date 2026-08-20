@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from '@/lib/supabase'
-import { getPlaceRatingSnapshot, GENERIC_PLACE_TYPES } from '@/lib/places'
+import { getPlaceDetails, getPlaceRatingSnapshot, GENERIC_PLACE_TYPES } from '@/lib/places'
 
 export type CompetitorComparison = {
   yourRestaurant: {
@@ -23,29 +23,10 @@ export type CompetitorComparison = {
 export async function addCompetitor(restaurantId: string, placeId: string, source: 'manual' | 'auto' = 'manual'): Promise<void> {
   const admin = getSupabaseAdmin()
 
-  // Fetch full details: name, address, rating, website, price level, cuisine types
-  const params = new URLSearchParams({
-    place_id: placeId,
-    fields: 'name,formatted_address,rating,user_ratings_total,website,price_level,types',
-    key: process.env.GOOGLE_PLACES_API_KEY!,
-  })
-  const res = await fetch(
-    `https://maps.googleapis.com/maps/api/place/details/json?${params}`
-  )
-  const data = await res.json()
-
-  if (data.status !== 'OK') {
-    throw new Error(`Google Places details error: ${data.status}`)
-  }
-
-  const result = data.result
-  const name: string = result.name
-  const address: string = result.formatted_address ?? ''
-  const rating: number | null = result.rating ?? null
-  const totalRatings: number | null = result.user_ratings_total ?? null
-  const website: string | null = result.website ?? null
-  const priceLevel: number | null = result.price_level ?? null
-  const cuisineTags: string[] = ((result.types ?? []) as string[])
+  // Places API (New) works for new Google Cloud projects; the legacy Places
+  // endpoints used here previously cannot be enabled on newly-created projects.
+  const result = await getPlaceDetails(placeId)
+  const cuisineTags: string[] = result.types
     .filter((t: string) => !GENERIC_PLACE_TYPES.has(t))
     .map((t: string) => t.replace(/_/g, ' ').replace(/\b\w/g, (c: string) => c.toUpperCase()))
     .slice(0, 4)
@@ -56,10 +37,10 @@ export async function addCompetitor(restaurantId: string, placeId: string, sourc
       {
         restaurant_id: restaurantId,
         google_place_id: placeId,
-        name,
-        address,
-        website,
-        price_level: priceLevel,
+        name: result.name,
+        address: result.address,
+        website: result.website,
+        price_level: result.priceLevel,
         cuisine_tags: cuisineTags,
         source,
         active: true,
@@ -73,25 +54,27 @@ export async function addCompetitor(restaurantId: string, placeId: string, sourc
     throw new Error(error?.message ?? 'Failed to upsert competitor')
   }
 
-  await admin.from('competitor_snapshots').upsert(
+  const { error: snapshotError } = await admin.from('competitor_snapshots').upsert(
     {
       competitor_id: competitor.id,
-      avg_rating: rating,
-      total_reviews: totalRatings,
+      avg_rating: result.rating,
+      total_reviews: result.totalRatings,
       snapshot_date: new Date().toISOString().slice(0, 10),
     },
     { onConflict: 'competitor_id,snapshot_date' }
   )
+  if (snapshotError) throw snapshotError
 }
 
 export async function syncCompetitorSnapshots(restaurantId: string): Promise<void> {
   const admin = getSupabaseAdmin()
 
-  const { data: competitors } = await admin
+  const { data: competitors, error: competitorError } = await admin
     .from('competitors')
     .select('id, google_place_id')
     .eq('restaurant_id', restaurantId)
     .eq('active', true)
+  if (competitorError) throw competitorError
 
   if (!competitors?.length) return
 
@@ -100,7 +83,7 @@ export async function syncCompetitorSnapshots(restaurantId: string): Promise<voi
   await Promise.all(
     competitors.map(async (c) => {
       const { rating, totalRatings } = await getPlaceRatingSnapshot(c.google_place_id)
-      await admin.from('competitor_snapshots').upsert(
+      const { error } = await admin.from('competitor_snapshots').upsert(
         {
           competitor_id: c.id,
           avg_rating: rating,
@@ -109,6 +92,7 @@ export async function syncCompetitorSnapshots(restaurantId: string): Promise<voi
         },
         { onConflict: 'competitor_id,snapshot_date' }
       )
+      if (error) throw error
     })
   )
 }
@@ -141,8 +125,22 @@ export async function getCompetitorComparison(restaurantId: string): Promise<Com
     .limit(1)
     .single()
 
-  const yourRating: number | null = scoreRow?.avg_rating ?? null
-  const yourReviews: number = scoreRow?.total_reviews ?? 0
+  let yourRating: number | null = scoreRow?.avg_rating ?? null
+  let yourReviews: number = scoreRow?.total_reviews ?? 0
+  if (!scoreRow) {
+    const { data: reviewRows, error: reviewError } = await admin
+      .from('reviews')
+      .select('rating')
+      .eq('restaurant_id', restaurantId)
+    if (reviewError) throw reviewError
+    const ratings = (reviewRows ?? [])
+      .map(review => review.rating)
+      .filter((rating): rating is number => rating != null)
+    yourReviews = reviewRows?.length ?? 0
+    yourRating = ratings.length > 0
+      ? ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length
+      : null
+  }
 
   // Get latest snapshot for each competitor
   const competitorData = await Promise.all(
@@ -211,12 +209,32 @@ export async function getCompetitorComparison(restaurantId: string): Promise<Com
 export async function batchSyncAllCompetitors(): Promise<{ synced: number; errors: number }> {
   const admin = getSupabaseAdmin()
 
-  const { data: rows } = await admin
+  const { data: rows, error: rowsError } = await admin
     .from('competitors')
     .select('restaurant_id')
     .eq('active', true)
+  if (rowsError) throw rowsError
 
-  const restaurantIds = [...new Set((rows ?? []).map(r => r.restaurant_id))]
+  const candidateIds = [...new Set((rows ?? []).map(r => r.restaurant_id))]
+  if (candidateIds.length === 0) return { synced: 0, errors: 0 }
+
+  const { data: restaurants, error: restaurantsError } = await admin
+    .from('restaurants')
+    .select('id, owner_email')
+    .in('id', candidateIds)
+    .eq('active', true)
+  if (restaurantsError) throw restaurantsError
+
+  const ownerEmails = [...new Set((restaurants ?? []).map(restaurant => restaurant.owner_email))]
+  const { data: eligibleAccounts, error: accountsError } = ownerEmails.length > 0
+    ? await admin.from('accounts').select('owner_email').in('owner_email', ownerEmails).in('plan', ['growth', 'agency'])
+    : { data: [], error: null }
+  if (accountsError) throw accountsError
+
+  const eligibleEmails = new Set((eligibleAccounts ?? []).map(account => account.owner_email))
+  const restaurantIds = (restaurants ?? [])
+    .filter(restaurant => eligibleEmails.has(restaurant.owner_email))
+    .map(restaurant => restaurant.id)
 
   let synced = 0
   let errors = 0

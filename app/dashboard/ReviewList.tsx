@@ -10,6 +10,7 @@ type Review = {
   author: string | null
   rating: number | null
   review_text: string | null
+  sentiment_label: string | null
   reply_draft_1: string | null
   reply_draft_2: string | null
   reply_draft_3: string | null
@@ -17,13 +18,6 @@ type Review = {
   review_timestamp: number | null
   replied_at: string | null
   created_at: string
-}
-
-type ReviewStats = {
-  total: number
-  needsReply: number
-  urgent: number
-  avgRating: number | null
 }
 
 const REPLY_LABELS = [
@@ -34,6 +28,7 @@ const REPLY_LABELS = [
 
 type SectionTab = 'needs-reply' | 'completed' | 'all'
 type RatingFilter = 'all' | '5' | '4' | '3' | '1-2'
+type SentimentFilter = 'all' | 'positive' | 'neutral' | 'negative'
 
 const OVERDUE_DAYS = 3
 
@@ -72,12 +67,12 @@ function ReviewRow({
   review,
   effectiveStatus,
   onSetStatus,
-  index,
+  sentimentEnabled,
 }: {
   review: Review
   effectiveStatus: string | null
   onSetStatus: (status: string) => void
-  index: number
+  sentimentEnabled: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [activeTab, setActiveTab] = useState<'reply_draft_1' | 'reply_draft_2' | 'reply_draft_3'>('reply_draft_1')
@@ -140,6 +135,11 @@ function ReviewRow({
                 {review.author ?? 'Anonymous'}
               </span>
               {review.rating != null && <Stars rating={review.rating} />}
+              {sentimentEnabled && review.sentiment_label && (
+                <span className={`pill ${review.sentiment_label === 'positive' ? 'pill-pos' : review.sentiment_label === 'negative' ? 'pill-neg' : ''}`}>
+                  {review.sentiment_label.charAt(0).toUpperCase() + review.sentiment_label.slice(1)}
+                </span>
+              )}
               {isLowRating && !isReplied && <span className="pill pill-neg">Urgent</span>}
               {!isLowRating && isOverdueReview && <span className="pill pill-warn">Overdue</span>}
               {isReplied && (
@@ -291,19 +291,18 @@ const RATING_FILTERS: { value: RatingFilter; label: string }[] = [
 
 export default function ReviewList({
   reviews,
-  restaurantName,
-  stats,
   currentPage,
   totalPages,
+  sentimentEnabled,
 }: {
   reviews: Review[]
-  restaurantName: string
-  stats: ReviewStats
   currentPage: number
   totalPages: number
+  sentimentEnabled: boolean
 }) {
   const [tab, setTab] = useState<SectionTab>('needs-reply')
   const [ratingFilter, setRatingFilter] = useState<RatingFilter>('all')
+  const [sentimentFilter, setSentimentFilter] = useState<SentimentFilter>('all')
   const [search, setSearch] = useState('')
   const [localStatus, setLocalStatus] = useState<Record<string, string>>({})
 
@@ -327,6 +326,7 @@ export default function ReviewList({
       if (ratingFilter === '4' && r.rating !== 4) return false
       if (ratingFilter === '3' && r.rating !== 3) return false
       if (ratingFilter === '1-2' && (r.rating == null || r.rating > 2)) return false
+      if (sentimentEnabled && sentimentFilter !== 'all' && r.sentiment_label !== sentimentFilter) return false
       if (search) {
         const q = search.toLowerCase()
         if (!(r.author ?? '').toLowerCase().includes(q) && !(r.review_text ?? '').toLowerCase().includes(q)) return false
@@ -343,8 +343,7 @@ export default function ReviewList({
       })
     }
     return base
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reviews, tab, ratingFilter, search, localStatus])
+  }, [reviews, tab, ratingFilter, sentimentFilter, sentimentEnabled, search, localStatus])
 
   const tabs: { value: SectionTab; label: string; count: number }[] = [
     { value: 'needs-reply', label: 'Awaiting reply', count: localNeedsReply },
@@ -386,6 +385,20 @@ export default function ReviewList({
               </button>
             ))}
           </div>
+          {sentimentEnabled && (
+            <select
+              aria-label="Filter reviews by sentiment"
+              className="field"
+              value={sentimentFilter}
+              onChange={event => setSentimentFilter(event.target.value as SentimentFilter)}
+              style={{ width: 126, padding: '6px 9px', fontSize: 11 }}
+            >
+              <option value="all">All sentiment</option>
+              <option value="positive">Positive</option>
+              <option value="neutral">Neutral</option>
+              <option value="negative">Negative</option>
+            </select>
+          )}
         </div>
       </div>
 
@@ -417,13 +430,13 @@ export default function ReviewList({
             </p>
           </div>
         ) : (
-          filtered.map((review, i) => (
+          filtered.map(review => (
             <ReviewRow
               key={review.id}
               review={review}
               effectiveStatus={getStatus(review)}
               onSetStatus={(status) => setReviewStatus(review.id, status)}
-              index={i}
+              sentimentEnabled={sentimentEnabled}
             />
           ))
         )}

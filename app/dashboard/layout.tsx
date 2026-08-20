@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
-import Stripe from 'stripe'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { ACTIVE_LOCATION_COOKIE } from '@/lib/activeLocation'
@@ -10,6 +9,7 @@ import type { Plan } from '@/lib/planLimits'
 import DashboardSidebar from './DashboardSidebar'
 import TermsModal from './TermsModal'
 import Chatbot from './Chatbot'
+import { getStripe } from '@/lib/stripe'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies()
+  const requestHeaders = await headers()
   const supabase = createClient(cookieStore)
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -33,25 +34,28 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   if (!restaurants || restaurants.length === 0) redirect('/onboard')
 
-  // Resolve active location from cookie, fall back to first
+  // Prefer the selected location when it is enabled. After a downgrade, an
+  // old cookie may point at a location outside the new plan limit.
   const activeId = cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value
-  const activeRestaurant = restaurants.find(r => r.id === activeId) ?? restaurants[0]
+  const activeRestaurant = restaurants.find(r => r.id === activeId && r.active)
+    ?? restaurants.find(r => r.active)
+    ?? restaurants[0]
 
-  // Gate: if account not active, show plan selection — blocks all dashboard routes
-  if (!activeRestaurant.active) {
+  // Gate inactive workspaces while leaving Billing reachable for reactivation.
+  if (!activeRestaurant.active && requestHeaders.get('x-replova-pathname') !== '/dashboard/billing') {
     const plans = [
       {
-        key: 'starter', label: 'Starter', price: '$79', sub: '1 location',
-        features: ['1 location', '3 competitor slots', 'AI reply drafts', 'Review alerts & digests'],
+        key: 'starter', label: 'Starter', price: '$39', sub: '1 location',
+        features: ['1 location', 'AI reply drafts', 'Review request campaigns', 'Review alerts & digests'],
         primary: false,
       },
       {
-        key: 'growth', label: 'Growth', price: '$179', sub: 'Up to 5 locations',
+        key: 'growth', label: 'Growth', price: '$99', sub: 'Up to 5 locations',
         features: ['Up to 5 locations', '5 competitor slots', 'AI reply drafts', 'Sentiment & scoring', 'PDF reports'],
         primary: true,
       },
       {
-        key: 'agency', label: 'Agency', price: '$349', sub: 'Up to 15 locations',
+        key: 'agency', label: 'Agency', price: '$199', sub: 'Up to 15 locations',
         features: ['Up to 15 locations', '10 competitor slots', 'AI reply drafts', 'Custom persona', 'White-label reports'],
         primary: false,
       },
@@ -139,8 +143,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   let subscriptionStatus = 'trialing'
   if (account?.stripe_customer_id) {
     try {
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-      const { data: subs } = await stripe.subscriptions.list({
+      const { data: subs } = await getStripe().subscriptions.list({
         customer: account.stripe_customer_id,
         limit: 1,
         status: 'all',

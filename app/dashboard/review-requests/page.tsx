@@ -51,6 +51,7 @@ export default function ReviewRequestsPage() {
   const [sending, setSending] = useState(false)
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null)
   const [sendResult, setSendResult] = useState<{ sent: number; errors: string[] } | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
   const [dragOver, setDragOver] = useState(false)
   const [authError, setAuthError] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -82,6 +83,7 @@ export default function ReviewRequestsPage() {
     setUploading(true)
     setUploadResult(null)
     setSendResult(null)
+    setActionError(null)
     const form = new FormData()
     form.append('file', file)
     try {
@@ -91,8 +93,10 @@ export default function ReviewRequestsPage() {
         setUploadResult(data)
         await loadData(restaurant.id)
       } else {
-        setUploadResult({ imported: 0, skipped: 0, reasons: { noEmail: 0, invalidEmail: 0, duplicate: 0 } })
+        setActionError(data.error ?? 'Unable to import that CSV file.')
       }
+    } catch {
+      setActionError('Unable to upload the CSV. Check your connection and try again.')
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -103,6 +107,7 @@ export default function ReviewRequestsPage() {
     if (!restaurant) return
     setSending(true)
     setSendResult(null)
+    setActionError(null)
     try {
       const res = await fetch('/api/review-requests/send', {
         method: 'POST',
@@ -110,8 +115,14 @@ export default function ReviewRequestsPage() {
         body: JSON.stringify({ restaurantId: restaurant.id }),
       })
       const data = await res.json()
-      setSendResult(data)
-      await loadData(restaurant.id)
+      if (res.ok) {
+        setSendResult({ sent: data.sent ?? 0, errors: Array.isArray(data.errors) ? data.errors : [] })
+        await loadData(restaurant.id)
+      } else {
+        setActionError(data.error ?? 'Unable to send review requests.')
+      }
+    } catch {
+      setActionError('Unable to send review requests. Check your connection and try again.')
     } finally {
       setSending(false)
     }
@@ -133,17 +144,17 @@ export default function ReviewRequestsPage() {
   }
 
   const totalSent = (stats?.sent ?? 0) + (stats?.opened ?? 0) + (stats?.clicked ?? 0)
-  const opened = stats?.opened ?? 0
+  const opened = (stats?.opened ?? 0) + (stats?.clicked ?? 0)
   const clicked = stats?.clicked ?? 0
   const pendingCount = stats?.pending ?? 0
-  const openRate = totalSent > 0 ? opened / totalSent : 0
-  const clickRate = totalSent > 0 ? clicked / totalSent : 0
+  const openRate = stats?.openRate ?? 0
+  const clickRate = stats?.clickRate ?? 0
 
   const funnelCells = [
-    { l: 'Sent',    v: totalSent, sub: `${stats?.total ?? 0} contacts`,                    w: 1.0,       color: 'var(--t1)'  },
-    { l: 'Opened',  v: opened,    sub: `${Math.round(openRate * 100)}% open rate`,          w: openRate,  color: 'var(--warn)' },
-    { l: 'Clicked', v: clicked,   sub: `${Math.round(clickRate * 100)}% click rate`,        w: clickRate, color: 'var(--pos)'  },
-    { l: 'Pending', v: pendingCount, sub: 'queued for next batch',                          w: stats && stats.total > 0 ? pendingCount / stats.total : 0, color: 'var(--t3)' },
+    { l: 'Sent',       v: totalSent,                         sub: `${opened} opened · ${clicked} clicked`, w: 1.0,       color: 'var(--t1)'  },
+    { l: 'Opened',     v: opened,                            sub: `${Math.round(openRate * 100)}% open rate`, w: openRate, color: 'var(--warn)' },
+    { l: 'Clicked',    v: clicked,                           sub: 'review-page visits', w: clickRate, color: 'var(--pos)'  },
+    { l: 'Click rate', v: `${Math.round(clickRate * 100)}%`, sub: `${pendingCount} pending`, w: clickRate, color: 'var(--pos)' },
   ]
 
   return (
@@ -155,7 +166,7 @@ export default function ReviewRequestsPage() {
           <span>Review requests</span>
         </div>
         <h1 className="t-h1" style={{ marginBottom: 4 }}>Review requests</h1>
-        <p className="t-sm c-t3">Send a personal nudge to people who already loved their meal.</p>
+        <p className="t-sm c-t3">Send a personal nudge to clients who already had a great experience.</p>
       </div>
 
       <div className="page-body">
@@ -259,6 +270,10 @@ export default function ReviewRequestsPage() {
                     </span>
                   )}
                 </div>
+              )}
+
+              {actionError && (
+                <div className="banner banner-neg fade-up" style={{ marginBottom: 14 }}>{actionError}</div>
               )}
 
               {sendResult && (

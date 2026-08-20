@@ -37,13 +37,6 @@ type Review = {
   sentiment_label: string | null
 }
 
-type ReviewStats = {
-  total: number
-  needsReply: number
-  urgent: number
-  avgRating: number | null
-}
-
 type ReputationScore = {
   score: number | null
   avg_rating: number | null
@@ -107,7 +100,9 @@ export default async function DashboardPage({
   if (!restaurants || restaurants.length === 0) redirect('/onboard')
 
   const activeId = cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value
-  const restaurant = restaurants.find(r => r.id === activeId) ?? restaurants[0]
+  const restaurant = restaurants.find(r => r.id === activeId && r.active)
+    ?? restaurants.find(r => r.active)
+    ?? restaurants[0]
 
   const { data: account } = await admin
     .from('accounts')
@@ -117,8 +112,10 @@ export default async function DashboardPage({
 
   const plan: Plan = (account?.plan as Plan) ?? 'starter'
 
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const currentDate = new Date()
+  const currentTime = currentDate.getTime()
+  const thirtyDaysAgo = new Date(currentTime - 30 * 24 * 60 * 60 * 1000).toISOString()
+  const sevenDaysAgo = new Date(currentTime - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
   const [
     repScoreResult,
@@ -153,7 +150,7 @@ export default async function DashboardPage({
       .returns<Review[]>(),
     admin
       .from('reviews')
-      .select('rating, status')
+      .select('rating, status, review_timestamp')
       .eq('restaurant_id', restaurant.id),
     admin
       .from('reviews')
@@ -182,26 +179,28 @@ export default async function DashboardPage({
 
   const unrepliedCount = allRows.filter(r => r.status !== 'replied').length
   const urgentCount = allRows.filter(r => r.status !== 'replied' && r.rating != null && r.rating <= 2).length
-  const computedAvgRating = allRows.length > 0
-    ? allRows.reduce((s, r) => s + (r.rating ?? 0), 0) / allRows.length
+  const nowSeconds = Math.floor(currentTime / 1000)
+  const ninetyDaysAgoSeconds = nowSeconds - 90 * 24 * 60 * 60
+  const monthStartSeconds = Math.floor(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getTime() / 1000)
+  const recentRatedRows = allRows.filter(r => r.rating != null && (r.review_timestamp ?? 0) >= ninetyDaysAgoSeconds)
+  const computedAvgRating = recentRatedRows.length > 0
+    ? recentRatedRows.reduce((sum, row) => sum + (row.rating ?? 0), 0) / recentRatedRows.length
     : null
+  const reviewsThisMonth = allRows.filter(row => (row.review_timestamp ?? 0) >= monthStartSeconds).length
 
-  const stats: ReviewStats = {
-    total: allRows.length,
-    needsReply: unrepliedCount,
-    urgent: urgentCount,
-    avgRating: computedAvgRating,
-  }
-
-  const topKeywords = getTopKeywords((keywordsResult.data ?? []) as { keywords: string[] | null }[])
-  const staffShoutouts = getStaffShoutouts((staffResult.data ?? []) as { staff_mentions: string[] | null }[])
+  const topKeywords = plan === 'starter'
+    ? []
+    : getTopKeywords((keywordsResult.data ?? []) as { keywords: string[] | null }[])
+  const staffShoutouts = plan === 'starter'
+    ? []
+    : getStaffShoutouts((staffResult.data ?? []) as { staff_mentions: string[] | null }[])
   const hasCompetitors = (competitorsResult.count ?? 0) > 0
 
-  const scoreDelta = repScore?.score != null && priorScore?.score != null
+  const scoreDelta = plan !== 'starter' && repScore?.score != null && priorScore?.score != null
     ? Math.round((repScore.score - priorScore.score) * 10) / 10
     : null
 
-  const displayAvgRating = repScore?.avg_rating ?? computedAvgRating
+  const displayAvgRating = computedAvgRating
 
   return (
     <>
@@ -216,6 +215,10 @@ export default async function DashboardPage({
             </div>
             <h1 className="t-h1" style={{ marginBottom: 4 }}>{restaurant.name}</h1>
             <p className="t-sm c-t3">Auto-syncs every 6h</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--pos)', fontSize: 12, fontWeight: 600 }}>
+            <span className="pulse-dot" aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--pos)', display: 'inline-block' }} />
+            Monitoring
           </div>
         </div>
       </div>
@@ -264,12 +267,24 @@ export default async function DashboardPage({
             </div>
           </div>
         )}
+        {urgentCount === 0 && unrepliedCount > 0 && (
+          <div className="banner banner-warn fade-up" style={{ marginBottom: 20 }}>
+            <strong>{unrepliedCount} review{unrepliedCount === 1 ? '' : 's'} awaiting a reply.</strong>
+            <span> Clear the queue to keep your response rate healthy.</span>
+          </div>
+        )}
+        {unrepliedCount === 0 && (
+          <div className="banner banner-pos fade-up" style={{ marginBottom: 20 }}>
+            <strong>All clear.</strong>
+            <span> Every review has a reply.</span>
+          </div>
+        )}
 
         {/* Stats strip */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 28 }}>
           <StatTile
             label="Replova score"
-            value={repScore?.score != null ? Math.round(repScore.score) : '-'}
+            value={plan !== 'starter' && repScore?.score != null ? Math.round(repScore.score) : '-'}
             delta={scoreDelta !== null ? scoreDelta : undefined}
             sub="vs last week"
           />
@@ -283,11 +298,11 @@ export default async function DashboardPage({
                   </span>
                 : '-'
             }
-            sub={`${allRows.length} review${allRows.length !== 1 ? 's' : ''} · last 90 days`}
+            sub={`${recentRatedRows.length} review${recentRatedRows.length !== 1 ? 's' : ''} · last 90 days`}
           />
           <StatTile
             label="New this month"
-            value={repScore?.reviews_this_month ?? stats.total}
+            value={repScore?.reviews_this_month ?? reviewsThisMonth}
             sub="this month"
           />
           <StatTile
@@ -307,10 +322,9 @@ export default async function DashboardPage({
             ) : (
               <ReviewList
                 reviews={reviews}
-                restaurantName={restaurant.name}
-                stats={stats}
                 currentPage={1}
                 totalPages={1}
+                sentimentEnabled={plan !== 'starter'}
               />
             )}
           </div>

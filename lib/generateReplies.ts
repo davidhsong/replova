@@ -73,7 +73,7 @@ Review: "${reviewText}"`,
     ],
   })
 
-  recordUsage('claude-sonnet-4-20250514', 'reply_draft', message.usage.input_tokens, message.usage.output_tokens)
+  await recordUsage('claude-sonnet-4-20250514', 'reply_draft', message.usage.input_tokens, message.usage.output_tokens)
   const raw = message.content[0].type === 'text' ? message.content[0].text : ''
 
   let parsed: ReplyVariants

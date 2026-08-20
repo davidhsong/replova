@@ -23,21 +23,23 @@ export async function calculateReputationScore(restaurantId: string): Promise<Re
   const now = new Date()
   const ninetyDaysAgo = Math.floor(new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).getTime() / 1000)
 
-  const { data: reviews } = await admin
+  const { data: reviews, error: reviewsError } = await admin
     .from('reviews')
     .select('rating, status, review_timestamp, sentiment_score, replied_at')
     .eq('restaurant_id', restaurantId)
     .gte('review_timestamp', ninetyDaysAgo)
+  if (reviewsError) throw reviewsError
 
   const window = reviews ?? []
   const totalReviews = window.length
 
   // Component A — Average Rating (35%)
+  const ratedReviews = window.filter(review => review.rating != null)
   const avgRating =
-    totalReviews === 0
+    ratedReviews.length === 0
       ? 0
-      : window.reduce((sum, r) => sum + r.rating, 0) / totalReviews
-  const ratingScore = ((avgRating - 1) / 4) * 100
+      : ratedReviews.reduce((sum, review) => sum + (review.rating ?? 0), 0) / ratedReviews.length
+  const ratingScore = ratedReviews.length === 0 ? 0 : Math.max(0, Math.min(100, ((avgRating - 1) / 4) * 100))
 
   // Component B — Review Volume (20%)
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -107,7 +109,7 @@ export async function saveReputationSnapshot(restaurantId: string): Promise<Repu
 
   const today = new Date().toISOString().split('T')[0]
 
-  await admin.from('reputation_scores').upsert(
+  const { error } = await admin.from('reputation_scores').upsert(
     {
       restaurant_id: restaurantId,
       score: data.score,
@@ -124,6 +126,7 @@ export async function saveReputationSnapshot(restaurantId: string): Promise<Repu
     },
     { onConflict: 'restaurant_id,score_date' }
   )
+  if (error) throw error
 
   return data
 }
@@ -136,13 +139,14 @@ export async function getScoreHistory(
 
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-  const { data } = await admin
+  const { data, error } = await admin
     .from('reputation_scores')
     .select('score_date, score')
     .eq('restaurant_id', restaurantId)
     .gte('score_date', since)
     .not('score', 'is', null)
     .order('score_date', { ascending: true })
+  if (error) throw error
 
   return data ?? []
 }
@@ -150,16 +154,18 @@ export async function getScoreHistory(
 export async function batchSaveAllScores(): Promise<{ updated: number; errors: number }> {
   const admin = getSupabaseAdmin()
 
-  const { data: restaurants } = await admin
+  const { data: restaurants, error: restaurantsError } = await admin
     .from('restaurants')
     .select('id, owner_email')
     .eq('active', true)
+  if (restaurantsError) throw restaurantsError
 
   // Only compute scores for growth/agency accounts
   const emails = [...new Set((restaurants ?? []).map(r => r.owner_email))]
-  const { data: eligibleAccounts } = emails.length > 0
+  const { data: eligibleAccounts, error: accountsError } = emails.length > 0
     ? await admin.from('accounts').select('owner_email').in('plan', ['growth', 'agency']).in('owner_email', emails)
-    : { data: [] }
+    : { data: [], error: null }
+  if (accountsError) throw accountsError
 
   const eligibleEmails = new Set(eligibleAccounts?.map(a => a.owner_email) ?? [])
   const eligible = (restaurants ?? []).filter(r => eligibleEmails.has(r.owner_email))

@@ -1,6 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { BASE_URL } from '@/lib/baseUrl'
+import { safeRedirectPath } from '@/lib/safeRedirect'
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function getAdminClient() {
   return createClient(
@@ -9,8 +12,7 @@ function getAdminClient() {
   )
 }
 
-// Use anon key so signInWithOtp routes through Supabase's email delivery,
-// not admin.generateLink which returns the raw token to the caller.
+// The anon client sends the email without exposing a generated token to the caller.
 function getPublicClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -19,15 +21,25 @@ function getPublicClient() {
 }
 
 export async function POST(req: NextRequest) {
-  const { email, redirectTo } = await req.json()
+  let body: { email?: unknown; next?: unknown }
+  try {
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
 
-  if (!email || typeof email !== 'string') {
+  if (!body.email || typeof body.email !== 'string') {
     return NextResponse.json({ error: 'Email is required' }, { status: 400 })
   }
 
-  const normalizedEmail = email.trim().toLowerCase()
+  const normalizedEmail = body.email.trim().toLowerCase()
+  if (!EMAIL_RE.test(normalizedEmail)) {
+    return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 })
+  }
+  const next = typeof body.next === 'string' ? safeRedirectPath(body.next) : '/dashboard'
 
-  // Only send a magic link to users who already have an account.
+  // Only registered account owners may receive a link. This is also why every
+  // signInWithOtp call must set shouldCreateUser to false.
   const { data: account, error: lookupError } = await getAdminClient()
     .from('accounts')
     .select('owner_email')
@@ -37,7 +49,6 @@ export async function POST(req: NextRequest) {
   if (lookupError) {
     return NextResponse.json({ error: 'Something went wrong. Please try again.' }, { status: 500 })
   }
-
   if (!account) {
     return NextResponse.json(
       { error: 'No account found for this email. Please sign up first.' },
@@ -45,20 +56,18 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // getPublicClient() defaults to implicit flow (unlike the PKCE-configured
-  // browser client), so the fallback must point at /signin — which has a
-  // client-side #access_token hash handler — not /auth/callback, which is a
-  // server route that can never see a URL fragment.
+  // The server-side client uses the implicit flow. Tokens return in the URL
+  // fragment, which is handled by the client-side /signin page.
   const { error } = await getPublicClient().auth.signInWithOtp({
     email: normalizedEmail,
     options: {
       shouldCreateUser: false,
-      emailRedirectTo: redirectTo ?? `${BASE_URL}/signin`,
+      emailRedirectTo: `${BASE_URL}/signin?next=${encodeURIComponent(next)}`,
     },
   })
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 })
+    return NextResponse.json({ error: 'Unable to send a sign-in link. Please try again.' }, { status: 500 })
   }
 
   return NextResponse.json({ sent: true })

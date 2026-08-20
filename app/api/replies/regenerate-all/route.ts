@@ -33,9 +33,10 @@ export async function POST() {
   if (activeId) {
     const { data } = await admin
       .from('restaurants')
-      .select('id, name')
+      .select('id, name, active')
       .eq('id', activeId)
       .eq('owner_email', user.email)
+      .eq('active', true)
       .single<{ id: string; name: string }>()
     if (data) { restaurantId = data.id; restaurantName = data.name }
   }
@@ -43,8 +44,9 @@ export async function POST() {
   if (!restaurantId) {
     const { data } = await admin
       .from('restaurants')
-      .select('id, name')
+      .select('id, name, active')
       .eq('owner_email', user.email)
+      .eq('active', true)
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle<{ id: string; name: string }>()

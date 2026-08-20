@@ -225,18 +225,22 @@ export default function IntelligencePanel({
         </div>
       )}
 
-      <PanelLink
-        href="/dashboard/competitors"
-        label="vs. Competitors"
-        description={hasCompetitors ? 'View rating comparison' : 'Track nearby competitors'}
-      />
+      {!isStarter && hasCompetitors && (
+        <PanelLink
+          href="/dashboard/competitors"
+          label="vs. Competitors"
+          description="View rating comparison"
+        />
+      )}
 
-      <PanelLink
-        href={`/api/reports/monthly?restaurantId=${restaurantId}&month=${reportMonth}`}
-        label="Monthly Report"
-        description="Download PDF"
-        isExternal
-      />
+      {!isStarter && (
+        <PanelLink
+          href={`/api/reports/monthly?restaurantId=${restaurantId}&month=${reportMonth}`}
+          label="Monthly Report"
+          description="Download PDF"
+          isExternal
+        />
+      )}
     </aside>
   )
 }

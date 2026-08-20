@@ -66,7 +66,7 @@ function Toggle({ on, onChange, disabled = false }: {
   )
 }
 
-function LockedNotice({ children, plan = 'Practice' }: { children: React.ReactNode; plan?: string }) {
+function LockedNotice({ children, plan = 'Agency' }: { children: React.ReactNode; plan?: string }) {
   return (
     <div style={{ position: 'relative', padding: 14, background: 'var(--surface-2)', border: '1px dashed var(--line-md)', borderRadius: 'var(--r-4)' }}>
       <div style={{ opacity: 0.4, pointerEvents: 'none' }}>{children}</div>
@@ -184,6 +184,8 @@ export default function SettingsPage() {
         state_mismatch: 'Connection failed due to a security check. Please try again.',
         restaurant_not_found: 'Could not find your business. Please try again.',
         invalid_callback: 'Invalid callback. Please try again.',
+        not_configured: 'Google Business integration is not configured yet.',
+        save_failed: 'Google connected, but the credentials could not be saved. Please try again.',
       }
       setGoogleNotice(messages[oauthError] ?? 'Google connection failed. Please try again.')
       setGoogleNoticeType('error')
@@ -400,7 +402,8 @@ export default function SettingsPage() {
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
                     Google Business Profile
-<span className="t-xs c-pos">Connected</span>
+                    <span className="dot dot-pos dot-pulse" aria-hidden="true" />
+                    <span className="t-xs c-pos">Connected</span>
                   </div>
                   <div className="t-xs c-t3">Scope: read reviews, post replies</div>
                 </div>
@@ -671,7 +674,7 @@ export default function SettingsPage() {
               className="btn btn-ghost btn-sm"
               onClick={async () => {
                 await getSupabaseBrowser().auth.signOut()
-                window.location.href = '/signin'
+                window.location.replace('/signin')
               }}
             >
               <IconSignOut s={13} />
@@ -710,7 +713,7 @@ function DeleteAccountButton() {
         throw new Error(data.error ?? 'Deletion failed')
       }
       await getSupabaseBrowser().auth.signOut()
-      window.location.href = '/'
+      window.location.replace('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
       setDeleting(false)

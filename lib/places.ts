@@ -1,4 +1,4 @@
-const API_KEY = process.env.GOOGLE_PLACES_API_KEY
+const PLACES_BASE_URL = 'https://places.googleapis.com/v1'
 
 export interface PlaceSearchResult {
   placeId: string
@@ -8,6 +8,12 @@ export interface PlaceSearchResult {
   totalRatings: number | null
   priceLevel: number | null
   types: string[]
+}
+
+export interface PlaceDetailsResult extends PlaceSearchResult {
+  website: string | null
+  location: { latitude: number; longitude: number } | null
+  primaryType: string | null
 }
 
 interface FindPlaceResult {
@@ -30,95 +36,162 @@ interface PlaceReviewsResult {
   reviews: Review[]
 }
 
-export async function searchNearbyPlaces(query: string): Promise<PlaceSearchResult[]> {
-  const params = new URLSearchParams({
-    query,
-    type: 'establishment',
-    key: API_KEY!,
-  })
+type GooglePlace = {
+  id?: string
+  displayName?: { text?: string }
+  formattedAddress?: string
+  rating?: number
+  userRatingCount?: number
+  priceLevel?: string
+  types?: string[]
+  websiteUri?: string
+  location?: { latitude?: number; longitude?: number }
+  primaryType?: string
+  reviews?: Array<{
+    authorAttribution?: { displayName?: string }
+    rating?: number
+    text?: { text?: string }
+    publishTime?: string
+  }>
+}
 
-  const res = await fetch(
-    `https://maps.googleapis.com/maps/api/place/textsearch/json?${params}`
-  )
-  const data = await res.json()
+const SEARCH_FIELDS = [
+  'places.id',
+  'places.displayName',
+  'places.formattedAddress',
+  'places.rating',
+  'places.userRatingCount',
+  'places.priceLevel',
+  'places.types',
+].join(',')
 
-  if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-    throw new Error(`Google Places textsearch error: ${data.status} — ${data.error_message ?? 'no details'}`)
+function getApiKey(): string {
+  const key = process.env.GOOGLE_PLACES_API_KEY
+  if (!key) throw new Error('Google Places is not configured')
+  return key
+}
+
+async function parseGoogleResponse<T>(res: Response, operation: string): Promise<T> {
+  if (!res.ok) {
+    const body = await res.json().catch(() => null) as { error?: { message?: string } } | null
+    throw new Error(`${operation} failed: ${body?.error?.message ?? `Google returned HTTP ${res.status}`}`)
+  }
+  return res.json() as Promise<T>
+}
+
+async function textSearch(
+  textQuery: string,
+  pageSize: number,
+  locationBias?: { latitude: number; longitude: number; radius: number }
+): Promise<GooglePlace[]> {
+  const body: Record<string, unknown> = { textQuery, pageSize }
+  if (locationBias) {
+    body.locationBias = {
+      circle: {
+        center: {
+          latitude: locationBias.latitude,
+          longitude: locationBias.longitude,
+        },
+        radius: locationBias.radius,
+      },
+    }
   }
 
-  return (data.results ?? []).slice(0, 5).map((r: {
-    place_id: string
-    name: string
-    formatted_address: string
-    rating?: number
-    user_ratings_total?: number
-    price_level?: number
-    types?: string[]
-  }) => ({
-    placeId: r.place_id,
-    name: r.name,
-    address: r.formatted_address,
-    rating: r.rating ?? null,
-    totalRatings: r.user_ratings_total ?? null,
-    priceLevel: r.price_level ?? null,
-    types: r.types ?? [],
-  }))
+  const res = await fetch(`${PLACES_BASE_URL}/places:searchText`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': getApiKey(),
+      'X-Goog-FieldMask': SEARCH_FIELDS,
+    },
+    body: JSON.stringify(body),
+  })
+
+  const data = await parseGoogleResponse<{ places?: GooglePlace[] }>(res, 'Google Places search')
+  return data.places ?? []
+}
+
+function priceLevelToNumber(priceLevel?: string): number | null {
+  const map: Record<string, number> = {
+    PRICE_LEVEL_FREE: 0,
+    PRICE_LEVEL_INEXPENSIVE: 1,
+    PRICE_LEVEL_MODERATE: 2,
+    PRICE_LEVEL_EXPENSIVE: 3,
+    PRICE_LEVEL_VERY_EXPENSIVE: 4,
+  }
+  return priceLevel ? (map[priceLevel] ?? null) : null
+}
+
+function toSearchResult(place: GooglePlace): PlaceSearchResult | null {
+  if (!place.id || !place.displayName?.text) return null
+  return {
+    placeId: place.id,
+    name: place.displayName.text,
+    address: place.formattedAddress ?? '',
+    rating: place.rating ?? null,
+    totalRatings: place.userRatingCount ?? null,
+    priceLevel: priceLevelToNumber(place.priceLevel),
+    types: place.types ?? [],
+  }
+}
+
+export async function searchNearbyPlaces(query: string): Promise<PlaceSearchResult[]> {
+  const places = await textSearch(query, 5)
+  return places.map(toSearchResult).filter((place): place is PlaceSearchResult => place !== null)
+}
+
+export async function getPlaceDetails(placeId: string): Promise<PlaceDetailsResult> {
+  if (!placeId.trim()) throw new Error('Google Place ID is required')
+
+  const fields = [
+    'id',
+    'displayName',
+    'formattedAddress',
+    'rating',
+    'userRatingCount',
+    'priceLevel',
+    'types',
+    'websiteUri',
+    'location',
+    'primaryType',
+  ].join(',')
+
+  const res = await fetch(`${PLACES_BASE_URL}/places/${encodeURIComponent(placeId)}`, {
+    headers: {
+      'X-Goog-Api-Key': getApiKey(),
+      'X-Goog-FieldMask': fields,
+    },
+  })
+  const place = await parseGoogleResponse<GooglePlace>(res, 'Google Place details')
+  const result = toSearchResult(place)
+  if (!result) throw new Error('Google Place details were incomplete')
+
+  const latitude = place.location?.latitude
+  const longitude = place.location?.longitude
+  return {
+    ...result,
+    website: place.websiteUri ?? null,
+    location: latitude != null && longitude != null ? { latitude, longitude } : null,
+    primaryType: place.primaryType ?? null,
+  }
 }
 
 export async function getPlaceRatingSnapshot(
   placeId: string
 ): Promise<{ rating: number | null; totalRatings: number | null }> {
-  const params = new URLSearchParams({
-    place_id: placeId,
-    fields: 'rating,user_ratings_total',
-    key: API_KEY!,
-  })
-
-  const res = await fetch(
-    `https://maps.googleapis.com/maps/api/place/details/json?${params}`
-  )
-  const data = await res.json()
-
-  if (data.status !== 'OK') {
-    throw new Error(`Google Places details error: ${data.status} — ${data.error_message ?? 'no details'}`)
-  }
-
-  return {
-    rating: data.result.rating ?? null,
-    totalRatings: data.result.user_ratings_total ?? null,
-  }
+  const details = await getPlaceDetails(placeId)
+  return { rating: details.rating, totalRatings: details.totalRatings }
 }
 
 export async function findPlaceId(
   restaurantName: string,
   city: string
 ): Promise<FindPlaceResult | null> {
-  const params = new URLSearchParams({
-    input: `${restaurantName} ${city}`,
-    inputtype: 'textquery',
-    fields: 'place_id,name,formatted_address',
-    key: API_KEY!,
-  })
-
-  const res = await fetch(
-    `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?${params}`
-  )
-  const data = await res.json()
-
-  if (data.status === 'ZERO_RESULTS') return null
-
-  if (data.status !== 'OK') {
-    throw new Error(`Google Places findplacefromtext error: ${data.status} — ${data.error_message ?? 'no details'}`)
-  }
-
-  const candidate = data.candidates?.[0]
-  if (!candidate) return null
-
-  return {
-    placeId: candidate.place_id,
-    name: candidate.name,
-    address: candidate.formatted_address,
-  }
+  const places = await textSearch(`${restaurantName} ${city}`, 1)
+  const result = places.map(toSearchResult).find((place): place is PlaceSearchResult => place !== null)
+  return result
+    ? { placeId: result.placeId, name: result.name, address: result.address }
+    : null
 }
 
 export const GENERIC_PLACE_TYPES = new Set([
@@ -129,124 +202,60 @@ export const GENERIC_PLACE_TYPES = new Set([
 export async function findNearbyCompetitors(
   restaurantPlaceId: string,
   excludePlaceId: string,
-  cuisine?: string | null
+  businessType?: string | null
 ): Promise<PlaceSearchResult[]> {
-  type NearbyResult = {
-    place_id: string
-    name: string
-    vicinity: string
-    rating?: number
-    user_ratings_total?: number
-    price_level?: number
-    types?: string[]
-  }
+  const origin = await getPlaceDetails(restaurantPlaceId)
+  if (!origin.location) return []
 
-  // Step 1: get the restaurant's coordinates and its own cuisine types
-  const detailParams = new URLSearchParams({
-    place_id: restaurantPlaceId,
-    fields: 'geometry,types',
-    key: API_KEY!,
+  const query = businessType && businessType !== 'establishment'
+    ? businessType.replace(/_/g, ' ')
+    : (origin.primaryType ?? origin.types.find(type => !GENERIC_PLACE_TYPES.has(type)) ?? 'local business')
+      .replace(/_/g, ' ')
+
+  const places = await textSearch(query, 20, {
+    latitude: origin.location.latitude,
+    longitude: origin.location.longitude,
+    radius: 8000,
   })
-  const detailRes = await fetch(
-    `https://maps.googleapis.com/maps/api/place/details/json?${detailParams}`
-  )
-  const detailData = await detailRes.json()
-  if (detailData.status !== 'OK') return []
 
-  const { lat, lng } = detailData.result?.geometry?.location ?? {}
-  if (lat == null || lng == null) return []
+  const candidates = places
+    .map(toSearchResult)
+    .filter((place): place is PlaceSearchResult => place !== null && place.placeId !== excludePlaceId)
 
-  const restaurantTypes = new Set<string>(
-    ((detailData.result?.types ?? []) as string[]).filter(t => !GENERIC_PLACE_TYPES.has(t))
-  )
+  candidates.sort((a, b) => {
+    const aMatch = a.types.some(type => origin.types.includes(type) && !GENERIC_PLACE_TYPES.has(type)) ? 1 : 0
+    const bMatch = b.types.some(type => origin.types.includes(type) && !GENERIC_PLACE_TYPES.has(type)) ? 1 : 0
+    if (bMatch !== aMatch) return bMatch - aMatch
+    return (b.rating ?? 0) - (a.rating ?? 0)
+  })
 
-  // Helper: run a Nearby Search, exclude own place, return raw results
-  async function nearbySearch(keyword?: string): Promise<NearbyResult[]> {
-    const params = new URLSearchParams({
-      location: `${lat},${lng}`,
-      radius: '8000',
-      type: 'establishment',
-      key: API_KEY!,
-    })
-    if (keyword) params.set('keyword', keyword)
-    const res = await fetch(`https://maps.googleapis.com/maps/api/place/nearbysearch/json?${params}`)
-    const data = await res.json()
-    if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') return []
-    return ((data.results ?? []) as NearbyResult[]).filter(r => r.place_id !== excludePlaceId)
-  }
-
-  let candidates: NearbyResult[] = []
-
-  if (cuisine) {
-    // Primary: cuisine-keyword search (Google biases to that type)
-    candidates = await nearbySearch(cuisine)
-
-    // Fallback: general search filtered by matching Google place types
-    if (candidates.length === 0) {
-      const all = await nearbySearch()
-      candidates = restaurantTypes.size > 0
-        ? all.filter(r => (r.types ?? []).some(t => restaurantTypes.has(t)))
-        : all
-      // If type filtering also yields nothing, accept any nearby restaurant
-      if (candidates.length === 0) candidates = all
-    }
-  } else {
-    candidates = await nearbySearch()
-    // Sort same-cuisine types first, then by rating
-    candidates.sort((a, b) => {
-      const aMatch = restaurantTypes.size > 0 && (a.types ?? []).some(t => restaurantTypes.has(t)) ? 1 : 0
-      const bMatch = restaurantTypes.size > 0 && (b.types ?? []).some(t => restaurantTypes.has(t)) ? 1 : 0
-      if (bMatch !== aMatch) return bMatch - aMatch
-      return (b.rating ?? 0) - (a.rating ?? 0)
-    })
-  }
-
-  candidates.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-
-  return candidates.slice(0, 20).map(r => ({
-    placeId: r.place_id,
-    name: r.name,
-    address: r.vicinity,
-    rating: r.rating ?? null,
-    totalRatings: r.user_ratings_total ?? null,
-    priceLevel: r.price_level ?? null,
-    types: r.types ?? [],
-  }))
+  return candidates.slice(0, 20)
 }
 
 export async function getPlaceReviews(placeId: string): Promise<PlaceReviewsResult> {
-  const params = new URLSearchParams({
-    place_id: placeId,
-    fields: 'name,rating,user_ratings_total,reviews',
-    key: API_KEY!,
+  if (!placeId.trim()) throw new Error('Google Place ID is required')
+
+  const res = await fetch(`${PLACES_BASE_URL}/places/${encodeURIComponent(placeId)}`, {
+    headers: {
+      'X-Goog-Api-Key': getApiKey(),
+      'X-Goog-FieldMask': 'displayName,rating,userRatingCount,reviews',
+    },
   })
-
-  const res = await fetch(
-    `https://maps.googleapis.com/maps/api/place/details/json?${params}`
-  )
-  const data = await res.json()
-
-  if (data.status !== 'OK') {
-    throw new Error(`Google Places details error: ${data.status} — ${data.error_message ?? 'no details'}`)
-  }
-
-  const result = data.result
+  const place = await parseGoogleResponse<GooglePlace>(res, 'Google Place reviews')
 
   return {
-    restaurantName: result.name,
-    overallRating: result.rating,
-    totalRatings: result.user_ratings_total,
-    // Google Places API returns a maximum of 5 reviews — hard API limit
-    reviews: (result.reviews ?? []).map((r: {
-      author_name: string
-      rating: number
-      text: string
-      time: number
-    }) => ({
-      author: r.author_name,
-      rating: r.rating,
-      text: r.text,
-      timestamp: r.time,
+    restaurantName: place.displayName?.text ?? 'Business',
+    overallRating: place.rating ?? 0,
+    totalRatings: place.userRatingCount ?? 0,
+    // Places API returns a small representative review sample. Connecting a
+    // Business Profile unlocks the complete review history.
+    reviews: (place.reviews ?? []).map(review => ({
+      author: review.authorAttribution?.displayName ?? 'Anonymous',
+      rating: review.rating ?? 0,
+      text: review.text?.text ?? '',
+      timestamp: review.publishTime
+        ? Math.floor(new Date(review.publishTime).getTime() / 1000)
+        : Math.floor(Date.now() / 1000),
     })),
   }
 }

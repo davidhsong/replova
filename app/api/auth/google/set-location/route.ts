@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { locationName } = await req.json()
+  const { locationName } = await req.json().catch(() => ({ locationName: null }))
   if (!locationName || typeof locationName !== 'string') {
     return NextResponse.json({ error: 'locationName is required' }, { status: 400 })
   }
@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
       .select('id')
       .eq('id', activeId)
       .eq('owner_email', user.email)
+      .eq('active', true)
       .maybeSingle()
     restaurant = data
   }
@@ -41,6 +42,7 @@ export async function POST(req: NextRequest) {
       .from('restaurants')
       .select('id')
       .eq('owner_email', user.email)
+      .eq('active', true)
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle()

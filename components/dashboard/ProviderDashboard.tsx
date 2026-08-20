@@ -21,15 +21,12 @@ const CARD: React.CSSProperties = {
 
 export default function ProviderDashboard({ restaurantId, plan }: Props) {
   const [providers, setProviders] = useState<ProviderStats[] | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(() => plan !== 'starter')
 
   const isLocked = plan === 'starter'
 
   useEffect(() => {
-    if (isLocked) {
-      setLoading(false)
-      return
-    }
+    if (isLocked) return
     fetch(`/api/providers/stats?restaurantId=${restaurantId}`)
       .then(r => r.json())
       .then(data => {
@@ -60,7 +57,7 @@ export default function ProviderDashboard({ restaurantId, plan }: Props) {
         <div>
           <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 4 }}>Team Reputation</p>
           <p style={{ fontSize: 12, color: 'var(--t3)', lineHeight: 1.5 }}>
-            See which staff members drive your best reviews. Available on Studio and above.
+            See which staff members drive your best reviews. Available on Growth and above.
           </p>
         </div>
         <Link href="/dashboard/billing" style={{
@@ -68,7 +65,7 @@ export default function ProviderDashboard({ restaurantId, plan }: Props) {
           background: 'var(--accent-sub)', borderRadius: 'var(--r-pill)',
           padding: '4px 12px', border: '1px solid var(--accent-line)',
         }}>
-          Upgrade to Studio
+          Upgrade to Growth
         </Link>
       </div>
     )

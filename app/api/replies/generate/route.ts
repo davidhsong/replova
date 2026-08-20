@@ -36,12 +36,13 @@ export async function POST(req: NextRequest) {
 
   const { data: restaurant } = await admin
     .from('restaurants')
-    .select('id')
+    .select('id, active')
     .eq('id', review.restaurant_id)
     .eq('owner_email', user.email!)
-    .maybeSingle<{ id: string }>()
+    .maybeSingle<{ id: string; active: boolean }>()
 
   if (!restaurant) return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+  if (!restaurant.active) return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
   try {
     const { queueId } = await queueReplyForReview(reviewId)

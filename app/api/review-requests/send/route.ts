@@ -4,10 +4,7 @@ import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { sendReviewRequestEmail } from '@/lib/reviewRequests'
 import { ACTIVE_LOCATION_COOKIE } from '@/lib/activeLocation'
-
-function delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
+import pLimit from 'p-limit'
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -16,15 +13,18 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json() as { restaurantId?: string; requestIds?: string[] }
+  const body = await req.json().catch(() => ({})) as { restaurantId?: string; requestIds?: string[] }
+  if (body.requestIds && (!Array.isArray(body.requestIds) || body.requestIds.some(id => typeof id !== 'string'))) {
+    return NextResponse.json({ error: 'requestIds must be an array of IDs' }, { status: 400 })
+  }
 
   const admin = getSupabaseAdmin()
-  let restaurant: { id: string; name: string } | null = null
+  let restaurant: { id: string; name: string; active: boolean } | null = null
 
   if (body.restaurantId) {
     const { data } = await admin
       .from('restaurants')
-      .select('id, name')
+      .select('id, name, active')
       .eq('id', body.restaurantId)
       .eq('owner_email', user.email!)
       .maybeSingle()
@@ -34,17 +34,19 @@ export async function POST(req: NextRequest) {
     if (activeId) {
       const { data } = await admin
         .from('restaurants')
-        .select('id, name')
+        .select('id, name, active')
         .eq('id', activeId)
         .eq('owner_email', user.email!)
+        .eq('active', true)
         .maybeSingle()
       restaurant = data
     }
     if (!restaurant) {
       const { data } = await admin
         .from('restaurants')
-        .select('id, name')
+        .select('id, name, active')
         .eq('owner_email', user.email!)
+        .eq('active', true)
         .order('created_at', { ascending: true })
         .limit(1)
         .maybeSingle()
@@ -53,16 +55,16 @@ export async function POST(req: NextRequest) {
   }
 
   if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
+  if (!restaurant.active) return NextResponse.json({ error: 'Subscription inactive' }, { status: 403 })
 
   let query = admin
     .from('review_requests')
     .select('id, customer_name, customer_email, review_link')
     .eq('restaurant_id', restaurant.id)
+    .eq('status', 'pending')
 
   if (body.requestIds?.length) {
     query = query.in('id', body.requestIds)
-  } else {
-    query = query.eq('status', 'pending')
   }
 
   const { data: requests } = await query
@@ -73,8 +75,9 @@ export async function POST(req: NextRequest) {
 
   let sent = 0
   const errors: string[] = []
+  const limit = pLimit(3)
 
-  for (const request of requests) {
+  await Promise.all(requests.map(request => limit(async () => {
     try {
       await sendReviewRequestEmail(
         {
@@ -85,18 +88,16 @@ export async function POST(req: NextRequest) {
         },
         restaurant.name
       )
-      await admin
+      const { error: updateError } = await admin
         .from('review_requests')
         .update({ status: 'sent', sent_at: new Date().toISOString() })
         .eq('id', request.id)
+      if (updateError) throw updateError
       sent++
     } catch (err) {
       errors.push(`${request.customer_email}: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
-    if (sent + errors.length < requests.length) {
-      await delay(300)
-    }
-  }
+  })))
 
   return NextResponse.json({ sent, errors })
 }

@@ -6,6 +6,7 @@ import { getValidGoogleToken } from '@/lib/googleAuth'
 
 type Restaurant = {
   id: string
+  active: boolean
   place_id: string
   google_access_token: string | null
   google_refresh_token: string | null
@@ -109,7 +110,7 @@ export async function POST(req: NextRequest) {
   const { data: restaurant } = await admin
     .from('restaurants')
     .select(
-      'id, place_id, google_access_token, google_refresh_token, google_token_expires_at, google_location_name'
+      'id, active, place_id, google_access_token, google_refresh_token, google_token_expires_at, google_location_name'
     )
     .eq('id', review.restaurant_id)
     .eq('owner_email', user.email!)
@@ -117,6 +118,9 @@ export async function POST(req: NextRequest) {
 
   if (!restaurant) {
     return NextResponse.json({ error: 'Review not found' }, { status: 404 })
+  }
+  if (!restaurant.active) {
+    return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
   }
 
   if (!restaurant.google_refresh_token) {
@@ -215,7 +219,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: `Google API error: ${errMessage}` }, { status: 500 })
   }
 
-  await admin
+  const { error: updateError } = await admin
     .from('reviews')
     .update({
       google_review_name: googleReviewName,
@@ -223,6 +227,10 @@ export async function POST(req: NextRequest) {
       replied_at: new Date().toISOString(),
     })
     .eq('id', reviewId)
+  if (updateError) {
+    console.error('Google reply posted but review status update failed:', updateError)
+    return NextResponse.json({ error: 'Reply was posted, but the dashboard status is still updating.' }, { status: 202 })
+  }
 
   return NextResponse.json({ success: true })
 }

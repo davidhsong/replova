@@ -1,23 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
-import Stripe from 'stripe'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { getStripe, getStripePriceId, subscriptionGrantsAccess } from '@/lib/stripe'
+import { setOwnerRestaurantAccess } from '@/lib/subscriptionAccess'
 
 type Plan = 'starter' | 'growth' | 'agency'
-
-function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!)
-}
-
-function getPriceId(plan: Plan): string | null {
-  const map: Record<Plan, string | undefined> = {
-    starter: process.env.STRIPE_PRICE_ID_STARTER,
-    growth:  process.env.STRIPE_PRICE_ID_GROWTH || process.env.STRIPE_PRICE_ID,
-    agency:  process.env.STRIPE_PRICE_ID_AGENCY,
-  }
-  return map[plan] ?? null
-}
 
 export async function POST(req: NextRequest) {
   const cookieStore = await cookies()
@@ -26,7 +14,8 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await req.json() as { plan?: string }
+  const body = await req.json().catch(() => null) as { plan?: string } | null
+  if (!body) return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 })
   const plan = body.plan as Plan
   if (!['starter', 'growth', 'agency'].includes(plan)) {
     return NextResponse.json({ error: 'Invalid plan.' }, { status: 400 })
@@ -47,8 +36,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Already on this plan.' }, { status: 400 })
   }
 
-  const newPriceId = getPriceId(plan)
-  if (!newPriceId) {
+  let newPriceId: string
+  try {
+    newPriceId = getStripePriceId(plan)
+  } catch {
     return NextResponse.json({ error: 'Price not configured for this plan.' }, { status: 500 })
   }
 
@@ -60,7 +51,7 @@ export async function POST(req: NextRequest) {
     limit: 10,
   })
 
-  const sub = subs.find(s => s.status !== 'canceled')
+  const sub = subs.find(s => subscriptionGrantsAccess(s.status) || s.status === 'past_due')
   if (!sub) {
     return NextResponse.json({ error: 'No active subscription found. If you are still in a free trial, use the plan selector on the dashboard.' }, { status: 400 })
   }
@@ -76,10 +67,15 @@ export async function POST(req: NextRequest) {
   })
 
   // Update immediately — webhook will confirm shortly after
-  await admin
+  const { error: updateError } = await admin
     .from('accounts')
     .update({ plan })
     .eq('owner_email', user.email!)
+  if (updateError) {
+    console.error('Stripe plan changed but account update failed:', updateError)
+    return NextResponse.json({ error: 'Plan changed in Stripe but the dashboard is still updating. Refresh shortly.' }, { status: 202 })
+  }
+  await setOwnerRestaurantAccess(user.email!, true, plan)
 
   return NextResponse.json({ success: true })
 }

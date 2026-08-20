@@ -36,6 +36,7 @@ export async function GET() {
       .select(select)
       .eq('id', activeId)
       .eq('owner_email', user.email)
+      .eq('active', true)
       .maybeSingle<RestaurantTokenRow>()
     restaurant = data
   }
@@ -44,6 +45,7 @@ export async function GET() {
       .from('restaurants')
       .select(select)
       .eq('owner_email', user.email)
+      .eq('active', true)
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle<RestaurantTokenRow>()
@@ -59,28 +61,21 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to get valid Google token. Please reconnect.' }, { status: 401 })
   }
 
-  console.log('[GMB locations] Fetching accounts for user:', user.email)
-
   const accountsRes = await fetch(
     'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
     { headers: { Authorization: `Bearer ${accessToken}` } }
   )
 
   const accountsBody = await accountsRes.text()
-  console.log('[GMB locations] Accounts response status:', accountsRes.status)
-  console.log('[GMB locations] Accounts response body:', accountsBody)
-
   if (!accountsRes.ok) {
     return NextResponse.json(
-      { error: `Google accounts API error (${accountsRes.status}): ${accountsBody}` },
+      { error: `Google accounts API error (${accountsRes.status}). Please reconnect and try again.` },
       { status: 502 }
     )
   }
 
   const accountsData = JSON.parse(accountsBody) as { accounts?: { name: string }[] }
   const accounts = accountsData.accounts ?? []
-
-  console.log('[GMB locations] Accounts found:', accounts.length, accounts.map(a => a.name))
 
   if (!accounts.length) {
     return NextResponse.json({
@@ -102,16 +97,11 @@ export async function GET() {
       if (pageToken) params.set('pageToken', pageToken)
 
       const url = `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?${params.toString()}`
-      console.log('[GMB locations] Fetching locations from:', url)
-
       const locRes = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } })
       const locBody = await locRes.text()
 
-      console.log('[GMB locations] Locations response status:', locRes.status)
-      console.log('[GMB locations] Locations response body:', locBody)
-
       if (!locRes.ok) {
-        console.error('[GMB locations] Failed to list locations for account:', account.name, locRes.status, locBody)
+        console.error('[GMB locations] Failed to list locations:', locRes.status)
         break
       }
 
@@ -131,8 +121,6 @@ export async function GET() {
       pageToken = locData.nextPageToken
     } while (pageToken)
   }
-
-  console.log('[GMB locations] Total locations found:', locations.length)
 
   return NextResponse.json({ locations })
 }

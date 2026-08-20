@@ -19,14 +19,15 @@ export async function GET() {
 
   // Prefer active location cookie, fall back to first restaurant
   const activeId = cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value
-  let restaurant: { id: string; name: string; cuisine_type: string | null; google_refresh_token: string | null; google_location_name: string | null } | null = null
+  let restaurant: { id: string; name: string; active: boolean; cuisine_type: string | null; google_refresh_token: string | null; google_location_name: string | null } | null = null
 
   if (activeId) {
     const { data } = await admin
       .from('restaurants')
-      .select('id, name, cuisine_type, google_refresh_token, google_location_name')
+      .select('id, name, active, cuisine_type, google_refresh_token, google_location_name')
       .eq('id', activeId)
       .eq('owner_email', user.email)
+      .eq('active', true)
       .single()
     restaurant = data
   }
@@ -34,8 +35,9 @@ export async function GET() {
   if (!restaurant) {
     const { data } = await admin
       .from('restaurants')
-      .select('id, name, cuisine_type, google_refresh_token, google_location_name')
+      .select('id, name, active, cuisine_type, google_refresh_token, google_location_name')
       .eq('owner_email', user.email)
+      .eq('active', true)
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle()
@@ -59,6 +61,7 @@ export async function GET() {
   return NextResponse.json({
     id: restaurant.id,
     name: restaurant.name,
+    active: restaurant.active,
     cuisineType: restaurant.cuisine_type ?? null,
     plan,
     competitorLimit: limits.competitors,

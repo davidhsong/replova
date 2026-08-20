@@ -1,16 +1,11 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import Stripe from 'stripe'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { PLAN_LIMITS } from '@/lib/planLimits'
 import { IconCheck, IconX, IconExternal } from '@/components/icons'
 import type { Plan } from '@/lib/planLimits'
-import PlanChangeButton from './PlanChangeButton'
-
-function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!)
-}
+import { getStripe } from '@/lib/stripe'
 
 type Account = {
   plan: Plan
@@ -25,9 +20,9 @@ const PLAN_META: Record<Plan, {
   competitors: number
   tagline: string
 }> = {
-  starter: { label: 'Solo',     price: 79,  locations: 1,  competitors: 3,  tagline: 'Solo practices' },
-  growth:  { label: 'Studio',   price: 179, locations: 5,  competitors: 5,  tagline: 'Multi-location studios' },
-  agency:  { label: 'Practice', price: 349, locations: 15, competitors: 10, tagline: 'Multi-practice groups' },
+  starter: { label: 'Starter', price: 39,  locations: 1,  competitors: 3,  tagline: 'Single-location businesses' },
+  growth:  { label: 'Growth',  price: 99,  locations: 5,  competitors: 5,  tagline: 'Growing multi-location teams' },
+  agency:  { label: 'Agency',  price: 199, locations: 15, competitors: 10, tagline: 'Groups and agencies' },
 }
 
 const PLAN_FEATURES: Record<Plan, { features: string[]; missing: string[] }> = {
@@ -158,7 +153,7 @@ export default async function BillingPage() {
           stripeTrialDaysLeft = Math.max(0, Math.ceil((trialEndsViaStripe.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
           inStripeTrialByDate = now < trialEndsViaStripe
         } else {
-          const periodEnd = (sub as unknown as { current_period_end: number }).current_period_end
+          const periodEnd = sub.items.data[0]?.current_period_end
           if (periodEnd) renewalDate = new Date(periodEnd * 1000)
         }
       }
@@ -246,7 +241,11 @@ export default async function BillingPage() {
             )}
 
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              {hasStripe ? (
+              {!restaurant.active ? (
+                <a href="/api/create-checkout" className="btn btn-primary">
+                  Reactivate subscription
+                </a>
+              ) : hasStripe ? (
                 <a href="/api/billing-portal" className="btn btn-primary btn-sm">
                   Manage subscription <IconExternal s={11} />
                 </a>
@@ -259,11 +258,7 @@ export default async function BillingPage() {
                     No charge until {effectiveTrialEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
                   </span>
                 </>
-              ) : (
-                <a href="/api/create-checkout" className="btn btn-primary">
-                  Reactivate subscription
-                </a>
-              )}
+              ) : null}
             </div>
           </div>
 
@@ -345,13 +340,13 @@ export default async function BillingPage() {
                       You&apos;re on this plan
                     </button>
                   ) : hasStripe ? (
-                    <PlanChangeButton
-                      targetPlan={p}
-                      targetLabel={m.label}
-                      targetPrice={m.price}
-                      variant={isUpgrade ? 'upgrade' : 'downgrade'}
-                      priceDiff={m.price - meta.price}
-                    />
+                    <a
+                      href="/api/billing-portal"
+                      className={`btn ${isUpgrade ? 'btn-primary' : 'btn-ghost'}`}
+                      style={{ width: 200, justifyContent: 'center', textDecoration: 'none' }}
+                    >
+                      {isUpgrade ? `Upgrade to ${m.label}` : `Downgrade to ${m.label}`}
+                    </a>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                       <a

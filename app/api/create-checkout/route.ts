@@ -1,26 +1,11 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { NextRequest } from 'next/server'
-import Stripe from 'stripe'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { BASE_URL } from '@/lib/baseUrl'
-
-type Plan = 'starter' | 'growth' | 'agency'
-
-function getStripe() {
-  return new Stripe(process.env.STRIPE_SECRET_KEY!)
-}
-
-function getPriceId(plan: Plan): string {
-  if (plan === 'starter') {
-    return process.env.STRIPE_PRICE_ID_STARTER || process.env.STRIPE_PRICE_ID!
-  }
-  if (plan === 'agency') {
-    return process.env.STRIPE_PRICE_ID_AGENCY || process.env.STRIPE_PRICE_ID!
-  }
-  return process.env.STRIPE_PRICE_ID_GROWTH || process.env.STRIPE_PRICE_ID!
-}
+import { getStripe, getStripePriceId } from '@/lib/stripe'
+import type { Plan } from '@/lib/planLimits'
 
 function resolvePlan(raw: string | null): Plan {
   if (raw === 'starter' || raw === 'agency') return raw
@@ -30,42 +15,64 @@ function resolvePlan(raw: string | null): Plan {
 export async function GET(req: NextRequest) {
   const cookieStore = await cookies()
   const supabase = createClient(cookieStore)
-
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/onboard')
+  if (!user?.email) redirect('/onboard')
 
   const admin = getSupabaseAdmin()
+  const [{ data: restaurant }, { data: account }] = await Promise.all([
+    admin
+      .from('restaurants')
+      .select('id')
+      .eq('owner_email', user.email)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle(),
+    admin
+      .from('accounts')
+      .select('plan, stripe_customer_id')
+      .eq('owner_email', user.email)
+      .maybeSingle(),
+  ])
 
-  // Get the first restaurant for this user (just need the id)
-  const { data: restaurant } = await admin
-    .from('restaurants')
-    .select('id, owner_email')
-    .eq('owner_email', user.email)
-    .order('created_at', { ascending: true })
-    .limit(1)
-    .maybeSingle()
-
-  if (!restaurant) redirect('/onboard')
-
-  // Get the account for plan info
-  const { data: account } = await admin
-    .from('accounts')
-    .select('plan')
-    .eq('owner_email', user.email!)
-    .maybeSingle()
+  if (!restaurant || !account) redirect('/onboard')
 
   const queryPlan = req.nextUrl.searchParams.get('plan')
-  const plan: Plan = queryPlan ? resolvePlan(queryPlan) : resolvePlan(account?.plan ?? null)
+  const plan = queryPlan ? resolvePlan(queryPlan) : resolvePlan(account.plan)
+  const stripe = getStripe()
 
-  const session = await getStripe().checkout.sessions.create({
+  // An existing live subscription should be managed rather than duplicated.
+  if (account.stripe_customer_id) {
+    const subscriptions = await stripe.subscriptions.list({
+      customer: account.stripe_customer_id,
+      status: 'all',
+      limit: 10,
+    })
+    if (subscriptions.data.some(subscription =>
+      subscription.status !== 'canceled' && subscription.status !== 'incomplete_expired'
+    )) {
+      redirect('/api/billing-portal')
+    }
+  }
+
+  const subscriptionData = {
+    metadata: { ownerEmail: user.email, plan },
+    ...(account.stripe_customer_id ? {} : { trial_period_days: 30 }),
+  }
+
+  const session = await stripe.checkout.sessions.create({
     mode: 'subscription',
-    line_items: [{ price: getPriceId(plan), quantity: 1 }],
-    customer_email: user.email!,
-    metadata: { restaurantId: restaurant.id, ownerEmail: user.email!, plan },
-    subscription_data: { trial_period_days: 30 },
+    line_items: [{ price: getStripePriceId(plan), quantity: 1 }],
+    ...(account.stripe_customer_id
+      ? { customer: account.stripe_customer_id }
+      : { customer_email: user.email }),
+    client_reference_id: restaurant.id,
+    metadata: { restaurantId: restaurant.id, ownerEmail: user.email, plan },
+    subscription_data: subscriptionData,
+    allow_promotion_codes: true,
     success_url: `${BASE_URL}/api/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${BASE_URL}/dashboard`,
+    cancel_url: `${BASE_URL}/dashboard/billing`,
   })
 
-  redirect(session.url!)
+  if (!session.url) throw new Error('Stripe did not return a checkout URL')
+  redirect(session.url)
 }

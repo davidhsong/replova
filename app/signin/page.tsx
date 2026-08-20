@@ -5,8 +5,14 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { getSupabaseBrowser } from '@/lib/supabase'
+import { safeRedirectPath } from '@/lib/safeRedirect'
 
 type State = 'idle' | 'loading' | 'sent' | 'error'
+
+function getNextPath(): string {
+  const raw = new URLSearchParams(window.location.search).get('next')
+  return safeRedirectPath(raw)
+}
 
 function Logo({ size = 20 }: { size?: number }) {
   const box = size + 6;
@@ -31,14 +37,18 @@ export default function SignInPage() {
     // Show error when redirected back from a failed magic-link verification
     const params = new URLSearchParams(window.location.search)
     if (params.get('error') === 'invalid_link') {
-      setError('That sign-in link has expired or already been used. Request a new one.')
-      setState('error')
+      const timer = window.setTimeout(() => {
+        setError('That sign-in link has expired or already been used. Request a new one.')
+        setState('error')
+      }, 0)
+      return () => window.clearTimeout(timer)
     }
   }, [])
 
   useEffect(() => {
     // Redirect already-authenticated users straight to the dashboard.
     // If the refresh token is stale, sign out silently so the bad cookies are cleared.
+    if (window.location.hash.includes('access_token')) return
     void (async () => {
       const supabase = getSupabaseBrowser()
       const { data: { user }, error } = await supabase.auth.getUser()
@@ -46,7 +56,11 @@ export default function SignInPage() {
         await supabase.auth.signOut()
         return
       }
-      if (user) router.replace('/dashboard')
+      if (user) {
+        const next = getNextPath()
+        if (next.startsWith('/api/')) window.location.replace(next)
+        else router.replace(next)
+      }
     })()
   }, [router])
 
@@ -57,16 +71,19 @@ export default function SignInPage() {
     const accessToken = params.get('access_token')
     const refreshToken = params.get('refresh_token')
     if (!accessToken || !refreshToken) {
-      console.error('[signin] hash had access_token but was missing a required field:', hash)
-      setError('Sign-in link was malformed. Request a new one.')
-      setState('error')
-      return
+      const timer = window.setTimeout(() => {
+        setError('Sign-in link was malformed. Request a new one.')
+        setState('error')
+      }, 0)
+      return () => window.clearTimeout(timer)
     }
     void (async () => {
       const supabase = getSupabaseBrowser()
       const { error: sessionError } = await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
       if (!sessionError) {
-        router.replace('/dashboard')
+        const next = getNextPath()
+        if (next.startsWith('/api/')) window.location.replace(next)
+        else router.replace(next)
       } else {
         console.error('[signin] setSession failed:', sessionError.message)
         setError(`Sign-in failed: ${sessionError.message}`)
@@ -91,7 +108,7 @@ export default function SignInPage() {
         // not a ?code query param. Route back to /signin itself, which already
         // has a client-side handler for that hash — not /auth/callback, which
         // is a server route and can never see a URL fragment.
-        redirectTo: `${window.location.origin}/signin`,
+        next: getNextPath(),
       }),
     })
 
@@ -144,7 +161,7 @@ export default function SignInPage() {
               </div>
               <h2 style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-0.01em', marginBottom: 8 }}>Check your email.</h2>
               <p className="t-sm c-t2" style={{ marginBottom: 24, lineHeight: 1.6 }}>
-                We sent a sign-in link to <strong style={{ color: 'var(--t1)' }}>{email}</strong>. It expires in 15 minutes.
+                We sent a sign-in link to <strong style={{ color: 'var(--t1)' }}>{email}</strong>. For security, use the newest link you receive.
               </p>
               <button className="btn btn-ghost btn-sm" onClick={() => { setState('idle'); setEmail('') }}>
                 Use a different email

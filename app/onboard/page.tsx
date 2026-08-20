@@ -93,6 +93,7 @@ function OnboardPageContent() {
 
   const [step, setStep] = useState<Step>('search')
   const [sessionEmail, setSessionEmail] = useState<string | null>(null)
+  const [sessionChecked, setSessionChecked] = useState(!addMode)
 
   const [restaurantName, setRestaurantName] = useState('')
   const [city, setCity] = useState('')
@@ -109,7 +110,12 @@ function OnboardPageContent() {
     if (!addMode) return
     void (async () => {
       const { data } = await getSupabaseBrowser().auth.getUser()
-      if (data.user?.email) setSessionEmail(data.user.email)
+      if (data.user?.email) {
+        setSessionEmail(data.user.email)
+      } else {
+        window.location.replace('/signin?next=%2Fonboard%3Fadd%3Dtrue')
+      }
+      setSessionChecked(true)
     })()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -141,7 +147,8 @@ function OnboardPageContent() {
   }
 
   async function handleConfirm() {
-    if (addMode && sessionEmail) {
+    if (addMode) {
+      if (!sessionChecked || !sessionEmail) return
       await createRestaurant(sessionEmail)
       return
     }
@@ -157,25 +164,28 @@ function OnboardPageContent() {
       const res = await fetch('/api/restaurants/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: result.name, email: ownerEmail, placeId: result.placeId, plan }),
+        body: JSON.stringify({ name: result.name, email: ownerEmail, placeId: result.placeId, plan, addMode }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Failed to add location.')
 
       if (addMode) {
-        window.location.href = '/dashboard'
+        window.location.replace('/dashboard')
         return
       }
 
-      const redirectTo = data.alreadyExists
-        ? `${window.location.origin}/auth/callback?next=%2Fdashboard`
-        : `${window.location.origin}/auth/callback?next=%2Fdashboard%3Fsuccess%3D1`
-
-      const { error: otpError } = await getSupabaseBrowser().auth.signInWithOtp({
-        email: ownerEmail,
-        options: { emailRedirectTo: redirectTo },
+      const next = data.alreadyExists
+        ? '/dashboard'
+        : `/api/create-checkout?plan=${plan}`
+      const magicLinkRes = await fetch('/api/auth/magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: ownerEmail, next }),
       })
-      if (otpError) throw new Error(otpError.message)
+      const magicLinkData = await magicLinkRes.json().catch(() => ({}))
+      if (!magicLinkRes.ok) {
+        throw new Error(magicLinkData.error ?? 'Unable to send your sign-in link.')
+      }
 
       setSuccessEmail(ownerEmail)
       setStep('success')
@@ -218,7 +228,7 @@ function OnboardPageContent() {
           <p className="t-sm c-t2" style={{ lineHeight: 1.65 }}>
             We sent a sign-in link to{' '}
             <strong style={{ color: 'var(--t1)' }}>{successEmail}</strong>.{' '}
-            Click it to access your dashboard.
+            Click it to continue securely to checkout and start your trial.
           </p>
           <p className="t-xs c-t4" style={{ marginTop: 16 }}>
             You&apos;ll get AI-drafted replies and alerts as new reviews come in.
@@ -344,7 +354,7 @@ function OnboardPageContent() {
               </button>
               <button
                 onClick={handleConfirm}
-                disabled={submitting}
+                disabled={submitting || (addMode && !sessionChecked)}
                 className="btn btn-primary"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}
               >
@@ -410,7 +420,7 @@ function OnboardPageContent() {
         )}
 
         <p className="t-xs c-t4" style={{ marginTop: 32, textAlign: 'center' }}>
-          No credit card required · Cancel anytime
+          30 days free · Cancel anytime
         </p>
       </main>
     </div>

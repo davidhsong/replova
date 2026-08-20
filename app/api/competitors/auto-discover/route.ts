@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from '@/lib/supabase'
 import { findNearbyCompetitors } from '@/lib/places'
 import { addCompetitor } from '@/lib/competitors'
 import { discoverCompetitorsWithClaude } from '@/lib/discoverCompetitors'
-import { getPlanLimits } from '@/lib/planLimits'
+import { getPlanLimits, hasCompetitorTracking } from '@/lib/planLimits'
 import type { Plan } from '@/lib/planLimits'
 
 function getGooglePlacesType(businessType: string | null): string {
@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
     .select('id, name, place_id, cuisine_type')
     .eq('id', restaurantId)
     .eq('owner_email', user.email)
+    .eq('active', true)
     .single<{ id: string; name: string; place_id: string; cuisine_type: string | null }>()
 
   if (!restaurant) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -56,6 +57,9 @@ export async function POST(req: NextRequest) {
     .eq('owner_email', user.email!)
     .maybeSingle()
   const plan: Plan = (account?.plan as Plan) ?? 'starter'
+  if (!hasCompetitorTracking(plan)) {
+    return NextResponse.json({ error: 'Competitor tracking requires Growth or Agency.' }, { status: 403 })
+  }
   const slotsTotal = getPlanLimits(plan).competitors
 
   const { count: existingCount } = await admin

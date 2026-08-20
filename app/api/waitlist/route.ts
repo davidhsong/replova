@@ -4,13 +4,16 @@ import { getSupabaseAdmin } from '@/lib/supabase'
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export async function POST(req: Request) {
-  const { email, businessName } = await req.json()
+  const { email, businessName } = await req.json().catch(() => ({ email: null, businessName: null }))
 
   if (!email || typeof email !== 'string' || !EMAIL_RE.test(email.trim())) {
     return NextResponse.json({ error: 'Enter a valid email address.' }, { status: 400 })
   }
 
   const normalizedEmail = email.trim().toLowerCase()
+  if (normalizedEmail.length > 320 || (typeof businessName === 'string' && businessName.length > 200)) {
+    return NextResponse.json({ error: 'Submitted details are too long.' }, { status: 400 })
+  }
   const admin = getSupabaseAdmin()
 
   const { error } = await admin

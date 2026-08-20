@@ -9,6 +9,9 @@ export async function GET(req: NextRequest) {
   if (!name || !city) {
     return NextResponse.json({ error: 'name and city are required' }, { status: 400 })
   }
+  if (name.length > 200 || city.length > 200) {
+    return NextResponse.json({ error: 'Search terms are too long' }, { status: 400 })
+  }
 
   try {
     const result = await findPlaceId(name, city)
@@ -17,8 +20,7 @@ export async function GET(req: NextRequest) {
     }
     return NextResponse.json({ found: true, placeId: result.placeId, name: result.name, address: result.address })
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Search failed'
     console.error('search-place error:', err)
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json({ error: 'Business search is temporarily unavailable. Please try again.' }, { status: 502 })
   }
 }

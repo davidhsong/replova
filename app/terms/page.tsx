@@ -56,9 +56,9 @@ const sections: LegalSection[] = [
         </p>
         <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 0, marginBottom: 12 }}>
           {[
-            { n: 'Starter', d: '$79/month · 1 location · 3 competitor slots' },
-            { n: 'Growth',  d: '$179/month · up to 5 locations · 5 competitor slots · sentiment & scores' },
-            { n: 'Agency',  d: '$349/month · up to 15 locations · 10 competitor slots · custom persona & white-label reports' },
+            { n: 'Starter', d: '$39/month · 1 location · essential review tools' },
+            { n: 'Growth',  d: '$99/month · up to 5 locations · 5 competitor slots · sentiment & scores' },
+            { n: 'Agency',  d: '$199/month · up to 15 locations · 10 competitor slots · custom persona & white-label reports' },
           ].map(p => (
             <li key={p.n} style={{ display: 'flex', gap: 8 }}>
               <strong style={{ color: 'var(--t1)', minWidth: 60 }}>{p.n}</strong>

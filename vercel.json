@@ -1,1 +1,10 @@
-{}
+{
+  "crons": [
+    { "path": "/api/cron/sync-all-reviews", "schedule": "0 */6 * * *" },
+    { "path": "/api/cron/process-reply-queue", "schedule": "*/15 * * * *" },
+    { "path": "/api/cron/analyze-sentiment", "schedule": "0 2 * * *" },
+    { "path": "/api/cron/update-scores", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/sync-competitors", "schedule": "0 4 * * *" },
+    { "path": "/api/cron/weekly-digest", "schedule": "0 9 * * 1" }
+  ]
+}

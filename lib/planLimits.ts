@@ -12,6 +12,10 @@ export function getPlanLimits(plan: Plan) {
   return PLAN_LIMITS[plan]
 }
 
+export function hasCompetitorTracking(plan: Plan): boolean {
+  return plan === 'growth' || plan === 'agency'
+}
+
 export async function getAccountForEmail(
   email: string,
   admin: ReturnType<typeof getSupabaseAdmin>

@@ -14,6 +14,10 @@ export async function GET() {
     return NextResponse.redirect(new URL('/signin', BASE_URL))
   }
 
+  if (!process.env.GOOGLE_CLIENT_ID || !process.env.GOOGLE_CLIENT_SECRET) {
+    return NextResponse.redirect(new URL('/dashboard/settings?google_error=not_configured', BASE_URL))
+  }
+
   const admin = getSupabaseAdmin()
 
   // Resolve the active location (from the location-switcher cookie) rather than
@@ -28,6 +32,7 @@ export async function GET() {
       .select('id')
       .eq('id', activeId)
       .eq('owner_email', user.email)
+      .eq('active', true)
       .maybeSingle()
     restaurant = data
   }
@@ -36,6 +41,7 @@ export async function GET() {
       .from('restaurants')
       .select('id')
       .eq('owner_email', user.email)
+      .eq('active', true)
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle()
@@ -46,8 +52,7 @@ export async function GET() {
     return NextResponse.redirect(new URL('/onboard', BASE_URL))
   }
 
-  // Use restaurantId as state — verified on callback against the authenticated user's restaurant
-  const state = restaurant.id
+  const state = crypto.randomUUID()
 
   const params = new URLSearchParams({
     client_id: process.env.GOOGLE_CLIENT_ID!,
@@ -74,6 +79,13 @@ export async function GET() {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     maxAge: 600, // 10 minutes
+    path: '/',
+  })
+  response.cookies.set('google_oauth_restaurant', restaurant.id, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 600,
     path: '/',
   })
 

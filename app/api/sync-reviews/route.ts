@@ -23,6 +23,7 @@ export async function POST() {
       .select('id, active')
       .eq('id', activeId)
       .eq('owner_email', user.email!)
+      .eq('active', true)
       .maybeSingle()
     restaurant = data
   }
@@ -32,6 +33,7 @@ export async function POST() {
       .from('restaurants')
       .select('id, active')
       .eq('owner_email', user.email!)
+      .eq('active', true)
       .order('created_at', { ascending: true })
       .limit(1)
       .maybeSingle()
