@@ -1,8 +1,13 @@
 import type { Metadata } from 'next'
 import LegalLayout from '@/components/LegalLayout'
 import type { LegalSection } from '@/components/LegalLayout'
+import { createPageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = { title: 'Refund Policy' }
+export const metadata: Metadata = createPageMetadata({
+  title: 'Refund Policy',
+  description: 'Review Replova trial, cancellation, downgrade, and refund terms for paid subscriptions.',
+  path: '/refunds',
+})
 
 const sections: LegalSection[] = [
   {

@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import { Geist_Mono, Onest } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import {
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_TITLE,
+  SITE_URL,
+} from "@/lib/seo";
 import "./globals.css";
 
 const onest = Onest({
@@ -17,11 +23,13 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Replova | AI Google Review Management",
+    default: SITE_TITLE,
     template: "Replova | %s",
   },
-  description:
-    "Replova monitors Google reviews, drafts on-brand replies, publishes approved responses, and turns customer feedback into practical business intelligence for any local business.",
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
   keywords: [
     "Replova",
     "AI review replies",
@@ -34,36 +42,29 @@ export const metadata: Metadata = {
     "AI reply generator",
     "reputation management SaaS",
   ],
-  metadataBase: new URL("https://replova.app"),
-  alternates: {
-    canonical: "/",
-  },
+  metadataBase: new URL(SITE_URL),
+  manifest: "/manifest.webmanifest",
   openGraph: {
     type: "website",
-    url: "https://replova.app",
-    siteName: "Replova",
-    title: "Replova | AI Google Review Management",
-    description:
-      "AI-drafted Google review replies, sentiment analysis, competitor tracking, and weekly reputation insights for local businesses.",
+    locale: "en_US",
+    url: "/",
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Replova | AI Review Management",
+        alt: "Replova AI review management and customer insights",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Replova | AI Google Review Management",
-    description:
-      "AI-drafted Google review replies, sentiment analysis, and competitor tracking for local businesses.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     images: ["/og-image.png"],
-  },
-  icons: {
-    icon: [{ url: "/replova-mark.svg", type: "image/svg+xml" }],
-    shortcut: "/replova-mark.svg",
   },
   robots: {
     index: true,

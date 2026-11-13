@@ -1,9 +1,10 @@
 import type { MetadataRoute } from 'next'
 import { careerRoles } from '@/lib/careerRoles'
 import { industrySolutions } from '@/lib/industrySolutions'
+import { SITE_URL } from '@/lib/seo'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const base = 'https://replova.app'
+  const base = SITE_URL
   const now = new Date()
 
   const staticRoutes: MetadataRoute.Sitemap = [

@@ -4,7 +4,7 @@ import Link from 'next/link'
 export function BrandLogo() {
   return (
     <span className="brand-lockup">
-      <Image src="/replova-mark.svg" alt="" width={27} height={27} className="brand-mark" />
+      <Image src="/replova-logo-transparent.png" alt="" width={27} height={27} className="brand-mark" />
       <span>Replova</span>
     </span>
   )
@@ -81,6 +81,14 @@ export function ArrowIcon({ diagonal = false }: { diagonal?: boolean }) {
   )
 }
 
+function LinkedInIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M20.45 20.45h-3.56v-5.57c0-1.33-.03-3.04-1.86-3.04-1.86 0-2.14 1.45-2.14 2.94v5.67H9.33V8.98h3.42v1.57h.05c.47-.9 1.64-1.86 3.37-1.86 3.6 0 4.27 2.37 4.27 5.46v6.3ZM5.31 7.41a2.07 2.07 0 1 1 0-4.13 2.07 2.07 0 0 1 0 4.13Zm1.78 13.04H3.53V8.98h3.56v11.47Z" />
+    </svg>
+  )
+}
+
 export function MarketingHeader() {
   return (
     <header className="lp-header">
@@ -103,21 +111,39 @@ export function MarketingHeader() {
 
 const footerGroups = [
   {
-    title: 'Explore',
+    title: 'Platform',
     links: [
-      ['Platform', '/#platform'],
-      ['Solutions', '/industries'],
-      ['Resources', '/resources'],
-      ['Careers', '/careers'],
+      ['Review response workflow', '/#platform'],
+      ['Reputation intelligence', '/#intelligence'],
+      ['Pricing', '/#pricing'],
+    ],
+  },
+  {
+    title: 'Solutions',
+    links: [
+      ['Healthcare & wellness', '/industries/healthcare-wellness'],
+      ['Home services', '/industries/home-services'],
+      ['Automotive', '/industries/automotive'],
+      ['Professional services', '/industries/professional-services'],
+      ['Retail & hospitality', '/industries/retail-hospitality'],
     ],
   },
   {
     title: 'Company',
     links: [
-      ['Privacy', '/privacy'],
-      ['Terms', '/terms'],
-      ['Refunds', '/refunds'],
+      ['Careers', '/careers'],
+      ['Request a demo', '/demo'],
+      ['Sign in', '/signin'],
       ['Contact', 'mailto:support@replova.app'],
+    ],
+  },
+  {
+    title: 'Resources',
+    links: [
+      ['Resource center', '/resources'],
+      ['Replying to reviews', '/resources#replying'],
+      ['Customer insights', '/resources#insights'],
+      ['Ethical review requests', '/resources#requests'],
     ],
   },
 ] as const
@@ -128,7 +154,17 @@ export function MarketingFooter() {
       <div className="lp-footer-grid">
         <div className="lp-footer-brand">
           <BrandLogo />
-          <p>Google review operations and reputation intelligence for every local business.</p>
+          <div className="lp-footer-socials">
+            <a
+              href="https://www.linkedin.com/company/replova/"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Visit Replova on LinkedIn"
+              title="Replova on LinkedIn"
+            >
+              <LinkedInIcon />
+            </a>
+          </div>
         </div>
         {footerGroups.map(group => (
           <div className="lp-footer-group" key={group.title}>
@@ -138,7 +174,11 @@ export function MarketingFooter() {
         ))}
         <div className="lp-footer-bottom">
           <span>© {new Date().getFullYear()} Replova</span>
-          <span>Built for businesses that care what customers think.</span>
+          <nav aria-label="Legal">
+            <Link href="/privacy">Privacy</Link>
+            <Link href="/terms">Terms of service</Link>
+            <Link href="/refunds">Refunds</Link>
+          </nav>
         </div>
       </div>
     </footer>

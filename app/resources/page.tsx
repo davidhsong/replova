@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowIcon, MarketingFooter, MarketingHeader } from '@/components/MarketingChrome'
+import { createPageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: 'Resources',
   description: 'Practical guides for replying to Google reviews, learning from customer feedback, and building a healthier local reputation.',
-  alternates: { canonical: '/resources' },
-}
+  path: '/resources',
+})
 
 export default function ResourcesPage() {
   return (

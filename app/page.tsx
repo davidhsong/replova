@@ -1,11 +1,41 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowIcon, MarketingFooter, MarketingHeader } from '@/components/MarketingChrome'
+import { createPageMetadata, SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from '@/lib/seo'
 
-export const metadata: Metadata = {
-  title: { absolute: 'Replova | AI Google Review Management' },
-  description: 'Answer every Google review in your voice and turn customer feedback into clear, useful business intelligence.',
-  alternates: { canonical: 'https://replova.app' },
+export const metadata: Metadata = createPageMetadata({
+  title: SITE_TITLE,
+  description: SITE_DESCRIPTION,
+  path: '/',
+  absoluteTitle: true,
+})
+
+const structuredData = {
+  '@context': 'https://schema.org',
+  '@graph': [
+    {
+      '@type': 'Organization',
+      '@id': `${SITE_URL}/#organization`,
+      name: 'Replova',
+      url: SITE_URL,
+      logo: {
+        '@type': 'ImageObject',
+        url: `${SITE_URL}/replova-logo.png`,
+        width: 1254,
+        height: 1254,
+      },
+      description: 'AI-powered B2B SaaS for review management, customer feedback analysis, and actionable business insights.',
+    },
+    {
+      '@type': 'WebSite',
+      '@id': `${SITE_URL}/#website`,
+      url: SITE_URL,
+      name: 'Replova',
+      description: SITE_DESCRIPTION,
+      publisher: { '@id': `${SITE_URL}/#organization` },
+      inLanguage: 'en-US',
+    },
+  ],
 }
 
 const plans = [
@@ -118,6 +148,12 @@ function InsightStoryCard() {
 export default function Home() {
   return (
     <div className="marketing-shell">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, '\\u003c'),
+        }}
+      />
       <MarketingHeader />
       <main id="main-content">
         <section className="lp-hero-centered">

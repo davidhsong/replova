@@ -43,7 +43,7 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
     <main id="main-content" className="demo-shell">
       <header className="demo-topbar">
         <Link href="/" className="demo-brand" aria-label="Replova home">
-          <Image src="/replova-mark.svg" alt="" width={27} height={27} priority />
+          <Image src="/replova-logo-transparent.png" alt="" width={27} height={27} priority />
           <span>Replova</span>
         </Link>
         <span className="demo-preview-badge">Scheduling preview</span>
@@ -51,7 +51,7 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
 
       <section className="demo-scheduler" aria-labelledby="demo-title">
         <aside className="demo-intro">
-          <div className="demo-mini-brand"><Image src="/replova-mark.svg" alt="" width={24} height={24} /></div>
+          <div className="demo-mini-brand"><Image src="/replova-logo-transparent.png" alt="" width={24} height={24} /></div>
           <span>Replova</span>
           <h1 id="demo-title">Replova introduction</h1>
           <p><CalendarIcon /> 45 minutes</p>

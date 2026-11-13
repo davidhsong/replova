@@ -7,7 +7,7 @@ function Logo({ size = 20 }: { size?: number }) {
   const box = size + 6
   return (
     <Image
-      src="/replova-mark.svg"
+      src="/replova-logo-transparent.png"
       alt="Replova"
       width={box}
       height={box}

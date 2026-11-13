@@ -69,7 +69,7 @@ export default function DashboardSidebar({
     <>
     <aside className="sidebar">
       <Link href="/dashboard" className="dashboard-brand" aria-label="Replova dashboard">
-        <Image src="/replova-mark.svg" alt="" width={24} height={24} />
+        <Image src="/replova-logo-transparent.png" alt="" width={24} height={24} />
         <span>Replova</span>
       </Link>
 

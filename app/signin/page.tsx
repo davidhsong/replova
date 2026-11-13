@@ -105,7 +105,7 @@ export default function SignInPage() {
   return (
     <main id="main-content" className="signin-shell">
       <Link className="signin-brand" href="/" aria-label="Replova home">
-        <Image src="/replova-mark.svg" alt="" width={30} height={30} priority />
+        <Image src="/replova-logo-transparent.png" alt="" width={30} height={30} priority />
         <span>Replova</span>
       </Link>
 

@@ -1,13 +1,15 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowIcon, MarketingFooter, MarketingHeader } from '@/components/MarketingChrome'
+import CareersFlow from '@/components/CareersFlow'
 import { careerRoles } from '@/lib/careerRoles'
+import { createPageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: 'Careers',
   description: 'Join Replova through a learning-first student internship in product, engineering, growth, customer experience, or review intelligence.',
-  alternates: { canonical: '/careers' },
-}
+  path: '/careers',
+})
 
 export default function CareersPage() {
   return (
@@ -23,28 +25,7 @@ export default function CareersPage() {
 
         <section aria-labelledby="program-heading">
           <div className="page-rule-heading"><h2 id="program-heading">The internship path</h2><span>Remote · flexible · 8-12 weeks</span></div>
-          <div className="internship-flow" aria-label="Three-stage internship learning path">
-            <article className="flow-node">
-              <div className="flow-node-head"><span>01</span><small>Foundation</small></div>
-              <h3>Learn the system</h3>
-              <p>Start with guided context, product examples, and the fundamentals behind your role.</p>
-              <div className="flow-outcome"><span>You gain</span><strong>A clear map of the work</strong></div>
-            </article>
-            <div className="flow-connector" aria-hidden="true"><span>Practice</span><i /></div>
-            <article className="flow-node">
-              <div className="flow-node-head"><span>02</span><small>Supported work</small></div>
-              <h3>Build with feedback</h3>
-              <p>Practice on scoped tasks, ask questions early, and review decisions with a mentor.</p>
-              <div className="flow-outcome"><span>You gain</span><strong>Confidence and useful habits</strong></div>
-            </article>
-            <div className="flow-connector" aria-hidden="true"><span>Apply</span><i /></div>
-            <article className="flow-node flow-node-final">
-              <div className="flow-node-head"><span>03</span><small>Evidence</small></div>
-              <h3>Ship and reflect</h3>
-              <p>Complete a small project, present what you learned, and document what you would improve.</p>
-              <div className="flow-outcome"><span>You leave with</span><strong>A project story you can explain</strong></div>
-            </article>
-          </div>
+          <CareersFlow />
         </section>
 
         <section id="open-roles" aria-labelledby="roles-heading">

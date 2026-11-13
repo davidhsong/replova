@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowIcon, MarketingFooter, MarketingHeader } from '@/components/MarketingChrome'
 import { careerRoles, getCareerRoleBySlug } from '@/lib/careerRoles'
+import { createPageMetadata } from '@/lib/seo'
 import ApplicationForm from '../ApplicationForm'
 
 type CareerRolePageProps = {
@@ -19,11 +20,11 @@ export async function generateMetadata({ params }: CareerRolePageProps): Promise
 
   if (!role) return { title: 'Role Not Found', robots: { index: false, follow: false } }
 
-  return {
+  return createPageMetadata({
     title: role.title,
     description: `${role.summary} No prior experience required. This is a remote, unpaid, learning-first student internship.`,
-    alternates: { canonical: `/careers/${role.slug}` },
-  }
+    path: `/careers/${role.slug}`,
+  })
 }
 
 export default async function CareerRolePage({ params }: CareerRolePageProps) {

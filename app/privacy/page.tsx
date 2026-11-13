@@ -1,8 +1,13 @@
 import type { Metadata } from 'next'
 import LegalLayout from '@/components/LegalLayout'
 import type { LegalSection } from '@/components/LegalLayout'
+import { createPageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = { title: 'Privacy Policy' }
+export const metadata: Metadata = createPageMetadata({
+  title: 'Privacy Policy',
+  description: 'Learn how Replova collects, uses, protects, and retains account, review, and application data.',
+  path: '/privacy',
+})
 
 const sections: LegalSection[] = [
   {

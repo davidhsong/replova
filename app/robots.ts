@@ -1,15 +1,16 @@
 import type { MetadataRoute } from 'next'
+import { SITE_URL } from '@/lib/seo'
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: [
       {
         userAgent: '*',
-        allow: ['/', '/onboard', '/signin', '/demo', '/privacy', '/terms'],
-        disallow: ['/dashboard/', '/dashboard-preview', '/api/', '/auth/'],
+        allow: '/',
+        disallow: ['/dashboard', '/dashboard-preview', '/api/', '/auth/'],
       },
     ],
-    sitemap: 'https://replova.app/sitemap.xml',
-    host: 'https://replova.app',
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   }
 }

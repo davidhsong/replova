@@ -54,7 +54,7 @@ export default function DashboardPreviewPage() {
 
       <div className="dash-preview-shell">
         <aside className="dash-preview-sidebar">
-          <Link href="/" className="dash-preview-brand"><Image src="/replova-mark.svg" alt="" width={25} height={25} /><span>Replova</span></Link>
+          <Link href="/" className="dash-preview-brand"><Image src="/replova-logo-transparent.png" alt="" width={25} height={25} /><span>Replova</span></Link>
           <div className="dash-preview-workspace"><small>Workspace</small><strong>Northstar Auto Care</strong><span>Single location</span></div>
           <nav aria-label="Dashboard preview navigation">
             {navItems.map(([label, icon]) => <span className={label === 'Review center' ? 'active' : ''} key={label}><NavIcon name={icon} />{label}</span>)}

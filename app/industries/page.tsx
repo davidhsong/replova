@@ -2,12 +2,13 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowIcon, MarketingFooter, MarketingHeader } from '@/components/MarketingChrome'
 import { industrySolutions } from '@/lib/industrySolutions'
+import { createPageMetadata } from '@/lib/seo'
 
-export const metadata: Metadata = {
+export const metadata: Metadata = createPageMetadata({
   title: 'Solutions',
   description: 'Explore Google review response and reputation intelligence workflows tailored to the customer moments that matter in your business.',
-  alternates: { canonical: '/industries' },
-}
+  path: '/industries',
+})
 
 export default function SolutionsPage() {
   return (

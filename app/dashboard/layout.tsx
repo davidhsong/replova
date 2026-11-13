@@ -11,6 +11,7 @@ import TermsModal from './TermsModal'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
+  robots: { index: false, follow: false, nocache: true },
 }
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {

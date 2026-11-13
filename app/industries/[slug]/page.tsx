@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowIcon, MarketingFooter, MarketingHeader } from '@/components/MarketingChrome'
 import { getIndustrySolution, industrySolutions } from '@/lib/industrySolutions'
+import { createPageMetadata } from '@/lib/seo'
 
 type SolutionPageProps = {
   params: Promise<{ slug: string }>
@@ -16,13 +17,13 @@ export async function generateMetadata({ params }: SolutionPageProps): Promise<M
   const { slug } = await params
   const solution = getIndustrySolution(slug)
 
-  if (!solution) return {}
+  if (!solution) return { robots: { index: false, follow: false } }
 
-  return {
+  return createPageMetadata({
     title: `${solution.name} Solutions`,
     description: solution.lede,
-    alternates: { canonical: `/industries/${solution.slug}` },
-  }
+    path: `/industries/${solution.slug}`,
+  })
 }
 
 export default async function SolutionDetailPage({ params }: SolutionPageProps) {
