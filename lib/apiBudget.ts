@@ -1,18 +1,26 @@
 import { getSupabaseAdmin } from './supabase'
 import { Resend } from 'resend'
 
-const ALERT_EMAIL = process.env.DEV_ALERT_EMAIL ?? 'davidhsongg@gmail.com'
+const ALERT_EMAIL = process.env.DEV_ALERT_EMAIL
 
 // Cost per token in USD
 const MODEL_COSTS: Record<string, { input: number; output: number }> = {
-  'claude-haiku-4-5-20251001': { input: 0.80 / 1_000_000, output: 4.00 / 1_000_000 },
-  'claude-sonnet-4-20250514':  { input: 3.00 / 1_000_000, output: 15.00 / 1_000_000 },
-  'claude-sonnet-4-6':         { input: 3.00 / 1_000_000, output: 15.00 / 1_000_000 },
-  'claude-opus-4-7':           { input: 15.00 / 1_000_000, output: 75.00 / 1_000_000 },
+  'gpt-6-luna':    { input: 0.10 / 1_000_000, output: 0.50 / 1_000_000 },
+  'gpt-6.1-terra': { input: 1.00 / 1_000_000, output: 5.00 / 1_000_000 },
+  'gpt-6.1-sol':   { input: 2.00 / 1_000_000, output: 10.00 / 1_000_000 },
+  'gpt-6-astra':   { input: 10.00 / 1_000_000, output: 50.00 / 1_000_000 },
 }
 
 export function calculateCost(model: string, inputTokens: number, outputTokens: number): number {
-  const costs = MODEL_COSTS[model] ?? MODEL_COSTS['claude-sonnet-4-20250514']
+  const configuredInput = Number(process.env.OPENAI_INPUT_COST_PER_MILLION)
+  const configuredOutput = Number(process.env.OPENAI_OUTPUT_COST_PER_MILLION)
+  const hasConfiguredCosts = Number.isFinite(configuredInput)
+    && configuredInput > 0
+    && Number.isFinite(configuredOutput)
+    && configuredOutput > 0
+  const costs = hasConfiguredCosts
+    ? { input: configuredInput / 1_000_000, output: configuredOutput / 1_000_000 }
+    : (MODEL_COSTS[model] ?? MODEL_COSTS['gpt-6-luna'])
   return costs.input * inputTokens + costs.output * outputTokens
 }
 
@@ -52,6 +60,10 @@ export async function recordUsage(
 }
 
 async function sendAlert(percent: number, spent: number, budget: number): Promise<void> {
+  if (!ALERT_EMAIL || !process.env.RESEND_API_KEY) {
+    console.warn('[apiBudget] Skipping budget alert email because DEV_ALERT_EMAIL or RESEND_API_KEY is not configured.')
+    return
+  }
   const remaining = Math.max(0, budget - spent)
   const label = percent >= 100 ? 'BUDGET EXHAUSTED' : `${percent}% used`
 
@@ -72,10 +84,10 @@ async function sendAlert(percent: number, spent: number, budget: number): Promis
   <tr><td style="padding:4px 16px 4px 0;color:#666">Remaining</td>
       <td style="padding:4px 0"><strong>$${remaining.toFixed(4)}</strong></td></tr>
   <tr><td style="padding:4px 16px 4px 0;color:#666">Used</td>
-      <td style="padding:4px 0"><strong>${((spent / budget) * 100).toFixed(1)}%</strong></td></tr>
+      <td style="padding:4px 0"><strong>${budget > 0 ? ((spent / budget) * 100).toFixed(1) : '100.0'}%</strong></td></tr>
 </table>
 ${percent >= 100
-  ? '<p style="margin-top:16px;color:#c00"><strong>Budget exhausted. Increase DEV_BUDGET_USD or top up your Anthropic balance.</strong></p>'
+  ? '<p style="margin-top:16px;color:#c00"><strong>Budget exhausted. Increase the stored API budget or top up your OpenAI balance.</strong></p>'
   : ''}
     `.trim(),
   }).catch(err => console.error('[apiBudget] alert email failed:', err))

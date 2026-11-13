@@ -1,5 +1,5 @@
-import Anthropic from '@anthropic-ai/sdk'
 import { recordUsage } from './apiBudget'
+import { createStructuredResponse, OPENAI_MODEL } from './openai'
 
 interface GenerateRepliesParams {
   restaurantName: string
@@ -22,17 +22,16 @@ function sanitize(value: string, maxLen: number): string {
 }
 
 export async function generateReplies(params: GenerateRepliesParams): Promise<ReplyVariants> {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   const restaurantName = sanitize(params.restaurantName, 200)
   const author = sanitize(params.author, 100)
   const rating = Math.min(5, Math.max(0, Math.round(params.rating)))
   const reviewText = sanitize(params.reviewText, 2000)
   const personaLine = params.persona ? `\nWrite in this voice: ${sanitize(params.persona, 300)}` : ''
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 800,
-    system: `You are an expert in customer communication and online reputation management.
+  const { data, inputTokens, outputTokens } = await createStructuredResponse<ReplyVariants>({
+    name: 'review_reply_variants',
+    maxOutputTokens: 800,
+    instructions: `You are an expert in customer communication and online reputation management.
 
 Write thoughtful, human, and brand-safe responses to customer reviews for ANY type of business.
 
@@ -54,51 +53,38 @@ Rules:
 - Do not use formulaic phrases such as "we're thrilled," "we're delighted," "it means the world," "rest assured," "not just," or "more than"
 - Use contractions when they sound natural
 - Each response should sound like an attentive business owner, not a marketing team
-- Never offer discounts or mention competitor names${personaLine}
-
-Return ONLY a valid JSON object with exactly these three keys:
-{
-  "professional": "formal business tone, 60-80 words, references specific review details",
-  "warm": "friendly and personal tone, uses reviewer's first name, 60-80 words, references specific review details",
-  "brief": "concise and genuine, under 40 words, references specific review details"
-}
-
-No markdown, no explanation, no code blocks. Return raw JSON only.`,
-    messages: [
-      {
-        role: 'user',
-        content: `Write 3 reply variants for this Google review.
+- Never offer discounts or mention competitor names${personaLine}`,
+    input: `Write 3 reply variants for this Google review.
 
 Business: ${restaurantName}
 Reviewer: ${author}
 Rating: ${rating}/5 stars
-Review: "${reviewText}"`,
+Review: "${reviewText}"
+
+Professional: formal business tone, 60-80 words, references specific details.
+Warm: friendly and personal, uses the reviewer's first name, 60-80 words.
+Brief: concise and genuine, under 40 words.`,
+    schema: {
+      type: 'object',
+      properties: {
+        professional: { type: 'string' },
+        warm: { type: 'string' },
+        brief: { type: 'string' },
       },
-    ],
+      required: ['professional', 'warm', 'brief'],
+      additionalProperties: false,
+    },
   })
 
-  await recordUsage('claude-sonnet-4-20250514', 'reply_draft', message.usage.input_tokens, message.usage.output_tokens)
-  const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-
-  let parsed: ReplyVariants
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    const cleaned = raw.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim()
-    try {
-      parsed = JSON.parse(cleaned)
-    } catch {
-      throw new Error(`Claude returned unparseable JSON: ${raw.slice(0, 200)}`)
-    }
-  }
+  await recordUsage(OPENAI_MODEL, 'reply_draft', inputTokens, outputTokens)
 
   if (
-    typeof parsed.professional !== 'string' ||
-    typeof parsed.warm !== 'string' ||
-    typeof parsed.brief !== 'string'
+    typeof data.professional !== 'string' ||
+    typeof data.warm !== 'string' ||
+    typeof data.brief !== 'string'
   ) {
-    throw new Error('Claude response missing required reply fields')
+    throw new Error('OpenAI response missing required reply fields')
   }
 
-  return parsed
+  return data
 }

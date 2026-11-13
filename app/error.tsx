@@ -7,7 +7,7 @@ function Logo({ size = 20 }: { size?: number }) {
   const box = size + 6
   return (
     <Image
-      src="/replova-logo.png"
+      src="/replova-mark.svg"
       alt="Replova"
       width={box}
       height={box}
@@ -33,7 +33,7 @@ export default function Error({
         </div>
       </header>
 
-      <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <main id="main-content" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
         <div className="fade-up" style={{ textAlign: 'center', maxWidth: 400 }}>
           <p className="t-mono c-t4" style={{ fontSize: 13, marginBottom: 8 }}>Error 500</p>
           <h1 className="t-serif" style={{ fontSize: 44, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: 14 }}>

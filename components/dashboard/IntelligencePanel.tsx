@@ -28,7 +28,7 @@ type Props = {
 const CARD: React.CSSProperties = {
   background: 'var(--surface)',
   border: '1px solid var(--line)',
-  borderRadius: 'var(--r-7)',
+  borderRadius: 0,
   padding: 20,
 }
 

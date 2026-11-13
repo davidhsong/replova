@@ -14,7 +14,17 @@ export function getSupabaseAdmin() {
 // never during SSR or module evaluation on the server.
 let _browserClient: ReturnType<typeof createBrowserClient> | null = null
 
+export function isSupabaseBrowserConfigured() {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL &&
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  )
+}
+
 export function getSupabaseBrowser() {
+  if (!isSupabaseBrowserConfigured()) {
+    throw new Error('Supabase browser credentials are not configured')
+  }
   if (!_browserClient) {
     _browserClient = createBrowserClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

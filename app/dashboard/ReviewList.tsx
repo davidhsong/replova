@@ -80,7 +80,10 @@ function ReviewRow({
 
   const isReplied = effectiveStatus === 'replied'
   const isLowRating = review.rating != null && review.rating <= 2
-  const isOverdueReview = !isReplied && isOverdue(review.created_at)
+  const reviewCreatedAt = review.review_timestamp
+    ? new Date(review.review_timestamp * 1000).toISOString()
+    : review.created_at
+  const isOverdueReview = !isReplied && isOverdue(reviewCreatedAt)
   const activeText = review[activeTab]
   const reviewDate = formatReviewDate(review.review_timestamp)
 
@@ -334,15 +337,7 @@ export default function ReviewList({
       return true
     })
 
-    if (tab === 'needs-reply') {
-      base.sort((a, b) => {
-        const aU = (localStatus[a.id] ?? a.status) !== 'replied' && a.rating != null && a.rating <= 2 ? 0 : 1
-        const bU = (localStatus[b.id] ?? b.status) !== 'replied' && b.rating != null && b.rating <= 2 ? 0 : 1
-        if (aU !== bU) return aU - bU
-        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-      })
-    }
-    return base
+    return base.sort((a, b) => (b.review_timestamp ?? 0) - (a.review_timestamp ?? 0))
   }, [reviews, tab, ratingFilter, sentimentFilter, sentimentEnabled, search, localStatus])
 
   const tabs: { value: SectionTab; label: string; count: number }[] = [
@@ -354,7 +349,7 @@ export default function ReviewList({
   return (
     <div>
       {/* Filter bar */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 0 }}>
+      <div className="review-filter-bar" style={{ marginBottom: 0 }}>
         <div className="tabs">
           {tabs.map(t => (
             <button key={t.value} onClick={() => setTab(t.value)} className={`tab ${tab === t.value ? 'active' : ''}`}>
@@ -421,7 +416,7 @@ export default function ReviewList({
       </div>
 
       {/* Review list */}
-      <div style={{ border: '1px solid var(--line)', borderRadius: 'var(--r-6)', overflow: 'hidden', marginTop: 10, borderTopLeftRadius: 0, borderTopRightRadius: 0, borderTop: 'none' }}>
+      <div style={{ border: '1px solid var(--line)', borderRadius: 0, overflow: 'hidden', marginTop: 10, borderTop: 'none' }}>
         {filtered.length === 0 ? (
           <div style={{ padding: '48px 24px', textAlign: 'center' }}>
             <p className="t-serif t-italic c-t3" style={{ fontSize: 18, marginBottom: 6 }}>No reviews match this view.</p>

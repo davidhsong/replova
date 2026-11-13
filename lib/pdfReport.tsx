@@ -352,7 +352,7 @@ export async function buildReportData(restaurantId: string, month: Date): Promis
     .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
     .slice(0, 3)
     .map(r => ({
-      author: r.author ?? 'Guest',
+      author: r.author ?? 'Customer',
       rating: r.rating ?? 5,
       excerpt: (r.review_text ?? '').slice(0, 180),
     }))
@@ -362,7 +362,7 @@ export async function buildReportData(restaurantId: string, month: Date): Promis
     .sort((a, b) => (a.rating ?? 0) - (b.rating ?? 0))
     .slice(0, 2)
     .map(r => ({
-      author: r.author ?? 'Guest',
+      author: r.author ?? 'Customer',
       rating: r.rating ?? 1,
       excerpt: (r.review_text ?? '').slice(0, 180),
     }))
@@ -417,7 +417,7 @@ export async function buildReportData(restaurantId: string, month: Date): Promis
   }
 
   return {
-    restaurantName: restaurant?.name ?? 'Your Restaurant',
+    restaurantName: restaurant?.name ?? 'Your Business',
     month: monthLabel,
     thisMonthScore,
     lastMonthScore,
@@ -622,7 +622,7 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
             <Text style={styles.sectionTitle}>Google Rating Comparison</Text>
 
             <View style={styles.tableHeader}>
-              <Text style={{ ...styles.tableHeaderCell, flex: 3 }}>Restaurant</Text>
+              <Text style={{ ...styles.tableHeaderCell, flex: 3 }}>Business</Text>
               <Text style={{ ...styles.tableHeaderCell, flex: 1, textAlign: 'center' }}>Rating</Text>
               <Text style={{ ...styles.tableHeaderCell, flex: 1, textAlign: 'center' }}>Reviews</Text>
             </View>
@@ -654,7 +654,7 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
 
             {data.yourRankAmongCompetitors !== null && (
               <Text style={styles.rankText}>
-                You are ranked #{data.yourRankAmongCompetitors} of {data.competitors.length + 1} restaurants you&apos;re tracking
+                You are ranked #{data.yourRankAmongCompetitors} of {data.competitors.length + 1} businesses you&apos;re tracking
               </Text>
             )}
           </View>

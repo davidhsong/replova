@@ -23,9 +23,7 @@ export async function setOwnerRestaurantAccess(
     .in('id', ids)
   if (deactivateError) throw deactivateError
 
-  if (!active) return
-
-  const enabledIds = ids.slice(0, getPlanLimits(plan).locations)
+  const enabledIds = active ? ids.slice(0, getPlanLimits(plan).locations) : []
   if (enabledIds.length > 0) {
     const { error: activateError } = await admin
       .from('restaurants')
@@ -42,7 +40,7 @@ export async function setOwnerRestaurantAccess(
     .order('created_at', { ascending: true })
   if (competitorLookupError) throw competitorLookupError
 
-  const allowedPerLocation = hasCompetitorTracking(plan) ? getPlanLimits(plan).competitors : 0
+  const allowedPerLocation = active && hasCompetitorTracking(plan) ? getPlanLimits(plan).competitors : 0
   const enabledSet = new Set(enabledIds)
   const seenPerLocation = new Map<string, number>()
   const competitorIdsToDisable: string[] = []

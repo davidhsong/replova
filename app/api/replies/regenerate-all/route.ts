@@ -54,7 +54,7 @@ export async function POST() {
   }
 
   if (!restaurantId || !restaurantName) {
-    return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
+    return NextResponse.json({ error: 'Business not found' }, { status: 404 })
   }
 
   const { data: settings } = await admin

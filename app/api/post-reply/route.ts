@@ -225,6 +225,7 @@ export async function POST(req: NextRequest) {
       google_review_name: googleReviewName,
       status: 'replied',
       replied_at: new Date().toISOString(),
+      owner_reply_text: replyText.trim(),
     })
     .eq('id', reviewId)
   if (updateError) {

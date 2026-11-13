@@ -32,8 +32,7 @@ export async function getValidGoogleToken(
   })
 
   if (!res.ok) {
-    const body = await res.text()
-    console.error('Google token refresh failed:', body)
+    console.error(`Google token refresh failed with status ${res.status}`)
 
     // A 4xx response (e.g. invalid_grant) means the refresh token itself is
     // dead, usually because the user revoked access from their Google

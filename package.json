@@ -2,20 +2,25 @@
   "name": "replova",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.120.0",
-    "@next/third-parties": "^16.3.1",
+    "@next/third-parties": "^16.4.6",
     "@react-pdf/renderer": "^4.5.1",
     "@supabase/ssr": "^0.10.2",
     "@supabase/supabase-js": "^2.103.0",
     "@types/papaparse": "^5.5.2",
-    "next": "^16.3.1",
+    "next": "^16.4.6",
+    "openai": "^7.56.0",
     "p-limit": "^7.3.0",
     "papaparse": "^5.5.3",
     "react": "19.2.4",
@@ -29,8 +34,13 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "^16.3.1",
+    "eslint-config-next": "^16.4.6",
     "tailwindcss": "^4",
     "typescript": "^5"
+  },
+  "overrides": {
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "11.0.8"
+    }
   }
 }

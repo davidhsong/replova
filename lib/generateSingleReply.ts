@@ -1,5 +1,5 @@
-import Anthropic from '@anthropic-ai/sdk'
 import { recordUsage } from './apiBudget'
+import { getOpenAI, OPENAI_MODEL } from './openai'
 
 interface GenerateSingleReplyParams {
   restaurantName: string
@@ -16,7 +16,6 @@ function sanitize(value: string, maxLen: number): string {
 }
 
 export async function generateSingleReply(params: GenerateSingleReplyParams): Promise<string> {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   const restaurantName = sanitize(params.restaurantName, 200)
   const author = sanitize(params.author, 100)
   const rating = Math.min(5, Math.max(1, Math.round(params.rating)))
@@ -32,20 +31,22 @@ Keep replies under 150 words.
 4-5 stars: express genuine gratitude, mention something specific from their review.
 Never offer discounts or mention competitor names.${personaLine ? `\n${personaLine}` : ''}`
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 300,
-    system: systemPrompt,
-    messages: [
-      {
-        role: 'user',
-        content: `Review by ${author}, ${rating} stars: ${reviewText}`,
-      },
-    ],
+  const response = await getOpenAI().responses.create({
+    model: OPENAI_MODEL,
+    instructions: systemPrompt,
+    input: `Review by ${author}, ${rating} stars: ${reviewText}`,
+    max_output_tokens: 300,
+    reasoning: { effort: 'low' },
+    store: false,
   })
 
-  await recordUsage('claude-sonnet-4-6', 'auto_reply', message.usage.input_tokens, message.usage.output_tokens)
-  const text = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
-  if (!text) throw new Error('Claude returned empty reply')
+  await recordUsage(
+    OPENAI_MODEL,
+    'auto_reply',
+    response.usage?.input_tokens ?? 0,
+    response.usage?.output_tokens ?? 0
+  )
+  const text = response.output_text.trim()
+  if (!text) throw new Error('OpenAI returned an empty reply')
   return text
 }

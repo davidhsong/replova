@@ -84,7 +84,7 @@ export async function POST() {
     }
     const { error: restaurantDeleteError } = await admin.from('restaurants').delete().in('id', restaurantIds)
     if (restaurantDeleteError) {
-      return NextResponse.json({ error: 'Unable to delete restaurant data.' }, { status: 500 })
+      return NextResponse.json({ error: 'Unable to delete business data.' }, { status: 500 })
     }
   }
 

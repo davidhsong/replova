@@ -25,6 +25,15 @@ export async function POST(req: NextRequest) {
   if (typeof approved !== 'boolean') {
     return NextResponse.json({ error: 'approved (boolean) required' }, { status: 400 })
   }
+  if (editedReply !== undefined) {
+    if (typeof editedReply !== 'string') {
+      return NextResponse.json({ error: 'editedReply must be a string' }, { status: 400 })
+    }
+    const trimmedReply = editedReply.trim()
+    if (trimmedReply.length === 0 || trimmedReply.length > 4096) {
+      return NextResponse.json({ error: 'editedReply must be between 1 and 4096 characters' }, { status: 400 })
+    }
+  }
 
   const admin = getSupabaseAdmin()
 
@@ -48,8 +57,8 @@ export async function POST(req: NextRequest) {
   if (!restaurant.active) return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
   const update: Record<string, unknown> = { approved }
-  if (editedReply && typeof editedReply === 'string') {
-    update.edited_reply = editedReply
+  if (editedReply !== undefined) {
+    update.edited_reply = editedReply.trim()
   }
 
   // If approving with no scheduled time, schedule for 5 minutes from now

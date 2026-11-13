@@ -1,8 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk'
 import { recordUsage } from '@/lib/apiBudget'
 import { Resend } from 'resend'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { BASE_URL } from '@/lib/baseUrl'
+import { createStructuredResponse, OPENAI_MODEL } from '@/lib/openai'
 
 export interface DigestData {
   restaurantName: string
@@ -65,39 +65,43 @@ async function generateActionItems(opts: {
   topKeywords: string[]
   unrepliedCount: number
 }): Promise<string[]> {
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   try {
-    const message = await anthropic.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 256,
-      system:
-        'You are a reputation advisor for clinics, salons, restaurants, and other local businesses. ' +
-        'Return ONLY a JSON array of 2-3 strings. ' +
+    const { data, inputTokens, outputTokens } = await createStructuredResponse<{ items: string[] }>({
+      name: 'weekly_action_items',
+      maxOutputTokens: 256,
+      instructions:
+        'You are a reputation advisor for local businesses. ' +
+        'Return 2-3 specific recommendations. ' +
         'Each string is a specific, actionable recommendation under 20 words. ' +
         'Base recommendations on the actual data provided. ' +
         'Use plain language. Do not use em dashes, hype, emojis, or generic business advice. ' +
         "Examples: 'Respond to the 2-star service complaint before it affects your score' " +
         "or 'Wait-time complaints increased this week. Review staffing and handoffs'",
-      messages: [
-        {
-          role: 'user',
-          content: JSON.stringify({
-            avgRating: opts.avgRating,
-            ratingDelta: opts.ratingDelta,
-            negativeCount: opts.negativeCount,
-            worstReview: opts.worstReview,
-            topKeywords: opts.topKeywords,
-            unrepliedCount: opts.unrepliedCount,
-          }),
+      input: JSON.stringify({
+        avgRating: opts.avgRating,
+        ratingDelta: opts.ratingDelta,
+        negativeCount: opts.negativeCount,
+        worstReview: opts.worstReview,
+        topKeywords: opts.topKeywords,
+        unrepliedCount: opts.unrepliedCount,
+      }),
+      schema: {
+        type: 'object',
+        properties: {
+          items: {
+            type: 'array',
+            minItems: 2,
+            maxItems: 3,
+            items: { type: 'string' },
+          },
         },
-      ],
+        required: ['items'],
+        additionalProperties: false,
+      },
     })
-    await recordUsage('claude-haiku-4-5-20251001', 'weekly_digest', message.usage.input_tokens, message.usage.output_tokens)
+    await recordUsage(OPENAI_MODEL, 'weekly_digest', inputTokens, outputTokens)
 
-    const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
-    const cleaned = raw.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim()
-    const parsed = JSON.parse(cleaned)
-    if (Array.isArray(parsed) && parsed.every(x => typeof x === 'string')) return parsed
+    if (Array.isArray(data.items) && data.items.every(x => typeof x === 'string')) return data.items
   } catch {
     // fall through to fallback
   }

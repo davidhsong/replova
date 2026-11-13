@@ -25,8 +25,7 @@ create table reviews (
   status text default 'pending',
   google_review_name text,
   replied_at timestamptz,
-  created_at timestamptz default now(),
-  unique(restaurant_id, review_timestamp)
+  created_at timestamptz default now()
 );
 
 -- Run these ALTER statements on an existing database:
@@ -36,3 +35,7 @@ create table reviews (
 -- alter table restaurants add column if not exists google_location_name text;
 -- alter table reviews add column if not exists google_review_name text;
 -- alter table reviews add column if not exists replied_at timestamptz;
+
+-- For a complete new environment, apply every file in supabase/migrations in
+-- numeric order. The migration chain is the source of truth for the current
+-- production schema; this file only documents the two legacy base tables.

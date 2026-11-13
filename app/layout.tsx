@@ -1,32 +1,36 @@
 import type { Metadata } from "next";
-import { Noto_Sans } from "next/font/google";
+import { Geist_Mono, Onest } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import "./globals.css";
 
-const notoSans = Noto_Sans({
-  variable: "--font-noto-sans",
+const onest = Onest({
+  variable: "--font-onest",
   subsets: ["latin"],
-  weight: "variable",
-  style: ["normal", "italic"],
+  display: "swap",
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
   display: "swap",
 });
 
 export const metadata: Metadata = {
   title: {
-    default: "AI Review Management for Med Spas & Aesthetic Clinics | Replova",
-    template: "%s | Replova",
+    default: "Replova | AI Google Review Management",
+    template: "Replova | %s",
   },
   description:
-    "Replova is AI-powered reputation management for med spas, aesthetic clinics, salons, and dental offices. Get AI-drafted Google review replies, sentiment analysis, competitor tracking, and weekly digest emails.",
+    "Replova monitors Google reviews, drafts on-brand replies, publishes approved responses, and turns customer feedback into practical business intelligence for any local business.",
   keywords: [
     "Replova",
     "AI review replies",
-    "med spa reputation management",
-    "reputation management software for med spas",
-    "aesthetic clinic reviews",
+    "business reputation management",
+    "Google review management software",
+    "AI Google review replies",
     "Google review management",
-    "salon review software",
-    "dental office reviews",
+    "customer sentiment analysis",
+    "local competitor tracking",
     "AI reply generator",
     "reputation management SaaS",
   ],
@@ -38,9 +42,9 @@ export const metadata: Metadata = {
     type: "website",
     url: "https://replova.app",
     siteName: "Replova",
-    title: "AI Review Management for Med Spas & Aesthetic Clinics | Replova",
+    title: "Replova | AI Google Review Management",
     description:
-      "AI-drafted Google review replies, sentiment analysis, competitor tracking, and weekly digests for med spas, aesthetic clinics, and salons.",
+      "AI-drafted Google review replies, sentiment analysis, competitor tracking, and weekly reputation insights for local businesses.",
     images: [
       {
         url: "/og-image.png",
@@ -52,18 +56,14 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Review Management for Med Spas & Aesthetic Clinics | Replova",
+    title: "Replova | AI Google Review Management",
     description:
-      "AI-drafted Google review replies, sentiment analysis, and competitor tracking for aesthetic businesses.",
+      "AI-drafted Google review replies, sentiment analysis, and competitor tracking for local businesses.",
     images: ["/og-image.png"],
   },
   icons: {
-    icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/icon.png", type: "image/png", sizes: "512x512" },
-    ],
-    apple: { url: "/apple-icon.png", sizes: "180x180", type: "image/png" },
-    shortcut: "/favicon.ico",
+    icon: [{ url: "/replova-mark.svg", type: "image/svg+xml" }],
+    shortcut: "/replova-mark.svg",
   },
   robots: {
     index: true,
@@ -85,9 +85,11 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={notoSans.variable}
+      data-scroll-behavior="smooth"
+      className={`${onest.variable} ${geistMono.variable}`}
     >
       <body data-theme="light" data-density="comfortable">
+        <a className="skip-link" href="#main-content">Skip to content</a>
         {children}
       </body>
       {process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_GA_ID && (

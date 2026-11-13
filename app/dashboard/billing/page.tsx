@@ -185,9 +185,8 @@ export default async function BillingPage() {
       <div className="page-body" style={{ maxWidth: 1040 }}>
 
         {/* Two-column status card */}
-        <div className="card fade-up" style={{
+        <div className="card fade-up billing-status-grid" style={{
           padding: 28, marginBottom: 32,
-          display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 32,
         }}>
           {/* Left: plan info */}
           <div>
@@ -263,7 +262,7 @@ export default async function BillingPage() {
           </div>
 
           {/* Right: usage */}
-          <div style={{ borderLeft: '1px solid var(--line)', paddingLeft: 32, display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div className="billing-usage" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div className="t-eyebrow">Usage this month</div>
             <UsageBar used={usedLocations} total={limits.locations} label="Locations" />
             <UsageBar
@@ -288,8 +287,7 @@ export default async function BillingPage() {
             const isUpgrade = PLAN_ORDER.indexOf(p) > PLAN_ORDER.indexOf(plan)
 
             return (
-              <div key={p} style={{
-                display: 'grid', gridTemplateColumns: '200px 1fr 240px', gap: 32,
+              <div key={p} className="billing-plan-row" style={{
                 padding: '28px 32px',
                 borderTop: i > 0 ? '1px solid var(--line)' : 'none',
                 background: isCurrent ? 'var(--surface)' : 'transparent',

@@ -36,7 +36,7 @@ export async function sendReviewRequestEmail(
   const customerName = request.customer_name?.trim() || null
   const safeCustomerName = customerName ? escapeHtml(customerName) : null
   const safeRestaurantName = escapeHtml(restaurantName)
-  const subject = safeHeader(`${customerName ?? 'Hi there'}, how was your visit to ${restaurantName}?`)
+  const subject = safeHeader(`${customerName ?? 'Hi there'}, how was your experience with ${restaurantName}?`)
   const clickLink = buildTrackingLink(request.id, 'click')
   const openPixel = buildTrackingLink(request.id, 'open')
 
@@ -95,7 +95,7 @@ export async function sendReviewRequestEmail(
           <tr>
             <td style="padding:20px 32px 28px;border-top:1px solid #f0f0f1;">
               <p style="margin:0;font-size:12px;color:#a1a1aa;line-height:1.6;">
-                You're receiving this because you recently visited ${safeRestaurantName}.
+                You're receiving this because you recently interacted with ${safeRestaurantName}.
                 This is a one-time message.
               </p>
             </td>

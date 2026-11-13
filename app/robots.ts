@@ -5,8 +5,8 @@ export default function robots(): MetadataRoute.Robots {
     rules: [
       {
         userAgent: '*',
-        allow: ['/', '/onboard', '/signin', '/privacy', '/terms'],
-        disallow: ['/dashboard/', '/api/', '/auth/'],
+        allow: ['/', '/onboard', '/signin', '/demo', '/privacy', '/terms'],
+        disallow: ['/dashboard/', '/dashboard-preview', '/api/', '/auth/'],
       },
     ],
     sitemap: 'https://replova.app/sitemap.xml',

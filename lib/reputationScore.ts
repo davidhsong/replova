@@ -22,15 +22,20 @@ export async function calculateReputationScore(restaurantId: string): Promise<Re
 
   const now = new Date()
   const ninetyDaysAgo = Math.floor(new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000).getTime() / 1000)
+  const priorThreeMonthsStart = Math.floor(
+    new Date(now.getFullYear(), now.getMonth() - 3, 1).getTime() / 1000
+  )
+  const queryStart = Math.min(ninetyDaysAgo, priorThreeMonthsStart)
 
   const { data: reviews, error: reviewsError } = await admin
     .from('reviews')
     .select('rating, status, review_timestamp, sentiment_score, replied_at')
     .eq('restaurant_id', restaurantId)
-    .gte('review_timestamp', ninetyDaysAgo)
+    .gte('review_timestamp', queryStart)
   if (reviewsError) throw reviewsError
 
-  const window = reviews ?? []
+  const fetchedReviews = reviews ?? []
+  const window = fetchedReviews.filter(review => review.review_timestamp >= ninetyDaysAgo)
   const totalReviews = window.length
 
   // Component A: Average Rating (35%)
@@ -54,7 +59,7 @@ export async function calculateReputationScore(restaurantId: string): Promise<Re
     const startTs = Math.floor(start.getTime() / 1000)
     const endTs = Math.floor(end.getTime() / 1000)
     priorCounts.push(
-      window.filter((r) => r.review_timestamp >= startTs && r.review_timestamp < endTs).length
+      fetchedReviews.filter((r) => r.review_timestamp >= startTs && r.review_timestamp < endTs).length
     )
   }
   const avgPrior3 = priorCounts.reduce((a, b) => a + b, 0) / 3

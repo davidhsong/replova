@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { recordUsage } from '@/lib/apiBudget'
+import { createStructuredResponse, OPENAI_MODEL } from '@/lib/openai'
 
 export interface SentimentResult {
   score: number
@@ -8,7 +8,7 @@ export interface SentimentResult {
   summary: string
   keywords: string[]
   staffMentions: string[]
-  treatmentMentions: string[]
+  itemMentions: string[]
 }
 
 function fallbackFromRating(rating: number): SentimentResult {
@@ -18,7 +18,7 @@ function fallbackFromRating(rating: number): SentimentResult {
     summary: 'Unable to analyze review text.',
     keywords: [],
     staffMentions: [],
-    treatmentMentions: [],
+    itemMentions: [],
   }
 }
 
@@ -26,59 +26,59 @@ export async function analyzeSentiment(
   reviewText: string,
   rating: number
 ): Promise<SentimentResult> {
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
   if (!reviewText || !reviewText.trim()) {
     return fallbackFromRating(rating)
   }
 
   try {
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 512,
-      system:
-        'You are a review analyzer for clinics, salons, restaurants, and other local businesses. Return ONLY a valid JSON object with no markdown, ' +
-        'no code fences, no explanation. Analyze the review text and return exactly these fields: ' +
-        'score (float -1.0 to 1.0), label (positive/neutral/negative), ' +
-        'summary (one sentence describing the main sentiment and topics), ' +
-        'keywords (array of concise topics such as food quality, service, wait time, cleanliness, atmosphere, value, booking, or results), ' +
-        'staffMentions (array of first names of staff mentioned by name), ' +
-        'treatmentMentions (array of specific menu items, products, treatments, or services mentioned).',
-      messages: [
-        {
-          role: 'user',
-          content: `Rating: ${rating}/5 stars. Review: ${reviewText}`,
+    const { data, inputTokens, outputTokens } = await createStructuredResponse<{
+      score: number
+      label: SentimentResult['label']
+      summary: string
+      keywords: string[]
+      staffMentions: string[]
+      itemMentions: string[]
+    }>({
+      name: 'review_analysis',
+      maxOutputTokens: 512,
+      instructions:
+        'Analyze customer reviews for any type of local business. Identify the overall sentiment, concise operational themes, named staff, and specific products or services. Keep the summary to one sentence.',
+      input: `Rating: ${rating}/5 stars. Review: ${reviewText}`,
+      schema: {
+        type: 'object',
+        properties: {
+          score: { type: 'number', minimum: -1, maximum: 1 },
+          label: { type: 'string', enum: ['positive', 'neutral', 'negative'] },
+          summary: { type: 'string' },
+          keywords: { type: 'array', items: { type: 'string' }, maxItems: 12 },
+          staffMentions: { type: 'array', items: { type: 'string' }, maxItems: 12 },
+          itemMentions: { type: 'array', items: { type: 'string' }, maxItems: 12 },
         },
-      ],
+        required: ['score', 'label', 'summary', 'keywords', 'staffMentions', 'itemMentions'],
+        additionalProperties: false,
+      },
     })
 
-    await recordUsage('claude-haiku-4-5-20251001', 'sentiment', message.usage.input_tokens, message.usage.output_tokens)
-    const raw = message.content[0].type === 'text' ? message.content[0].text : ''
-    const cleaned = raw
-      .replace(/^```json\s*/i, '')
-      .replace(/^```\s*/i, '')
-      .replace(/```\s*$/i, '')
-      .trim()
-
-    const parsed = JSON.parse(cleaned)
+    await recordUsage(OPENAI_MODEL, 'sentiment', inputTokens, outputTokens)
 
     if (
-      typeof parsed.score !== 'number' ||
-      (parsed.label !== 'positive' && parsed.label !== 'neutral' && parsed.label !== 'negative') ||
-      typeof parsed.summary !== 'string' ||
-      !Array.isArray(parsed.keywords) ||
-      !Array.isArray(parsed.staffMentions) ||
-      !Array.isArray(parsed.treatmentMentions)
+      typeof data.score !== 'number' ||
+      (data.label !== 'positive' && data.label !== 'neutral' && data.label !== 'negative') ||
+      typeof data.summary !== 'string' ||
+      !Array.isArray(data.keywords) ||
+      !Array.isArray(data.staffMentions) ||
+      !Array.isArray(data.itemMentions)
     ) {
       return fallbackFromRating(rating)
     }
 
     return {
-      score: Math.max(-1, Math.min(1, parsed.score)),
-      label: parsed.label,
-      summary: parsed.summary.slice(0, 500),
-      keywords: parsed.keywords.filter((k: unknown) => typeof k === 'string').slice(0, 12),
-      staffMentions: parsed.staffMentions.filter((k: unknown) => typeof k === 'string').slice(0, 12),
-      treatmentMentions: parsed.treatmentMentions.filter((k: unknown) => typeof k === 'string').slice(0, 12),
+      score: Math.max(-1, Math.min(1, data.score)),
+      label: data.label,
+      summary: data.summary.slice(0, 500),
+      keywords: data.keywords.filter((k: unknown) => typeof k === 'string').slice(0, 12),
+      staffMentions: data.staffMentions.filter((k: unknown) => typeof k === 'string').slice(0, 12),
+      itemMentions: data.itemMentions.filter((k: unknown) => typeof k === 'string').slice(0, 12),
     }
   } catch {
     return fallbackFromRating(rating)
@@ -105,7 +105,7 @@ export async function analyzeAndSaveReview(reviewId: string): Promise<SentimentR
       summary: review.sentiment_summary,
       keywords: review.keywords ?? [],
       staffMentions: review.staff_mentions ?? [],
-      treatmentMentions: review.menu_mentions ?? [],
+      itemMentions: review.menu_mentions ?? [],
     }
   }
 
@@ -119,7 +119,7 @@ export async function analyzeAndSaveReview(reviewId: string): Promise<SentimentR
       sentiment_summary: result.summary,
       keywords: result.keywords,
       staff_mentions: result.staffMentions,
-      menu_mentions: result.treatmentMentions,
+      menu_mentions: result.itemMentions,
     })
     .eq('id', reviewId)
   if (updateError) throw updateError

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import LegalLayout from '@/components/LegalLayout'
 import type { LegalSection } from '@/components/LegalLayout'
 
-export const metadata: Metadata = { title: 'Terms of Service | Replova' }
+export const metadata: Metadata = { title: 'Terms of Service' }
 
 const sections: LegalSection[] = [
   {
@@ -11,7 +11,7 @@ const sections: LegalSection[] = [
       <p>
         By accessing or using Replova (&ldquo;the Service&rdquo;), you agree to be bound by these Terms and our{' '}
         <a href="/privacy" style={{ color: 'var(--t1)', textDecoration: 'underline' }}>Privacy Policy</a>.
-        Replova is a reputation management platform for local service businesses, including med spas, salons, dental offices, and similar businesses. Features include AI-generated review reply drafts,
+        Replova is a reputation management platform for businesses with a Google Business Profile. Features include AI-generated review reply drafts,
         sentiment analysis, competitor rating tracking, review request campaigns, weekly digest emails, and reputation scoring.
       </p>
     ),
@@ -145,7 +145,7 @@ export default function TermsPage() {
     <LegalLayout
       page="terms"
       title="Terms of Service"
-      kicker="Effective April 25, 2025"
+      kicker="Last updated November 12, 2026"
       sections={sections}
     />
   )

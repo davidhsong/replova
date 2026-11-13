@@ -76,7 +76,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     }
   }
 
-  // ── Business / restaurant name ────────────────────────────────────────────
+  // ── Business name ─────────────────────────────────────────────────────────
 
   if (
     m(q, 'my business name', 'my restaurant name', 'restaurant called', 'business called', 'what restaurant', 'restaurant am i', 'business am i', "what's my restaurant", "what's my business", 'what practice', 'my practice', 'practice called') ||
@@ -638,7 +638,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
     }
   }
 
-  if (m(q, 'intelligence panel', 'keyword cloud', 'keyword', 'sidebar panel', 'menu mention')) {
+  if (m(q, 'intelligence panel', 'keyword cloud', 'keyword', 'sidebar panel', 'item mention', 'service mention', 'menu mention')) {
     return {
       text: ctx.plan === 'starter'
         ? `The Intelligence Panel is included with Growth and Agency. It covers your reputation score, common review topics, sentiment trends, and staff mentions.`
@@ -658,7 +658,7 @@ function getResponse(input: string, ctx: ChatContext): BotResponse {
 
   if (m(q, 'ai reply', 'reply draft', 'draft reply', 'ai draft', 'ai-generated reply', 'how are drafts')) {
     return {
-      text: `Replova generates 3 AI reply drafts per review using Claude AI: Professional, Warm, and Brief. Created automatically when reviews sync.${ctx.awaitingReplyCount > 0 ? ` You have ${ctx.awaitingReplyCount} review${ctx.awaitingReplyCount !== 1 ? 's' : ''} with drafts ready.` : ''}`,
+      text: `Replova generates 3 AI reply drafts per review using OpenAI: Professional, Warm, and Brief. They are created automatically when reviews sync.${ctx.awaitingReplyCount > 0 ? ` You have ${ctx.awaitingReplyCount} review${ctx.awaitingReplyCount !== 1 ? 's' : ''} with drafts ready.` : ''}`,
       link: { label: 'Go to Dashboard', href: '/dashboard' },
     }
   }
@@ -887,13 +887,13 @@ export default function Chatbot(props: ChatbotProps) {
             right: 20,
             width: 360,
             height: 480,
-            zIndex: 9998,
+            zIndex: 110,
             display: 'flex',
             flexDirection: 'column',
             background: 'var(--surface-1)',
             border: '1px solid var(--border-md)',
-            borderRadius: 'var(--radius-l)',
-            boxShadow: '0 20px 60px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.3)',
+            borderRadius: 14,
+            boxShadow: '0 22px 60px rgba(18,27,43,0.16), 0 2px 8px rgba(18,27,43,0.06)',
             overflow: 'hidden',
           }}
         >
@@ -964,7 +964,7 @@ export default function Chatbot(props: ChatbotProps) {
             {messages.map((msg, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
                 <div style={{ maxWidth: '85%' }}>
-                  <div className="chatbot-msg" style={{ padding: '9px 12px', borderRadius: msg.role === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px', background: msg.role === 'user' ? 'var(--accent)' : 'var(--surface-2)', color: 'var(--t1)', fontSize: 13, lineHeight: 1.55, wordBreak: 'break-word' }}>
+                  <div className="chatbot-msg" style={{ padding: '9px 12px', borderRadius: msg.role === 'user' ? '12px 12px 3px 12px' : '12px 12px 12px 3px', background: msg.role === 'user' ? 'var(--accent)' : 'var(--surface-2)', color: msg.role === 'user' ? '#fff' : 'var(--t1)', fontSize: 13, lineHeight: 1.55, wordBreak: 'break-word' }}>
                     {msg.text}
                   </div>
                   {msg.link && (
@@ -1018,7 +1018,7 @@ export default function Chatbot(props: ChatbotProps) {
       <button
         onClick={() => setOpen(o => !o)}
         className="btn-press"
-        style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 9999, width: 52, height: 52, borderRadius: '50%', background: 'var(--accent)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.35), 0 1px 4px rgba(0,0,0,0.2)' }}
+        style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 111, width: 46, height: 46, borderRadius: 12, background: 'var(--t1)', border: '1px solid rgba(255,255,255,.08)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 28px rgba(18,27,43,0.18), 0 2px 5px rgba(18,27,43,0.08)' }}
         aria-label={open ? 'Close chat' : 'Open chat'}
       >
         {open ? (

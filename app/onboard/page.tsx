@@ -19,7 +19,7 @@ function Logo({ size = 20 }: { size?: number }) {
   const box = size + 6;
   return (
     <Image
-      src="/replova-logo.png"
+      src="/replova-mark.svg"
       alt="Replova"
       width={box}
       height={box}
@@ -239,11 +239,11 @@ function OnboardPageContent() {
   }
 
   return (
-    <div style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
+    <div className="onboard-shell" style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
 
       {/* Nav */}
-      <header style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
-        <div style={{ maxWidth: 880, margin: '0 auto', padding: '0 32px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <header className="onboard-header" style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
+        <div className="onboard-header-inner" style={{ maxWidth: 880, margin: '0 auto', padding: '0 32px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
             <Logo size={18} />
           </Link>
@@ -254,7 +254,7 @@ function OnboardPageContent() {
         </div>
       </header>
 
-      <main style={{ flex: 1, maxWidth: 880, width: '100%', margin: '0 auto', padding: '56px 32px' }}>
+      <main id="main-content" className="onboard-main" style={{ flex: 1, maxWidth: 880, width: '100%', margin: '0 auto', padding: '56px 32px' }}>
 
         <div className="t-eyebrow" style={{ marginBottom: 12 }}>
           Step {STEP_ORDER.indexOf(step) + 1} of {STEP_ORDER.length}
@@ -282,7 +282,7 @@ function OnboardPageContent() {
                 value={restaurantName}
                 onChange={e => setRestaurantName(e.target.value)}
                 className="field field-lg"
-                placeholder="Glow Aesthetics"
+                placeholder="Northstar Auto Care"
                 autoFocus
               />
             </div>
@@ -391,7 +391,7 @@ function OnboardPageContent() {
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 className="field field-lg"
-                placeholder="owner@yourpractice.com"
+                placeholder="owner@yourbusiness.com"
                 autoFocus
               />
               <p className="t-xs c-t4" style={{ marginTop: 6 }}>We&apos;ll send sign-in links and account emails to this address.</p>

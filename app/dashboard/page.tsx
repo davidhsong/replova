@@ -6,9 +6,7 @@ import { ACTIVE_LOCATION_COOKIE } from '@/lib/activeLocation'
 import ReviewList from './ReviewList'
 import DemoMode from './DemoMode'
 import AutoDismissBanner from './AutoDismissBanner'
-import IntelligencePanel from '@/components/dashboard/IntelligencePanel'
 import StatTile from '@/components/dashboard/StatTile'
-import ProviderDashboard from '@/components/dashboard/ProviderDashboard'
 import type { Plan } from '@/lib/planLimits'
 
 type Restaurant = {
@@ -39,41 +37,8 @@ type Review = {
 
 type ReputationScore = {
   score: number | null
-  avg_rating: number | null
-  total_reviews: number | null
   reviews_this_month: number | null
-  response_rate: number | null
-  avg_sentiment: number | null
-  rating_score: number | null
-  volume_score: number | null
-  response_score: number | null
-  sentiment_score: number | null
   score_date: string
-}
-
-function getTopKeywords(rows: { keywords: string[] | null }[], limit = 5): string[] {
-  const freq = new Map<string, number>()
-  for (const row of rows) {
-    if (!row.keywords) continue
-    for (const kw of row.keywords) {
-      if (kw) freq.set(kw, (freq.get(kw) ?? 0) + 1)
-    }
-  }
-  return [...freq.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
-    .map(([kw]) => kw)
-}
-
-function getStaffShoutouts(rows: { staff_mentions: string[] | null }[]): string[] {
-  const names = new Set<string>()
-  for (const row of rows) {
-    if (!row.staff_mentions) continue
-    for (const name of row.staff_mentions) {
-      if (name) names.add(name)
-    }
-  }
-  return [...names]
 }
 
 export default async function DashboardPage({
@@ -114,7 +79,6 @@ export default async function DashboardPage({
 
   const currentDate = new Date()
   const currentTime = currentDate.getTime()
-  const thirtyDaysAgo = new Date(currentTime - 30 * 24 * 60 * 60 * 1000).toISOString()
   const sevenDaysAgo = new Date(currentTime - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
   const [
@@ -122,13 +86,10 @@ export default async function DashboardPage({
     priorScoreResult,
     reviewsResult,
     allStatsResult,
-    keywordsResult,
-    staffResult,
-    competitorsResult,
   ] = await Promise.all([
     admin
       .from('reputation_scores')
-      .select('score, avg_rating, total_reviews, reviews_this_month, response_rate, avg_sentiment, rating_score, volume_score, response_score, sentiment_score, score_date')
+      .select('score, reviews_this_month, score_date')
       .eq('restaurant_id', restaurant.id)
       .order('score_date', { ascending: false })
       .limit(1)
@@ -152,24 +113,6 @@ export default async function DashboardPage({
       .from('reviews')
       .select('rating, status, review_timestamp')
       .eq('restaurant_id', restaurant.id),
-    admin
-      .from('reviews')
-      .select('keywords')
-      .eq('restaurant_id', restaurant.id)
-      .gte('created_at', thirtyDaysAgo)
-      .not('keywords', 'is', null),
-    admin
-      .from('reviews')
-      .select('staff_mentions')
-      .eq('restaurant_id', restaurant.id)
-      .eq('sentiment_label', 'positive')
-      .gte('created_at', thirtyDaysAgo)
-      .not('staff_mentions', 'is', null),
-    admin
-      .from('competitors')
-      .select('id', { count: 'exact', head: true })
-      .eq('restaurant_id', restaurant.id)
-      .eq('active', true),
   ])
 
   const repScore = repScoreResult.data
@@ -187,14 +130,6 @@ export default async function DashboardPage({
     ? recentRatedRows.reduce((sum, row) => sum + (row.rating ?? 0), 0) / recentRatedRows.length
     : null
   const reviewsThisMonth = allRows.filter(row => (row.review_timestamp ?? 0) >= monthStartSeconds).length
-
-  const topKeywords = plan === 'starter'
-    ? []
-    : getTopKeywords((keywordsResult.data ?? []) as { keywords: string[] | null }[])
-  const staffShoutouts = plan === 'starter'
-    ? []
-    : getStaffShoutouts((staffResult.data ?? []) as { staff_mentions: string[] | null }[])
-  const hasCompetitors = (competitorsResult.count ?? 0) > 0
 
   const scoreDelta = plan !== 'starter' && repScore?.score != null && priorScore?.score != null
     ? Math.round((repScore.score - priorScore.score) * 10) / 10
@@ -267,21 +202,8 @@ export default async function DashboardPage({
             </div>
           </div>
         )}
-        {urgentCount === 0 && unrepliedCount > 0 && (
-          <div className="banner banner-warn fade-up" style={{ marginBottom: 20 }}>
-            <strong>{unrepliedCount} review{unrepliedCount === 1 ? '' : 's'} awaiting a reply.</strong>
-            <span> Reply when you have a moment.</span>
-          </div>
-        )}
-        {unrepliedCount === 0 && (
-          <div className="banner banner-pos fade-up" style={{ marginBottom: 20 }}>
-            <strong>All clear.</strong>
-            <span> Every review has a reply.</span>
-          </div>
-        )}
-
         {/* Stats strip */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 28 }}>
+        <div className="dashboard-stats">
           <StatTile
             label="Replova score"
             value={plan !== 'starter' && repScore?.score != null ? Math.round(repScore.score) : '-'}
@@ -314,46 +236,19 @@ export default async function DashboardPage({
           />
         </div>
 
-        {/* Two-column layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0,1fr) 320px', gap: 32, alignItems: 'flex-start' }}>
-          <div style={{ minWidth: 0 }}>
-            {reviews.length === 0 ? (
-              <DemoMode />
-            ) : (
-              <ReviewList
-                reviews={reviews}
-                currentPage={1}
-                totalPages={1}
-                sentimentEnabled={plan !== 'starter'}
-              />
-            )}
-          </div>
-          <IntelligencePanel
-            score={repScore?.score ?? null}
-            scoreDelta={scoreDelta}
-            avgRating={displayAvgRating}
-            reviewsThisMonth={repScore?.reviews_this_month ?? null}
-            responseRate={repScore?.response_rate ?? null}
-            avgSentiment={repScore?.avg_sentiment ?? null}
-            ratingScore={repScore?.rating_score ?? null}
-            volumeScore={repScore?.volume_score ?? null}
-            responseScore={repScore?.response_score ?? null}
-            sentimentScore={repScore?.sentiment_score ?? null}
-            topKeywords={topKeywords}
-            staffShoutouts={staffShoutouts}
-            hasCompetitors={hasCompetitors}
-            restaurantId={restaurant.id}
-            plan={plan}
-          />
+        <div className="dashboard-review-workspace">
+          {reviews.length === 0 ? (
+            <DemoMode />
+          ) : (
+            <ReviewList
+              reviews={reviews}
+              currentPage={1}
+              totalPages={1}
+              sentimentEnabled={plan !== 'starter'}
+            />
+          )}
         </div>
 
-        {/* Provider / Team Reputation */}
-        <div style={{ marginTop: 40 }}>
-          <ProviderDashboard
-            restaurantId={restaurant.id}
-            plan={plan}
-          />
-        </div>
       </div>
     </>
   )

@@ -8,8 +8,6 @@ import { getPlanLimits } from '@/lib/planLimits'
 import type { Plan } from '@/lib/planLimits'
 import DashboardSidebar from './DashboardSidebar'
 import TermsModal from './TermsModal'
-import Chatbot from './Chatbot'
-import { getStripe } from '@/lib/stripe'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -25,10 +23,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const admin = getSupabaseAdmin()
 
-  // Fetch all locations for this user, including Google fields for the chatbot
+  // Fetch the workspaces needed by the persistent dashboard navigation.
   const { data: restaurants } = await admin
     .from('restaurants')
-    .select('id, name, active, google_access_token, google_location_name')
+    .select('id, name, active, created_at')
     .eq('owner_email', user.email)
     .order('created_at', { ascending: true })
 
@@ -46,17 +44,17 @@ export default async function DashboardLayout({ children }: { children: React.Re
     const plans = [
       {
         key: 'starter', label: 'Starter', price: '$39', sub: '1 location',
-        features: ['1 location', 'AI reply drafts', 'Review request campaigns', 'Review alerts & digests'],
+        features: ['1 location', 'AI reply drafts', 'Urgent review alerts', 'Weekly digest'],
         primary: false,
       },
       {
         key: 'growth', label: 'Growth', price: '$99', sub: 'Up to 5 locations',
-        features: ['Up to 5 locations', '5 competitor slots', 'AI reply drafts', 'Sentiment & scoring', 'PDF reports'],
+        features: ['Up to 5 locations', '5 competitor slots', 'AI reply drafts', 'Sentiment & scoring', 'Priority monitoring'],
         primary: true,
       },
       {
         key: 'agency', label: 'Agency', price: '$199', sub: 'Up to 15 locations',
-        features: ['Up to 15 locations', '10 competitor slots', 'AI reply drafts', 'Custom persona', 'White-label reports'],
+        features: ['Up to 15 locations', '10 competitor slots', 'AI reply drafts', 'Custom persona', 'Multi-location oversight'],
         primary: false,
       },
     ]
@@ -72,13 +70,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
             <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--t1)' }}>Replova</span>
           </div>
         </header>
-        <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px' }}>
+        <main id="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48, maxWidth: 480 }}>
             <div className="t-eyebrow" style={{ marginBottom: 12 }}>Start your free trial</div>
             <h1 className="t-serif" style={{ fontSize: 40, lineHeight: 1.1, letterSpacing: '-0.02em', marginBottom: 14 }}>Choose your plan</h1>
             <p style={{ fontSize: 15, color: 'var(--t3)', lineHeight: 1.6 }}>30 days free. No charge until your trial ends. Cancel anytime.</p>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, width: '100%', maxWidth: 860 }}>
+          <div className="inactive-plan-grid" style={{ width: '100%', maxWidth: 860 }}>
             {plans.map(p => (
               <div key={p.key} style={{ border: `1px solid ${p.primary ? 'var(--accent)' : 'var(--line)'}`, borderRadius: 'var(--r-7)', padding: '28px 24px', background: 'var(--surface)', position: 'relative' }}>
                 {p.primary && (
@@ -113,10 +111,10 @@ export default async function DashboardLayout({ children }: { children: React.Re
     )
   }
 
-  // Get account plan, terms acceptance, and Stripe ID
+  // Get account plan and terms acceptance.
   const { data: account } = await admin
     .from('accounts')
-    .select('plan, terms_accepted_at, stripe_customer_id')
+    .select('plan, terms_accepted_at')
     .eq('owner_email', user.email!)
     .maybeSingle()
 
@@ -133,62 +131,15 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .limit(1)
     .maybeSingle()
 
-  const trialEnd = firstRestaurant
-    ? new Date(new Date(firstRestaurant.created_at).getTime() + 30 * 24 * 60 * 60 * 1000)
-    : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+  const trialStart = firstRestaurant?.created_at ?? activeRestaurant.created_at
+  const trialEnd = new Date(new Date(trialStart).getTime() + 30 * 24 * 60 * 60 * 1000)
   const trialEndDate = trialEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
 
-  // Get Stripe subscription renewal date and status
-  let renewalDate: string | null = null
-  let subscriptionStatus = 'trialing'
-  if (account?.stripe_customer_id) {
-    try {
-      const { data: subs } = await getStripe().subscriptions.list({
-        customer: account.stripe_customer_id,
-        limit: 1,
-        status: 'all',
-      })
-      const sub = subs[0]
-      if (sub) {
-        subscriptionStatus = sub.status
-        // In Stripe v22, current_period_end moved from Subscription to SubscriptionItem
-        const periodEnd = sub.items?.data[0]?.current_period_end
-        if (periodEnd) {
-          renewalDate = new Date(periodEnd * 1000).toLocaleDateString('en-US', {
-            month: 'long', day: 'numeric', year: 'numeric',
-          })
-        }
-      }
-    } catch { /* chatbot degrades gracefully without renewal date */ }
-  }
-
-  // Parallel: latest reputation score + review counts + settings for active location
-  const [latestScoreResult, totalResult, awaitingResult, settingsResult] = await Promise.all([
-    admin
-      .from('reputation_scores')
-      .select('score, avg_rating, total_reviews, reviews_this_month, response_rate, avg_sentiment')
-      .eq('restaurant_id', activeRestaurant.id)
-      .order('score_date', { ascending: false })
-      .limit(1)
-      .maybeSingle(),
-    admin
-      .from('reviews')
-      .select('*', { count: 'exact', head: true })
-      .eq('restaurant_id', activeRestaurant.id),
-    admin
-      .from('reviews')
-      .select('*', { count: 'exact', head: true })
-      .eq('restaurant_id', activeRestaurant.id)
-      .neq('status', 'replied'),
-    admin
-      .from('restaurant_settings')
-      .select('auto_reply_enabled, auto_reply_delay_hours, reply_persona, notify_negative_reviews, negative_threshold')
-      .eq('restaurant_id', activeRestaurant.id)
-      .maybeSingle(),
-  ])
-
-  const scoreData = latestScoreResult.data
-  const settings = settingsResult.data
+  const { count: awaitingCount } = await admin
+    .from('reviews')
+    .select('*', { count: 'exact', head: true })
+    .eq('restaurant_id', activeRestaurant.id)
+    .neq('status', 'replied')
 
   const displayName = (user.user_metadata?.display_name as string | undefined) ?? ''
   const avatarUrl = user.user_metadata?.avatar_url as string | undefined
@@ -212,35 +163,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
         locations={restaurants}
         activeLocationId={activeRestaurant.id}
         locationLimit={limits.locations}
-        awaitingCount={awaitingResult.count ?? 0}
+        awaitingCount={awaitingCount ?? 0}
       />
-      <main className="main">{children}</main>
+      <main id="main-content" className="main">{children}</main>
       {needsTermsAcceptance && (
         <TermsModal plan={plan} trialEndDate={trialEndDate} />
       )}
-      <Chatbot
-        restaurantName={activeRestaurant.name}
-        userEmail={user.email!}
-        plan={plan}
-        locationCount={restaurants.length}
-        trialEndDate={trialEndDate}
-        renewalDate={renewalDate}
-        subscriptionStatus={subscriptionStatus}
-        googleConnected={!!activeRestaurant.google_access_token}
-        googleLocationName={activeRestaurant.google_location_name}
-        reputationScore={scoreData?.score ?? null}
-        avgRating={scoreData?.avg_rating ?? null}
-        totalReviews={totalResult.count ?? scoreData?.total_reviews ?? null}
-        reviewsThisMonth={scoreData?.reviews_this_month ?? null}
-        responseRate={scoreData?.response_rate ?? null}
-        avgSentiment={scoreData?.avg_sentiment ?? null}
-        awaitingReplyCount={awaitingResult.count ?? 0}
-        autoReplyEnabled={settings?.auto_reply_enabled ?? false}
-        autoReplyDelayHours={settings?.auto_reply_delay_hours ?? 1}
-        replyPersona={settings?.reply_persona ?? null}
-        notifyNegativeReviews={settings?.notify_negative_reviews ?? false}
-        negativeThreshold={settings?.negative_threshold ?? 3}
-      />
     </div>
   )
 }

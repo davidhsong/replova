@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     restaurant = data
   }
 
-  if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
+  if (!restaurant) return NextResponse.json({ error: 'Business not found' }, { status: 404 })
 
   const restaurantId = req.nextUrl.searchParams.get('restaurantId')
   if (restaurantId && restaurantId !== restaurant.id) {

@@ -138,11 +138,12 @@ export async function PATCH(req: NextRequest) {
   // cuisine_type saves directly to the restaurants table
   if ('cuisine_type' in body) {
     const allowedBusinessTypes = new Set([
-      'medical_spa', 'botox_clinic', 'laser_clinic', 'beauty_salon', 'nail_salon',
-      'massage_therapy', 'dental_office', 'chiropractor', 'physical_therapy', 'wellness_center',
+      'restaurant', 'cafe', 'bar', 'retail', 'beauty_wellness', 'healthcare',
+      'dental', 'fitness', 'hotel', 'professional_services', 'home_services',
+      'automotive', 'entertainment', 'education', 'other',
     ])
     if (body.cuisine_type !== null && (typeof body.cuisine_type !== 'string' || !allowedBusinessTypes.has(body.cuisine_type))) {
-      return NextResponse.json({ error: 'Invalid business type' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid business category' }, { status: 400 })
     }
     const { error } = await admin
       .from('restaurants')

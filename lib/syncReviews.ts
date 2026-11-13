@@ -54,7 +54,7 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
   const persona = settings?.reply_persona ?? null
 
   if (restError || !restaurant) {
-    throw new Error('Restaurant not found')
+    throw new Error('Business not found')
   }
 
   // Load existing reviews for de-duplication
@@ -228,7 +228,7 @@ export async function syncRestaurantReviews(restaurantId: string): Promise<SyncR
 
     newlyStored += inserted?.length ?? 0
 
-    // Limit concurrent Claude API calls to avoid rate limits
+    // Limit concurrent OpenAI API calls to avoid rate limits.
     const limit = pLimit(AI_CONCURRENCY)
 
     // Each task is independently try/caught so one failure (e.g. a transient

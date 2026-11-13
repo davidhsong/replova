@@ -1,8 +1,10 @@
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
 
 <!-- END:nextjs-agent-rules -->
 
@@ -11,6 +13,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 # Replova — Feature Brief
 
 **Purpose of this file:** Every page, feature, and behavior listed here MUST remain intact after any change. Before submitting work, verify that nothing on this list was accidentally broken or removed. This is the canonical record of what the product does.
+
+**Audience invariant:** Replova supports any business with a Google Business Profile. Product copy, AI prompts, onboarding, discovery, analytics, and examples must remain category-agnostic. Internal database and route names such as `restaurants`, `restaurant_id`, and `/api/restaurants/create` are legacy compatibility names and must not be renamed without a planned data migration.
+
+**AI invariant:** All generative features use the OpenAI Responses API through `lib/openai.ts`, with structured outputs where applicable and `store: false`. Do not reintroduce Anthropic/Claude dependencies or provider-specific code outside the shared OpenAI wrapper.
 
 ---
 
@@ -31,8 +37,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ### `/onboard` — Onboarding / sign-up flow
 
-- Google Places search to find the restaurant
-- Creates restaurant record via `POST /api/restaurants/create`
+- Google Places search to find the business
+- Creates the legacy-named business record via `POST /api/restaurants/create`
 - Sends user into Stripe checkout for plan selection
 
 ### `/auth/callback` — Auth callback
@@ -44,15 +50,33 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - Static legal/policy pages
 
+### `/industries` — Industries
+
+- Category-agnostic use cases for healthcare and wellness, home services, automotive, professional services, retail and hospitality, and other local businesses
+- Links into onboarding and resources
+
+### `/resources` — Resource center
+
+- Practical guides for review replies, customer-feedback analysis, and ethical review requests
+- Public, ungated content
+
+### `/careers` — Careers and internship applications
+
+- Three learning-first student internship positions
+- No prior experience required
+- Direct application form with optional PDF/DOC/DOCX résumé
+- Submits through `POST /api/careers/apply` and Resend to `CAREERS_EMAIL`
+- Application copy must clearly disclose that the program is unpaid, limited in duration, educational, and does not promise employment
+
 ---
 
-## Dashboard pages (require active session + restaurant)
+## Dashboard pages (require active session + business)
 
 ### `/dashboard` — Review Center (main dashboard)
 
 **Header:**
 
-- Restaurant name as page title
+- Business name as page title
 - "Monitoring" status indicator (green pulse dot)
 - Banner: "Connect Google Business" (amber) if `google_location_name` is null and no `?success` param
 - Banner: "You're all set" (green, auto-dismisses after 4s) when `?success=true` in URL
@@ -85,7 +109,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - Link to competitors page (if competitors have been added)
 - Plan-gated: score and sentiment panels only shown on Growth/Agency
 
-**Inactive state:** If `restaurant.active = false`, shows a "Start your free 30-day trial" CTA instead of the dashboard.
+**Inactive state:** If the legacy business record has `restaurant.active = false`, shows a "Start your free 30-day trial" CTA instead of the dashboard.
 
 ---
 
@@ -161,7 +185,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 **Your position card:**
 
 - Rank badge (#1 = gold, #2 = silver, #3 = bronze)
-- "You are ranked #X of N restaurants you're tracking"
+- "You are ranked #X of N businesses you're tracking"
 - Your avg rating + total review count
 
 **Add competitor card:**
@@ -174,7 +198,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 **Comparison table:**
 
-- Columns: Rank, Restaurant, Rating, Reviews, vs. You
+- Columns: Rank, Business, Rating, Reviews, vs. You
 - "You" row highlighted with accent background + "You" badge
 - vs. You delta: competitor rating minus your rating (positive = they beat you, shown red; negative = you beat them, shown green)
 - Remove button (trash icon) per competitor row
@@ -232,6 +256,7 @@ All cron routes require `Authorization: Bearer <CRON_SECRET>` header.
 | Review with rating ≤ threshold arrives | Negative review alert to owner (with suggested reply)                               |
 | Monday each week                       | Weekly digest: review summary, sentiment insights, AI action items, staff shoutouts |
 | User uploads CSV + clicks Send All     | Review request email to each customer with tracking link                            |
+| Student submits careers application    | Application email, with optional résumé, to the configured recruiting inbox         |
 
 ---
 

@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     restaurant = data
   }
 
-  if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
+  if (!restaurant) return NextResponse.json({ error: 'Business not found' }, { status: 404 })
   if (!restaurant.active) return NextResponse.json({ error: 'Subscription inactive' }, { status: 403 })
 
   const formData = await req.formData()
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'CSV must include an email column.' }, { status: 400 })
   }
   if (!restaurant.place_id) {
-    return NextResponse.json({ error: 'Connect this restaurant to a Google place before sending review requests.' }, { status: 400 })
+    return NextResponse.json({ error: 'Connect this business to a Google place before sending review requests.' }, { status: 400 })
   }
 
   let noEmail = 0

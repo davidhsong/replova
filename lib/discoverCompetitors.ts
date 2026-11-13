@@ -1,7 +1,7 @@
-import Anthropic from '@anthropic-ai/sdk'
 import type { PlaceSearchResult } from './places'
 import { GENERIC_PLACE_TYPES } from './places'
 import { recordUsage } from './apiBudget'
+import { createStructuredResponse, OPENAI_MODEL } from './openai'
 
 export interface DiscoveredCompetitor {
   placeId: string
@@ -21,7 +21,7 @@ function formatTypes(types: string[]): string {
   return tags.join(', ') || 'local business'
 }
 
-export async function discoverCompetitorsWithClaude(
+export async function discoverCompetitors(
   restaurant: { name: string; businessType: string | null },
   candidates: PlaceSearchResult[],
   maxResults: number
@@ -38,21 +38,20 @@ export async function discoverCompetitorsWithClaude(
     category: formatTypes(c.types),
   }))
 
-  const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-  let claudeResults: DiscoveredCompetitor[] = []
+  let aiResults: DiscoveredCompetitor[] = []
 
   const businessTypeContext = restaurant.businessType
     ? `IMPORTANT: Only select businesses that are the same type (${restaurant.businessType}) or a direct substitute. Exclude businesses in clearly different categories.`
     : ''
 
   try {
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
-      system: `You are a local business market analyst. Identify the most relevant competitors for a business from a list of nearby options. A competitor is any place a customer would choose INSTEAD of the given business for the same service.`,
-      messages: [{
-        role: 'user',
-        content: `My business:
+    const { data, inputTokens, outputTokens } = await createStructuredResponse<{
+      competitors: DiscoveredCompetitor[]
+    }>({
+      name: 'competitor_selection',
+      maxOutputTokens: 2048,
+      instructions: 'You are a local business market analyst. Identify the most relevant competitors from nearby options. A competitor is a place a customer would choose instead for a similar product or service. Rank direct competitors before indirect substitutes.',
+      input: `My business:
 Name: ${restaurant.name}
 Type: ${restaurant.businessType ?? 'not specified'}
 
@@ -61,20 +60,35 @@ ${JSON.stringify(formatted, null, 2)}
 
 ${businessTypeContext}
 Select up to ${maxResults} competitors (or all candidates if fewer than ${maxResults} exist).
-Rank them: direct competitors first (same type, similar positioning), then indirect.
-
-Return only a valid JSON array. Do not include markdown or an explanation:
-[{"placeId":"...","reason":"one sentence","competitorType":"direct"}]`,
-      }],
+Rank them: direct competitors first (same type, similar positioning), then indirect.`,
+      schema: {
+        type: 'object',
+        properties: {
+          competitors: {
+            type: 'array',
+            maxItems: maxResults,
+            items: {
+              type: 'object',
+              properties: {
+                placeId: { type: 'string', enum: candidates.map(candidate => candidate.placeId) },
+                reason: { type: 'string' },
+                competitorType: { type: 'string', enum: ['direct', 'indirect'] },
+              },
+              required: ['placeId', 'reason', 'competitorType'],
+              additionalProperties: false,
+            },
+          },
+        },
+        required: ['competitors'],
+        additionalProperties: false,
+      },
     })
 
-    await recordUsage('claude-haiku-4-5-20251001', 'competitor_discovery', message.usage.input_tokens, message.usage.output_tokens)
-    const raw = message.content[0].type === 'text' ? message.content[0].text.trim() : '[]'
-    const cleaned = raw.replace(/^```(?:json)?\n?/i, '').replace(/\n?```$/i, '').trim()
-    const parsed: unknown = JSON.parse(cleaned)
+    await recordUsage(OPENAI_MODEL, 'competitor_discovery', inputTokens, outputTokens)
+    const parsed: unknown = data.competitors
     const allowedIds = new Set(candidates.map(candidate => candidate.placeId))
     if (Array.isArray(parsed)) {
-      claudeResults = parsed
+      aiResults = parsed
         .filter((item): item is DiscoveredCompetitor => {
           if (!item || typeof item !== 'object') return false
           const candidate = item as Partial<DiscoveredCompetitor>
@@ -86,23 +100,23 @@ Return only a valid JSON array. Do not include markdown or an explanation:
         .slice(0, maxResults)
     }
   } catch {
-    // Claude failed, so fill the remaining slots from candidates
+    // AI selection failed, so fill the remaining slots from candidates.
   }
 
-  // Fill any remaining slots with highest-rated candidates Claude didn't pick
-  if (claudeResults.length < maxResults) {
-    const pickedIds = new Set(claudeResults.map(r => r.placeId))
+  // Fill any remaining slots with the highest-rated candidates the model did not pick.
+  if (aiResults.length < maxResults) {
+    const pickedIds = new Set(aiResults.map(r => r.placeId))
     const remaining = candidates
       .filter(c => !pickedIds.has(c.placeId))
       .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-      .slice(0, maxResults - claudeResults.length)
+      .slice(0, maxResults - aiResults.length)
       .map(c => ({
         placeId: c.placeId,
         reason: 'Highly-rated nearby business',
         competitorType: 'indirect' as const,
       }))
-    claudeResults = [...claudeResults, ...remaining]
+    aiResults = [...aiResults, ...remaining]
   }
 
-  return claudeResults
+  return aiResults
 }

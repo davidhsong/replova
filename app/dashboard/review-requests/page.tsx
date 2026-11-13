@@ -166,18 +166,17 @@ export default function ReviewRequestsPage() {
           <span>Review requests</span>
         </div>
         <h1 className="t-h1" style={{ marginBottom: 4 }}>Review requests</h1>
-        <p className="t-sm c-t3">Email past clients and ask them to leave a Google review.</p>
+        <p className="t-sm c-t3">Email recent customers and ask them to leave a Google review.</p>
       </div>
 
       <div className="page-body">
 
         {/* Funnel stats strip */}
         <div style={{
-          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)',
           border: '1px solid var(--line)', borderRadius: 'var(--r-7)',
           overflow: 'hidden', marginBottom: 32,
           background: 'var(--surface)',
-        }} className="fade-up">
+        }} className="fade-up request-stats">
           {funnelCells.map((s, i) => (
             <div key={s.l} style={{
               padding: '18px 22px',
@@ -200,7 +199,7 @@ export default function ReviewRequestsPage() {
         </div>
 
         {/* Two-column layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: 24, alignItems: 'flex-start' }}>
+        <div className="request-main-grid">
 
           {/* Left: upload + send */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>

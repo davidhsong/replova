@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import LegalLayout from '@/components/LegalLayout'
 import type { LegalSection } from '@/components/LegalLayout'
 
-export const metadata: Metadata = { title: 'Refund Policy | Replova' }
+export const metadata: Metadata = { title: 'Refund Policy' }
 
 const sections: LegalSection[] = [
   {

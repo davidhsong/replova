@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
+  if (!restaurant) return NextResponse.json({ error: 'Business not found' }, { status: 404 })
   if (!restaurant.active) return NextResponse.json({ error: 'Subscription inactive' }, { status: 403 })
 
   let query = admin

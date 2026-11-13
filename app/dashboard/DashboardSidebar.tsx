@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  IconMessage, IconUsers, IconSend, IconCard, IconCog,
+  IconMessage, IconUsers, IconCard, IconCog,
   IconChevDown, IconSignOut,
 } from '@/components/icons'
 import { getSupabaseBrowser } from '@/lib/supabase'
@@ -35,12 +35,18 @@ const PLAN_LABELS: Record<Plan, string> = {
 const TOP_ITEMS = [
   { href: '/dashboard', label: 'Reviews', Icon: IconMessage, exact: true, showsBadge: true },
   { href: '/dashboard/competitors', label: 'Competitors', Icon: IconUsers, exact: false, showsBadge: false },
-  { href: '/dashboard/review-requests', label: 'Requests', Icon: IconSend, exact: false, showsBadge: false },
 ]
 
 const BOTTOM_ITEMS = [
   { href: '/dashboard/billing', label: 'Billing', Icon: IconCard },
   { href: '/dashboard/settings', label: 'Settings', Icon: IconCog },
+]
+
+const MOBILE_ITEMS = [
+  { href: '/dashboard', label: 'Reviews', Icon: IconMessage, exact: true },
+  { href: '/dashboard/competitors', label: 'Compare', Icon: IconUsers, exact: false },
+  { href: '/dashboard/billing', label: 'Billing', Icon: IconCard, exact: false },
+  { href: '/dashboard/settings', label: 'Settings', Icon: IconCog, exact: false },
 ]
 
 export default function DashboardSidebar({
@@ -60,17 +66,17 @@ export default function DashboardSidebar({
   }
 
   return (
+    <>
     <aside className="sidebar">
+      <Link href="/dashboard" className="dashboard-brand" aria-label="Replova dashboard">
+        <Image src="/replova-mark.svg" alt="" width={24} height={24} />
+        <span>Replova</span>
+      </Link>
+
       {/* Workspace switcher */}
-      <div style={{ borderBottom: '1px solid var(--line)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px' }}>
-          <Image
-            src="/replova-logo.png"
-            alt="Replova"
-            width={28}
-            height={28}
-            style={{ borderRadius: 7, flexShrink: 0 }}
-          />
+      <div className="dashboard-workspace">
+        <div className="dashboard-workspace-row">
+          <div className="workspace-symbol" aria-hidden="true">{restaurantName.slice(0, 1).toUpperCase()}</div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{
               fontSize: 13, fontWeight: 600, color: 'var(--t1)',
@@ -99,16 +105,8 @@ export default function DashboardSidebar({
         )}
       </div>
 
-      {/* Nav */}
-      <div style={{ padding: '12px 0', flex: 1, overflowY: 'auto' }}>
+      <div className="dashboard-nav-scroll">
         <div className="nav-group">
-          <div style={{
-            fontSize: 10, fontWeight: 600, color: 'var(--t4)',
-            letterSpacing: '0.08em', textTransform: 'uppercase',
-            padding: '4px 10px 8px',
-          }}>
-            Workspace
-          </div>
           {TOP_ITEMS.map(({ href, label, Icon, exact, showsBadge }) => {
             const isActive = active(href, exact)
             const badge = showsBadge && awaitingCount > 0 ? awaitingCount : null
@@ -124,14 +122,7 @@ export default function DashboardSidebar({
           })}
         </div>
 
-        <div className="nav-group" style={{ marginTop: 8 }}>
-          <div style={{
-            fontSize: 10, fontWeight: 600, color: 'var(--t4)',
-            letterSpacing: '0.08em', textTransform: 'uppercase',
-            padding: '4px 10px 8px',
-          }}>
-            Account
-          </div>
+        <div className="nav-group dashboard-nav-secondary">
           {BOTTOM_ITEMS.map(({ href, label, Icon }) => {
             const isActive = active(href)
             return (
@@ -146,9 +137,8 @@ export default function DashboardSidebar({
         </div>
       </div>
 
-      {/* User footer */}
-      <div style={{ borderTop: '1px solid var(--line)', padding: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 8px', borderRadius: 8 }}>
+      <div className="dashboard-user-footer">
+        <div className="dashboard-user-row">
           {avatarUrl ? (
             // User avatars can be hosted on arbitrary OAuth provider domains.
             // eslint-disable-next-line @next/next/no-img-element
@@ -194,5 +184,17 @@ export default function DashboardSidebar({
         </div>
       </div>
     </aside>
+    <nav className="mobile-nav" aria-label="Dashboard navigation">
+      {MOBILE_ITEMS.map(({ href, label, Icon, exact }) => {
+        const isActive = active(href, exact)
+        return (
+          <Link key={href} href={href} className={isActive ? 'active' : ''}>
+            <Icon s={16} />
+            <span>{label}</span>
+          </Link>
+        )
+      })}
+    </nav>
+    </>
   )
 }

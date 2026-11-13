@@ -4,12 +4,13 @@ import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { getValidGoogleToken } from '@/lib/googleAuth'
 import { ACTIVE_LOCATION_COOKIE } from '@/lib/activeLocation'
+import {
+  GoogleLocationsError,
+  listGoogleBusinessLocations,
+  type GoogleBusinessLocation,
+} from '@/lib/googleLocations'
 
-export type GmbLocation = {
-  name: string    // "accounts/xxx/locations/yyy"
-  title: string   // business display name
-  placeId: string | null
-}
+export type GmbLocation = GoogleBusinessLocation
 
 type RestaurantTokenRow = {
   id: string
@@ -52,7 +53,7 @@ export async function GET() {
     restaurant = data
   }
 
-  if (!restaurant) return NextResponse.json({ error: 'No restaurant found' }, { status: 404 })
+  if (!restaurant) return NextResponse.json({ error: 'No business found' }, { status: 404 })
   if (!restaurant.google_access_token) return NextResponse.json({ error: 'Google not connected' }, { status: 400 })
 
   // Always use a valid (possibly refreshed) token
@@ -61,66 +62,12 @@ export async function GET() {
     return NextResponse.json({ error: 'Failed to get valid Google token. Please reconnect.' }, { status: 401 })
   }
 
-  const accountsRes = await fetch(
-    'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
-    { headers: { Authorization: `Bearer ${accessToken}` } }
-  )
-
-  const accountsBody = await accountsRes.text()
-  if (!accountsRes.ok) {
-    return NextResponse.json(
-      { error: `Google accounts API error (${accountsRes.status}). Please reconnect and try again.` },
-      { status: 502 }
-    )
+  try {
+    const locations = await listGoogleBusinessLocations(accessToken)
+    return NextResponse.json({ locations })
+  } catch (error) {
+    const status = error instanceof GoogleLocationsError ? error.status : 502
+    const message = error instanceof Error ? error.message : 'Unable to load Google Business locations.'
+    return NextResponse.json({ error: message }, { status })
   }
-
-  const accountsData = JSON.parse(accountsBody) as { accounts?: { name: string }[] }
-  const accounts = accountsData.accounts ?? []
-
-  if (!accounts.length) {
-    return NextResponse.json({
-      locations: [],
-      debug: 'No Business Profile accounts found for this Google account. Make sure the signed-in Google account owns or manages a Business Profile.',
-    })
-  }
-
-  const locations: GmbLocation[] = []
-
-  for (const account of accounts) {
-    let pageToken: string | undefined
-
-    do {
-      const params = new URLSearchParams({
-        readMask: 'name,title,metadata',
-        pageSize: '100',
-      })
-      if (pageToken) params.set('pageToken', pageToken)
-
-      const url = `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?${params.toString()}`
-      const locRes = await fetch(url, { headers: { Authorization: `Bearer ${accessToken}` } })
-      const locBody = await locRes.text()
-
-      if (!locRes.ok) {
-        console.error('[GMB locations] Failed to list locations:', locRes.status)
-        break
-      }
-
-      const locData = JSON.parse(locBody) as {
-        locations?: { name: string; title?: string; metadata?: { placeId?: string } }[]
-        nextPageToken?: string
-      }
-
-      for (const loc of locData.locations ?? []) {
-        locations.push({
-          name: loc.name,
-          title: loc.title ?? loc.name,
-          placeId: loc.metadata?.placeId ?? null,
-        })
-      }
-
-      pageToken = locData.nextPageToken
-    } while (pageToken)
-  }
-
-  return NextResponse.json({ locations })
 }

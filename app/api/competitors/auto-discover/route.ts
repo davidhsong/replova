@@ -4,22 +4,26 @@ import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { findNearbyCompetitors } from '@/lib/places'
 import { addCompetitor } from '@/lib/competitors'
-import { discoverCompetitorsWithClaude } from '@/lib/discoverCompetitors'
+import { discoverCompetitors } from '@/lib/discoverCompetitors'
 import { getPlanLimits, hasCompetitorTracking } from '@/lib/planLimits'
 import type { Plan } from '@/lib/planLimits'
 
 function getGooglePlacesType(businessType: string | null): string {
   const map: Record<string, string> = {
-    medical_spa: 'spa',
-    botox_clinic: 'beauty_salon',
-    laser_clinic: 'beauty_salon',
-    beauty_salon: 'beauty_salon',
-    nail_salon: 'beauty_salon',
-    massage_therapy: 'spa',
-    dental_office: 'dentist',
-    chiropractor: 'physiotherapist',
-    physical_therapy: 'physiotherapist',
-    wellness_center: 'health',
+    restaurant: 'restaurant',
+    cafe: 'cafe',
+    bar: 'bar',
+    retail: 'store',
+    beauty_wellness: 'beauty salon',
+    healthcare: 'medical clinic',
+    dental: 'dentist',
+    fitness: 'gym',
+    hotel: 'hotel',
+    professional_services: 'professional services',
+    home_services: 'home services',
+    automotive: 'auto repair',
+    entertainment: 'entertainment',
+    education: 'education',
   }
   return map[businessType ?? ''] ?? 'establishment'
 }
@@ -36,7 +40,7 @@ export async function POST(req: NextRequest) {
 
   const admin = getSupabaseAdmin()
 
-  // Verify ownership, get business type and name for Claude context
+  // Verify ownership and get business type/name for ranking context.
   const { data: restaurant } = await admin
     .from('restaurants')
     .select('id, name, place_id, cuisine_type')
@@ -93,8 +97,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ added: 0, message: 'No new nearby competitors found.' })
   }
 
-  // 2. Use Claude to intelligently rank and select the best competitors
-  const selected = await discoverCompetitorsWithClaude(
+  // 2. Use OpenAI to intelligently rank and select the best competitors.
+  const selected = await discoverCompetitors(
     { name: restaurant.name, businessType: restaurant.cuisine_type },
     fresh,
     slotsLeft

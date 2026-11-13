@@ -12,11 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Reference prototypes and local agent tooling are not shipped application code.
-    ".claude/**",
+    // Local agent tooling is not shipped application code.
     ".agents/**",
-    "design-reference/**",
-    "design-src/**",
+    // Browser profiles and screenshots created during visual QA.
+    "tmp/**",
   ]),
 ]);
 

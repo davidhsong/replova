@@ -59,7 +59,7 @@ export async function queueReplyForReview(reviewId: string): Promise<{ queueId: 
     .eq('id', review.restaurant_id)
     .single<RestaurantRow>()
 
-  if (restErr || !restaurant) throw new Error(`Restaurant not found for review ${reviewId}`)
+  if (restErr || !restaurant) throw new Error(`Business not found for review ${reviewId}`)
   if (!restaurant.active) throw new Error('Subscription required')
 
   const { data: existingQueue } = await admin
@@ -141,7 +141,7 @@ export async function processReplyQueue(): Promise<{ sent: number; errors: strin
         .single<RestaurantRow>()
 
       if (restErr || !restaurant) {
-        errors.push(`[${item.id}] Restaurant not found`)
+        errors.push(`[${item.id}] Business not found`)
         continue
       }
       if (!restaurant.active) continue
@@ -164,7 +164,7 @@ export async function processReplyQueue(): Promise<{ sent: number; errors: strin
 
       const accessToken = await getValidGoogleToken(restaurant, admin)
       if (!accessToken) {
-        errors.push(`[${item.id}] Could not obtain Google access token for restaurant ${restaurant.id}`)
+        errors.push(`[${item.id}] Could not obtain Google access token for business ${restaurant.id}`)
         continue
       }
 

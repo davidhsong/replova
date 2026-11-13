@@ -1,11 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
-import { getSupabaseBrowser } from '@/lib/supabase'
-import { IconSearch, IconRefresh, IconTrash } from '@/components/icons'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { IconRefresh, IconSearch, IconTrash } from '@/components/icons'
 
 type Restaurant = { id: string; name: string; competitorLimit: number; plan: string }
-
 type SearchResult = {
   placeId: string
   name: string
@@ -13,29 +11,12 @@ type SearchResult = {
   rating: number | null
   totalRatings: number | null
 }
-
 type Competitor = {
   id: string
   name: string
   googlePlaceId: string
   address: string | null
-  website: string | null
-  priceLevel: number | null
-  cuisineTags: string[]
-  source: 'manual' | 'auto'
-  latestSnapshot: { avg_rating: number | null; total_reviews: number | null; snapshot_date: string } | null
 }
-
-function PriceLevel({ level }: { level: number | null }) {
-  if (level === null) return null
-  const filled = Math.max(1, Math.min(4, level))
-  return (
-    <span className="t-mono" style={{ fontSize: 11, color: 'var(--t2)', letterSpacing: '-0.01em' }}>
-      {'$'.repeat(filled)}<span style={{ opacity: 0.25 }}>{'$'.repeat(4 - filled)}</span>
-    </span>
-  )
-}
-
 type ComparisonData = {
   yourRestaurant: { name: string; avgRating: number | null; totalReviews: number; rank: number }
   competitors: Array<{
@@ -50,229 +31,169 @@ type ComparisonData = {
   totalTracked: number
 }
 
-const MEDAL_COLORS: Record<number, string> = { 1: '#c08725', 2: '#7c7569', 3: '#a06430' }
-
 export default function CompetitorsPage() {
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null)
   const [competitors, setCompetitors] = useState<Competitor[]>([])
   const [comparison, setComparison] = useState<ComparisonData | null>(null)
+  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
+  const [showDropdown, setShowDropdown] = useState(false)
   const [addingId, setAddingId] = useState<string | null>(null)
   const [removingId, setRemovingId] = useState<string | null>(null)
-  const [showDropdown, setShowDropdown] = useState(false)
-  const [authError, setAuthError] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const [autoDiscovering, setAutoDiscovering] = useState(false)
-  const [autoDiscoverMsg, setAutoDiscoverMsg] = useState<string | null>(null)
-  const [clearingAll, setClearingAll] = useState(false)
-  const [confirmClear, setConfirmClear] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    async function init() {
-      const { data: { user } } = await getSupabaseBrowser().auth.getUser()
-      if (!user) { setAuthError(true); return }
-      const res = await fetch('/api/restaurant')
-      if (!res.ok) { setAuthError(true); return }
-      const r: Restaurant = await res.json()
-      setRestaurant(r)
-      if (r.plan === 'starter') return
-      const loaded = await loadData(r.id)
-      if (loaded.competitorCount === 0) await runAutoDiscover(r.id, true)
-    }
-    init()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  async function loadData(restaurantId: string): Promise<{ competitorCount: number }> {
-    const [compRes, cmpRes] = await Promise.all([
+  const loadData = useCallback(async (restaurantId: string) => {
+    const [competitorResponse, comparisonResponse] = await Promise.all([
       fetch(`/api/competitors?restaurantId=${restaurantId}`),
       fetch(`/api/competitors/comparison?restaurantId=${restaurantId}`),
     ])
+
     let count = 0
-    if (compRes.ok) {
-      const list: Competitor[] = await compRes.json()
+    if (competitorResponse.ok) {
+      const list = await competitorResponse.json() as Competitor[]
       setCompetitors(list)
       count = list.length
     }
-    if (cmpRes.ok) setComparison(await cmpRes.json())
-    return { competitorCount: count }
-  }
+    if (comparisonResponse.ok) setComparison(await comparisonResponse.json())
+    return count
+  }, [])
 
-  async function runAutoDiscover(restaurantId: string, silent = false) {
+  const discoverNearby = useCallback(async (restaurantId: string) => {
     if (autoDiscovering) return
     setAutoDiscovering(true)
-    if (!silent) setAutoDiscoverMsg(null)
     try {
-      const res = await fetch('/api/competitors/auto-discover', {
+      const response = await fetch('/api/competitors/auto-discover', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ restaurantId }),
       })
-      const data = await res.json()
-      if (res.ok) {
-        await loadData(restaurantId)
-        if (data.added > 0) {
-          const parts = []
-          if (data.direct > 0) parts.push(`${data.direct} direct`)
-          if (data.indirect > 0) parts.push(`${data.indirect} indirect`)
-          setAutoDiscoverMsg(`Added ${data.added} competitor${data.added !== 1 ? 's' : ''} (${parts.join(', ')}) via AI.`)
-        } else if (!silent) {
-          setAutoDiscoverMsg('No new nearby competitors found.')
-        }
-      } else if (!silent) {
-        setAutoDiscoverMsg(data.error ?? 'Auto-discover failed.')
-      }
-    } catch {
-      if (!silent) setAutoDiscoverMsg('Auto-discover failed. Check your connection.')
+      if (response.ok) await loadData(restaurantId)
     } finally {
       setAutoDiscovering(false)
     }
-  }
+  }, [autoDiscovering, loadData])
 
-  const doSearch = useCallback(async (q: string) => {
-    if (!q.trim()) { setSearchResults([]); setShowDropdown(false); return }
+  useEffect(() => {
+    void (async () => {
+      try {
+        const response = await fetch('/api/restaurant')
+        if (!response.ok) throw new Error('Unable to load this workspace.')
+        const current = await response.json() as Restaurant
+        setRestaurant(current)
+        if (current.plan !== 'starter') {
+          const count = await loadData(current.id)
+          if (count === 0) await discoverNearby(current.id)
+        }
+      } catch (caught) {
+        setError(caught instanceof Error ? caught.message : 'Unable to load competitors.')
+      } finally {
+        setLoading(false)
+      }
+    })()
+  // Initial workspace load only. Discovery is guarded internally.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  useEffect(() => {
+    function closeDropdown(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) setShowDropdown(false)
+    }
+    document.addEventListener('mousedown', closeDropdown)
+    return () => document.removeEventListener('mousedown', closeDropdown)
+  }, [])
+
+  const search = useCallback(async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([])
+      setShowDropdown(false)
+      return
+    }
     setSearchLoading(true)
     try {
-      const res = await fetch(`/api/competitors/search?q=${encodeURIComponent(q)}`)
-      if (res.ok) {
-        const results = await res.json()
-        setSearchResults(results)
-        setShowDropdown(results.length > 0)
-      }
+      const response = await fetch(`/api/competitors/search?q=${encodeURIComponent(query)}`)
+      if (!response.ok) return
+      const results = await response.json() as SearchResult[]
+      setSearchResults(results)
+      setShowDropdown(results.length > 0)
     } finally {
       setSearchLoading(false)
     }
   }, [])
 
-  function handleSearchChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const q = e.target.value
-    setSearchQuery(q)
+  function updateSearch(value: string) {
+    setSearchQuery(value)
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => doSearch(q), 500)
+    debounceRef.current = setTimeout(() => void search(value), 500)
   }
 
-  async function handleAdd(placeId: string) {
+  async function addCompetitor(placeId: string) {
     if (!restaurant) return
     setAddingId(placeId)
     setError(null)
     try {
-      const res = await fetch('/api/competitors', {
+      const response = await fetch('/api/competitors', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ restaurantId: restaurant.id, placeId }),
       })
-      if (!res.ok) {
-        const d = await res.json()
-        setError(d.error ?? 'Failed to add competitor')
-      } else {
-        setSearchQuery('')
-        setSearchResults([])
-        setShowDropdown(false)
-        await loadData(restaurant.id)
-      }
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error ?? 'Unable to add this competitor.')
+      setSearchQuery('')
+      setSearchResults([])
+      setShowDropdown(false)
+      await loadData(restaurant.id)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to add this competitor.')
     } finally {
       setAddingId(null)
     }
   }
 
-  async function handleClearAll() {
-    if (!restaurant) return
-    setClearingAll(true)
-    setConfirmClear(false)
-    setError(null)
-    try {
-      const res = await fetch(`/api/competitors?all=true&restaurantId=${restaurant.id}`, { method: 'DELETE' })
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        setError(d.error ?? 'Failed to clear competitors')
-      } else {
-        await loadData(restaurant.id)
-      }
-    } catch {
-      setError('Failed to clear competitors')
-    } finally {
-      setClearingAll(false)
-    }
-  }
-
-  async function handleRemove(competitorId: string) {
+  async function removeCompetitor(competitorId: string) {
     if (!restaurant) return
     setRemovingId(competitorId)
+    setError(null)
     try {
-      const res = await fetch(`/api/competitors?competitorId=${competitorId}`, { method: 'DELETE' })
-      if (!res.ok) {
-        const d = await res.json().catch(() => ({}))
-        setError(d.error ?? 'Failed to remove competitor')
-      } else {
-        await loadData(restaurant.id)
-      }
-    } catch {
-      setError('Failed to remove competitor')
+      const response = await fetch(`/api/competitors?competitorId=${competitorId}`, { method: 'DELETE' })
+      const data = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(data.error ?? 'Unable to remove this competitor.')
+      await loadData(restaurant.id)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : 'Unable to remove this competitor.')
     } finally {
       setRemovingId(null)
     }
   }
 
-  useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setShowDropdown(false)
-      }
-    }
-    document.addEventListener('mousedown', onClickOutside)
-    return () => document.removeEventListener('mousedown', onClickOutside)
-  }, [])
-
-  const competitorLimit = restaurant?.competitorLimit ?? 3
-  const atLimit = competitors.length >= competitorLimit
-
-  const yourEntry = comparison?.yourRestaurant
-  const allEntries: Array<{
-    id: string | 'you'
-    name: string
-    avgRating: number | null
-    totalReviews: number | null
-    ratingDelta: number | null
-    rank: number
-    isYou: boolean
-  }> = comparison
+  const limit = restaurant?.competitorLimit ?? 3
+  const atLimit = competitors.length >= limit
+  const entries = comparison
     ? [
-        { id: 'you', name: yourEntry!.name, avgRating: yourEntry!.avgRating, totalReviews: yourEntry!.totalReviews, ratingDelta: null, rank: yourEntry!.rank, isYou: true },
-        ...comparison.competitors.map(c => ({ ...c, isYou: false })),
-      ].sort((a, b) => a.rank - b.rank)
+        { ...comparison.yourRestaurant, id: 'you', ratingDelta: null, isYou: true },
+        ...comparison.competitors.map(competitor => ({ ...competitor, isYou: false })),
+      ].sort((left, right) => left.rank - right.rank)
     : []
-
-  const yourRank = comparison?.yourRestaurant.rank ?? null
-  const totalTracked = comparison?.totalTracked ?? 0
-
-  if (authError) {
-    return (
-      <div className="page-body" style={{ textAlign: 'center', paddingTop: 64 }}>
-        <p className="t-sm c-t3">Please sign in to view this page.</p>
-      </div>
-    )
-  }
 
   if (restaurant?.plan === 'starter') {
     return (
       <>
-        <div className="page-header">
-          <h1 className="t-h1" style={{ marginBottom: 4 }}>Competitors</h1>
-          <p className="t-sm c-t3">Compare your reputation with nearby businesses.</p>
-        </div>
-        <div className="page-body">
-          <div className="card" style={{ maxWidth: 620, padding: 32 }}>
-            <div className="t-eyebrow" style={{ marginBottom: 10 }}>Growth feature</div>
-            <h2 className="t-h2" style={{ marginBottom: 10 }}>Competitor tracking is available on Growth and Agency</h2>
-            <p className="t-sm c-t3" style={{ marginBottom: 20 }}>
-              These plans let you add nearby businesses and compare ratings, review counts, and local rank.
-            </p>
-            <a className="btn btn-primary" href="/dashboard/billing">View plans</a>
-          </div>
+        <header className="page-header product-page-header">
+          <div className="t-eyebrow">Workspace / Competitors</div>
+          <h1>Competitors</h1>
+          <p>Compare your Google rating with nearby businesses.</p>
+        </header>
+        <div className="page-body competitor-page-simple">
+          <section className="simple-upgrade-block">
+            <span>Growth feature</span>
+            <h2>See how your reputation compares.</h2>
+            <p>Competitor tracking is available on Growth and Agency plans.</p>
+            <a href="/dashboard/billing" className="btn btn-primary">View plans</a>
+          </section>
         </div>
       </>
     )
@@ -280,281 +201,83 @@ export default function CompetitorsPage() {
 
   return (
     <>
-      <div className="page-header">
-        <div className="t-eyebrow" style={{ marginBottom: 6 }}>
-          <span style={{ color: 'var(--t3)' }}>Workspace</span>
-          {' › '}
-          <span>Competitors</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 20, flexWrap: 'wrap' }}>
-          <h1 className="t-h1" style={{ marginBottom: 0 }}>Competitors</h1>
-          {yourRank !== null && totalTracked > 0 && (
-            <span className="t-body c-t3" style={{ lineHeight: 1 }}>
-              Ranked{' '}
-              <strong style={{ color: MEDAL_COLORS[yourRank] ?? 'var(--t1)' }}>#{yourRank}</strong>
-              {' '}of {totalTracked}
-              {yourEntry?.avgRating !== null && (
-                <> · <strong style={{ color: 'var(--t1)' }}>{yourEntry?.avgRating?.toFixed(1)}★</strong></>
-              )}
-            </span>
+      <header className="page-header product-page-header">
+        <div className="t-eyebrow">Workspace / Competitors</div>
+        <h1>Competitors</h1>
+        <p>{loading ? 'Loading…' : `${competitors.length} of ${limit} businesses tracked`}</p>
+      </header>
+
+      <div className="page-body competitor-page-simple">
+        <div className="competitor-toolbar" ref={dropdownRef}>
+          <div className="competitor-search">
+            <IconSearch s={14} />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={event => updateSearch(event.target.value)}
+              placeholder={atLimit ? 'Competitor limit reached' : 'Search Google Places'}
+              disabled={atLimit}
+              aria-label="Search Google Places for a competitor"
+            />
+            {searchLoading && <span className="spin"><IconRefresh s={13} /></span>}
+          </div>
+
+          {showDropdown && (
+            <div className="competitor-search-results">
+              {searchResults.map(result => {
+                const added = competitors.some(competitor => competitor.googlePlaceId === result.placeId)
+                return (
+                  <div key={result.placeId}>
+                    <span><strong>{result.name}</strong><small>{result.address}{result.rating !== null ? ` · ${result.rating.toFixed(1)}★` : ''}</small></span>
+                    <button type="button" className="btn btn-quiet btn-sm" disabled={added || addingId === result.placeId} onClick={() => addCompetitor(result.placeId)}>
+                      {added ? 'Added' : addingId === result.placeId ? 'Adding…' : 'Add'}
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
           )}
         </div>
-        <p className="t-sm c-t3" style={{ marginTop: 4 }}>
-          {competitors.length} of {competitorLimit} slots used
-        </p>
-      </div>
 
-      <div className="page-body">
+        {error && <p className="simple-message is-error">{error}</p>}
+        {atLimit && <p className="simple-message">Limit reached. <a href="/dashboard/billing">View plans</a></p>}
 
-        {/* Toolbar: search + auto-discover */}
-        <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginBottom: 16, flexWrap: 'wrap' }}>
-
-          {/* Search with dropdown */}
-          <div ref={dropdownRef} style={{ position: 'relative', flex: '1 1 280px', maxWidth: 400 }}>
-            <div style={{ position: 'relative' }}>
-              <span style={{ position: 'absolute', top: '50%', left: 11, transform: 'translateY(-50%)', color: 'var(--t4)', pointerEvents: 'none' }}>
-                <IconSearch s={13} />
-              </span>
-              <input
-                type="text"
-                placeholder="Search Google Places to add a competitor…"
-                value={searchQuery}
-                onChange={handleSearchChange}
-                disabled={atLimit}
-                className="field"
-                style={{ paddingLeft: 32, fontSize: 13, opacity: atLimit ? 0.5 : 1 }}
-              />
-              {searchLoading && (
-                <span className="spin" style={{ position: 'absolute', right: 11, top: '50%', transform: 'translateY(-50%)', display: 'inline-flex', color: 'var(--t3)' }}>
-                  <IconRefresh s={13} />
-                </span>
-              )}
-            </div>
-            {showDropdown && (
-              <div style={{
-                position: 'absolute', top: 'calc(100% + 4px)', left: 0, right: 0,
-                background: 'var(--surface)', border: '1px solid var(--line)',
-                borderRadius: 'var(--r-5)', boxShadow: 'var(--shadow-2)', zIndex: 50, overflow: 'hidden',
-              }}>
-                {searchResults.map((r, i) => {
-                  const alreadyAdded = competitors.some(c => c.googlePlaceId === r.placeId)
-                  const isAdding = addingId === r.placeId
-                  return (
-                    <div key={r.placeId} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderTop: i > 0 ? '1px solid var(--line)' : 'none' }}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</div>
-                        <div className="t-xs c-t3" style={{ marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {r.address}{r.rating !== null ? ` · ${r.rating.toFixed(1)}★` : ''}
-                        </div>
-                      </div>
-                      {alreadyAdded ? (
-                        <span className="t-xs c-t3">Added</span>
-                      ) : (
-                        <button onClick={() => handleAdd(r.placeId)} disabled={isAdding || atLimit} className="btn btn-ghost btn-sm">
-                          {isAdding ? '…' : 'Add'}
+        {entries.length > 0 ? (
+          <div className="competitor-table-wrap">
+            <table className="competitor-table">
+              <thead>
+                <tr><th>Rank</th><th>Business</th><th>Rating</th><th>Reviews</th><th>vs. you</th><th><span className="sr-only">Actions</span></th></tr>
+              </thead>
+              <tbody>
+                {entries.map(entry => (
+                  <tr key={entry.id} className={entry.isYou ? 'is-you' : undefined}>
+                    <td>#{entry.rank}</td>
+                    <td><strong>{entry.name}</strong>{entry.isYou && <span>You</span>}</td>
+                    <td>{entry.avgRating !== null ? `${entry.avgRating.toFixed(1)}★` : '—'}</td>
+                    <td>{entry.totalReviews !== null ? entry.totalReviews.toLocaleString() : '—'}</td>
+                    <td className={entry.ratingDelta !== null && entry.ratingDelta > 0 ? 'is-behind' : entry.ratingDelta !== null && entry.ratingDelta < 0 ? 'is-ahead' : undefined}>
+                      {entry.isYou || entry.ratingDelta === null ? '—' : `${entry.ratingDelta > 0 ? '+' : ''}${entry.ratingDelta.toFixed(2)}`}
+                    </td>
+                    <td>
+                      {!entry.isYou && (
+                        <button type="button" className="competitor-remove" onClick={() => removeCompetitor(entry.id)} disabled={removingId === entry.id} aria-label={`Remove ${entry.name}`}>
+                          <IconTrash s={13} />
                         </button>
                       )}
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-
-          <button
-            onClick={() => restaurant && runAutoDiscover(restaurant.id)}
-            disabled={autoDiscovering || atLimit}
-            className="btn btn-ghost btn-sm"
-            style={{ whiteSpace: 'nowrap', flexShrink: 0 }}
-          >
-            <span className={autoDiscovering ? 'spin' : undefined} style={{ display: 'inline-flex' }}>
-              <IconRefresh s={11} />
-            </span>
-            {autoDiscovering ? 'Finding…' : 'Auto-discover nearby'}
-          </button>
-
-          {competitors.length > 0 && (
-            confirmClear ? (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                <span className="t-xs c-t3">Remove all?</span>
-                <button
-                  onClick={handleClearAll}
-                  disabled={clearingAll}
-                  className="btn btn-sm"
-                  style={{ background: 'var(--neg)', color: '#fff', border: 'none' }}
-                >
-                  {clearingAll ? '…' : 'Yes, clear'}
-                </button>
-                <button onClick={() => setConfirmClear(false)} className="btn btn-ghost btn-sm">
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={() => setConfirmClear(true)}
-                className="btn btn-ghost btn-sm"
-                style={{ whiteSpace: 'nowrap', flexShrink: 0, color: 'var(--t3)' }}
-              >
-                Clear all
-              </button>
-            )
-          )}
-        </div>
-
-        {/* Messages */}
-        {autoDiscoverMsg && (
-          <div className="banner banner-pos fade-in" style={{ marginBottom: 12 }}>
-            {autoDiscoverMsg}
-          </div>
-        )}
-        {error && (
-          <div className="banner banner-neg fade-in" style={{ marginBottom: 12 }}>
-            {error}
-          </div>
-        )}
-        {atLimit && (
-          <div className="banner banner-warn" style={{ marginBottom: 12 }}>
-            Competitor limit reached.{' '}
-            <a href="/dashboard/billing" style={{ color: 'inherit', fontWeight: 700, textDecoration: 'underline' }}>View plans</a>
-          </div>
-        )}
-
-        {/* Table */}
-        {allEntries.length > 0 ? (
-          <div className="card" style={{ overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table className="dtable" style={{ minWidth: 620 }}>
-                <thead>
-                  <tr>
-                    <th style={{ width: 44 }}>#</th>
-                    <th>Business</th>
-                    <th style={{ width: 56 }}>Source</th>
-                    <th style={{ width: 56 }}>Price</th>
-                    <th style={{ width: 72, textAlign: 'right' }}>Rating</th>
-                    <th style={{ width: 80, textAlign: 'right' }}>Reviews</th>
-                    <th style={{ width: 80, textAlign: 'right' }}>vs. You</th>
-                    <th style={{ width: 36 }} />
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {allEntries.map((entry, i) => {
-                    const delta = entry.ratingDelta
-                    const isAhead = delta !== null && delta > 0
-                    const isBehind = delta !== null && delta < 0
-                    const comp = competitors.find(c => c.id === entry.id)
-                    return (
-                      <tr key={String(entry.id)} style={{ background: entry.isYou ? 'var(--accent-sub)' : undefined }}>
-                        <td>
-                          <span className="t-mono tnum" style={{ fontWeight: 700, fontSize: 12, color: MEDAL_COLORS[i + 1] ?? 'var(--t3)' }}>
-                            #{i + 1}
-                          </span>
-                        </td>
-                        <td style={{ maxWidth: 0 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
-                            <span style={{
-                              fontWeight: entry.isYou ? 700 : 500,
-                              color: entry.isYou ? 'var(--accent)' : 'var(--t1)',
-                              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flexShrink: 1,
-                            }}>
-                              {entry.name}
-                            </span>
-                            {comp && comp.address && comp.address.length > 0 && (
-                              <a
-                                href={`https://www.yelp.com/search?find_desc=${encodeURIComponent(comp.name)}&find_loc=${encodeURIComponent(comp.address)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ fontSize: 11, color: 'var(--t4)', textDecoration: 'none', marginLeft: 8, whiteSpace: 'nowrap' }}
-                              >
-                                Yelp ↗
-                              </a>
-                            )}
-                            {entry.isYou && <span className="pill pill-accent" style={{ height: 16, flexShrink: 0 }}>You</span>}
-                            {comp?.website && (
-                              <a href={comp.website} target="_blank" rel="noopener noreferrer"
-                                style={{ display: 'inline-flex', color: 'var(--t4)', flexShrink: 0 }}
-                                title="Visit website">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                                </svg>
-                              </a>
-                            )}
-                          </div>
-                          {comp?.address && (
-                            <div className="t-xs c-t4" style={{ marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {comp.address}
-                            </div>
-                          )}
-                          {comp && comp.cuisineTags.length > 0 && (
-                            <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap', marginTop: 3 }}>
-                              {comp.cuisineTags.slice(0, 3).map(tag => (
-                                <span key={tag} style={{ fontSize: 9, fontWeight: 600, padding: '1px 5px', borderRadius: 'var(--r-pill)', background: 'var(--surface-3)', color: 'var(--t3)', letterSpacing: '0.01em' }}>
-                                  {tag}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </td>
-                        <td>
-                          {!entry.isYou && comp && (
-                            <span style={{
-                              fontSize: 9, fontWeight: 700, padding: '2px 6px',
-                              borderRadius: 'var(--r-pill)', display: 'inline-flex', alignItems: 'center',
-                              background: comp.source === 'auto' ? 'var(--accent-sub)' : 'var(--surface-3)',
-                              color: comp.source === 'auto' ? 'var(--accent)' : 'var(--t3)',
-                              letterSpacing: '0.04em', textTransform: 'uppercase',
-                            }}>
-                              {comp.source === 'auto' ? 'AI' : 'Manual'}
-                            </span>
-                          )}
-                        </td>
-                        <td>
-                          {comp && <PriceLevel level={comp.priceLevel} />}
-                        </td>
-                        <td className="tnum" style={{ textAlign: 'right', fontWeight: 600 }}>
-                          {entry.avgRating !== null
-                            ? <>{entry.avgRating.toFixed(1)} <span style={{ color: 'var(--gold)' }}>★</span></>
-                            : <span className="c-t3">-</span>
-                          }
-                        </td>
-                        <td className="tnum c-t2" style={{ textAlign: 'right' }}>
-                          {entry.totalReviews !== null ? entry.totalReviews.toLocaleString() : '-'}
-                        </td>
-                        <td className="tnum" style={{ textAlign: 'right' }}>
-                          {entry.isYou || delta === null ? (
-                            <span className="c-t3">-</span>
-                          ) : (
-                            <span style={{ fontWeight: 600, color: isAhead ? 'var(--neg)' : isBehind ? 'var(--pos)' : 'var(--t3)' }}>
-                              {isAhead ? '+' : ''}{delta.toFixed(2)}
-                            </span>
-                          )}
-                        </td>
-                        <td style={{ textAlign: 'right' }}>
-                          {!entry.isYou && (
-                            <button
-                              onClick={() => handleRemove(entry.id as string)}
-                              disabled={removingId === entry.id}
-                              className="btn btn-quiet btn-sm"
-                              style={{ padding: '0 6px', opacity: removingId === entry.id ? 0.4 : 1 }}
-                              title="Remove"
-                            >
-                              <IconTrash s={12} />
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : !loading ? (
+          <div className="simple-empty-state">
+            <h2>No competitors yet</h2>
+            <p>Search above to add a nearby business.</p>
           </div>
         ) : (
-          <div className="card" style={{ padding: '48px 24px', textAlign: 'center' }}>
-            <p className="t-serif t-italic c-t3" style={{ fontSize: 18, marginBottom: 6 }}>You haven&apos;t added any competitors yet.</p>
-            <p className="t-xs c-t3">Search for a business above or let Replova find nearby options.</p>
-          </div>
+          <div className="competitor-table-loading skeleton" />
         )}
-
       </div>
     </>
   )

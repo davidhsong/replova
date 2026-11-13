@@ -24,7 +24,7 @@ export async function GET(
     .eq('id', restaurantId)
     .single()
 
-  if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
+  if (!restaurant) return NextResponse.json({ error: 'Business not found' }, { status: 404 })
   if (restaurant.owner_email !== user.email) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }

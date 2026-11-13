@@ -40,7 +40,7 @@ export async function POST() {
     restaurant = data
   }
 
-  if (!restaurant) return NextResponse.json({ error: 'Restaurant not found' }, { status: 404 })
+  if (!restaurant) return NextResponse.json({ error: 'Business not found' }, { status: 404 })
   if (!restaurant.active) return NextResponse.json({ error: 'Subscription required' }, { status: 403 })
 
   try {

@@ -49,9 +49,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, queueId })
   } catch (err) {
     console.error('queueReplyForReview failed:', err)
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : 'Failed to generate reply' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to generate reply' }, { status: 500 })
   }
 }

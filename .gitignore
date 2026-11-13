@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+/tmp/
 
 # next.js
 /.next/
@@ -36,6 +37,11 @@ yarn-error.log*
 
 # vercel
 .vercel
+
+# retired local tooling and design exports
+/.claude/
+/design-reference/
+/design-src/
 
 # typescript
 *.tsbuildinfo

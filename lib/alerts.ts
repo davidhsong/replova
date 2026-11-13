@@ -160,7 +160,7 @@ export async function sendNegativeReviewAlert(reviewId: string): Promise<void> {
     .eq('id', review.restaurant_id)
     .single()
 
-  if (restError || !restaurant) throw new Error(`Restaurant not found for review ${reviewId}`)
+  if (restError || !restaurant) throw new Error(`Business not found for review ${reviewId}`)
   if (!restaurant.active) return
 
   const { data: settings } = await admin
