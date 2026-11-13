@@ -24,47 +24,42 @@ const platformLinks = [
 ] as const
 
 const industryLinks = [
-  ['Healthcare & wellness', '/industries/healthcare-wellness'],
-  ['Home services', '/industries/home-services'],
-  ['Automotive', '/industries/automotive'],
-  ['Professional services', '/industries/professional-services'],
-  ['Retail & hospitality', '/industries/retail-hospitality'],
-  ['Other local businesses', '/industries/local-businesses'],
+  ['Healthcare & wellness', 'Find patient experience themes across every review.', '/industries/healthcare-wellness'],
+  ['Home services', 'Track communication, punctuality, and service quality.', '/industries/home-services'],
+  ['Automotive', 'Understand trust, estimates, wait times, and repair quality.', '/industries/automotive'],
+  ['Professional services', 'Turn client feedback into clear operational signals.', '/industries/professional-services'],
+  ['Retail & hospitality', 'Compare service, products, atmosphere, and value.', '/industries/retail-hospitality'],
+  ['Other local businesses', 'Use the same review workflow for any local business.', '/industries/local-businesses'],
 ] as const
 
-function PlatformDropdown() {
-  return (
-    <div className="nav-dropdown nav-dropdown-features">
-      <Link href="/#platform" className="nav-dropdown-trigger">Platform <ChevronDown /></Link>
-      <div className="nav-popover nav-feature-grid">
-        <div className="nav-popover-intro">
-          <span>Platform</span>
-          <strong>Everything after the review arrives.</strong>
-          <p>Keep responses moving and turn customer language into decisions.</p>
-        </div>
-        <div className="nav-popover-links">
-          {platformLinks.map(([label, description, href], index) => (
-            <Link href={href} key={label}>
-              <span className="nav-link-index">0{index + 1}</span>
-              <span><strong>{label}</strong><small>{description}</small></span>
-              <ArrowIcon />
-            </Link>
-          ))}
-        </div>
-      </div>
-    </div>
-  )
+type NavDropdownProps = {
+  label: string
+  href: string
+  introLabel: string
+  introTitle: string
+  introBody: string
+  links: ReadonlyArray<readonly [label: string, description: string, href: string]>
 }
 
-function SolutionsDropdown() {
+function NavDropdown({ label, href, introLabel, introTitle, introBody, links }: NavDropdownProps) {
   return (
-    <div className="nav-dropdown nav-dropdown-industries">
-      <Link href="/industries" className="nav-dropdown-trigger">Solutions <ChevronDown /></Link>
-      <div className="nav-popover nav-industry-grid">
-        <div className="nav-popover-heading"><span>Built for local trust</span><Link href="/industries">View all <ArrowIcon /></Link></div>
-        <div className="nav-industry-links">
-          {industryLinks.map(([label, href], index) => (
-            <Link href={href} key={label}><span>{String(index + 1).padStart(2, '0')}</span>{label}<ArrowIcon /></Link>
+    <div className="nav-dropdown">
+      <Link href={href} className="nav-dropdown-trigger">{label} <ChevronDown /></Link>
+      <div className="nav-popover nav-menu-grid">
+        <div className="nav-popover-intro">
+          <span>{introLabel}</span>
+          <div>
+            <strong>{introTitle}</strong>
+            <p>{introBody}</p>
+          </div>
+        </div>
+        <div className="nav-popover-links">
+          {links.map(([itemLabel, description, itemHref], index) => (
+            <Link href={itemHref} key={itemLabel}>
+              <span className="nav-link-index">0{index + 1}</span>
+              <span><strong>{itemLabel}</strong><small>{description}</small></span>
+              <ArrowIcon />
+            </Link>
           ))}
         </div>
       </div>
@@ -88,14 +83,36 @@ function LinkedInIcon() {
   )
 }
 
+function XIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.66l-5.21-6.82-5.97 6.82H1.67l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23Zm-1.16 17.52h1.83L7.08 4.13H5.11l11.97 15.64Z" />
+    </svg>
+  )
+}
+
 export function MarketingHeader() {
   return (
     <header className="lp-header">
       <div className="lp-nav-inner">
         <Link href="/" aria-label="Replova home"><BrandLogo eager /></Link>
         <nav className="lp-menu" aria-label="Main navigation">
-          <PlatformDropdown />
-          <SolutionsDropdown />
+          <NavDropdown
+            label="Platform"
+            href="/#platform"
+            introLabel="Platform"
+            introTitle="Everything after the review arrives."
+            introBody="Keep responses moving and turn customer language into decisions."
+            links={platformLinks}
+          />
+          <NavDropdown
+            label="Solutions"
+            href="/industries"
+            introLabel="Solutions"
+            introTitle="Built for the way local businesses earn trust."
+            introBody="See how Replova adapts the same review workflow to different customer experiences."
+            links={industryLinks}
+          />
           <Link href="/resources">Resources</Link>
           <Link href="/careers">Careers</Link>
         </nav>
@@ -154,6 +171,15 @@ export function MarketingFooter() {
         <div className="lp-footer-brand">
           <BrandLogo height={32} />
           <div className="lp-footer-socials">
+            <a
+              href="https://x.com/Replova"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Visit Replova on X"
+              title="Replova on X"
+            >
+              <XIcon />
+            </a>
             <a
               href="https://www.linkedin.com/company/replova/"
               target="_blank"

@@ -82,9 +82,10 @@ const sections: LegalSection[] = [
     heading: 'Career applicants',
     content: (
       <p>
-        Career applications are delivered to Replova through our email provider, Resend. We use this information only to evaluate your application,
-        communicate about a role, and maintain appropriate recruiting records. Please do not include sensitive personal information that is not needed
-        for the application. You may request deletion by emailing{' '}
+        Career applications and optional résumés are stored in Replova&apos;s private recruiting system. Authorized reviewers may record application
+        status and internal evaluation notes. Resend may also deliver a notification copy to our recruiting inbox. We use this information only to
+        evaluate your application, communicate about a role, and maintain appropriate recruiting records. Please do not include sensitive personal
+        information that is not needed for the application. You may request deletion by emailing{' '}
         <a href="mailto:careers@replova.app" style={{ color: 'var(--t1)', textDecoration: 'underline' }}>careers@replova.app</a>.
       </p>
     ),
@@ -113,7 +114,7 @@ export default function PrivacyPage() {
     <LegalLayout
       page="privacy"
       title="Privacy Policy"
-      kicker="Last updated November 12, 2026"
+      kicker="Last updated November 13, 2026"
       sections={sections}
     />
   )

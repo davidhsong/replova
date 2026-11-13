@@ -37,6 +37,8 @@ export function createPageMetadata({
       card: 'summary_large_image',
       title: socialTitle,
       description,
+      creator: '@Replova',
+      site: '@Replova',
     },
   }
 }

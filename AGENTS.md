@@ -65,8 +65,17 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Three learning-first student internship positions
 - No prior experience required
 - Direct application form with optional PDF/DOC/DOCX résumé
-- Submits through `POST /api/careers/apply` and Resend to `CAREERS_EMAIL`
+- Submits through `POST /api/careers/apply`, stores the application in `career_applications`, privately stores optional résumés, and sends a Resend notification to `CAREERS_EMAIL`
 - Application copy must clearly disclose that the program is unpaid, limited in duration, educational, and does not promise employment
+
+### `/dashboard/applicants` — Applicant tracking (recruiting admins only)
+
+- Requires an authenticated email in the private `career_admins` allowlist, listed in `CAREERS_ADMIN_EMAILS`, or matching `CAREERS_EMAIL`
+- Lists website internship applications with search and filters for role, status, and sponsorship
+- Shows the complete application and authenticated résumé downloads
+- Supports private reviewer notes
+- Supports New, Reviewing, Shortlisted, Interview, Accepted, and Rejected statuses
+- Career applications remain saved even if the optional notification email fails
 
 ---
 
@@ -256,7 +265,7 @@ All cron routes require `Authorization: Bearer <CRON_SECRET>` header.
 | Review with rating ≤ threshold arrives | Negative review alert to owner (with suggested reply)                               |
 | Monday each week                       | Weekly digest: review summary, sentiment insights, AI action items, staff shoutouts |
 | User uploads CSV + clicks Send All     | Review request email to each customer with tracking link                            |
-| Student submits careers application    | Application email, with optional résumé, to the configured recruiting inbox         |
+| Student submits careers application    | Application is stored in the recruiting dashboard; a notification email is sent to the configured inbox |
 
 ---
 

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  IconMessage, IconUsers, IconCard, IconCog,
+  IconMessage, IconUsers, IconBriefcase, IconCard, IconCog,
   IconChevDown, IconSignOut,
 } from '@/components/icons'
 import { getSupabaseBrowser } from '@/lib/supabase'
@@ -24,6 +24,7 @@ interface Props {
   activeLocationId: string
   locationLimit: number
   awaitingCount: number
+  isCareersAdmin: boolean
 }
 
 const PLAN_LABELS: Record<Plan, string> = {
@@ -51,7 +52,7 @@ const MOBILE_ITEMS = [
 
 export default function DashboardSidebar({
   restaurantName, plan, displayName, initials, avatarUrl, userEmail,
-  locations, activeLocationId, locationLimit, awaitingCount,
+  locations, activeLocationId, locationLimit, awaitingCount, isCareersAdmin,
 }: Props) {
   const pathname = usePathname()
   const router = useRouter()
@@ -106,7 +107,7 @@ export default function DashboardSidebar({
 
       <div className="dashboard-nav-scroll">
         <div className="nav-group">
-          {TOP_ITEMS.map(({ href, label, Icon, exact, showsBadge }) => {
+          {[...TOP_ITEMS, ...(isCareersAdmin ? [{ href: '/dashboard/applicants', label: 'Applicants', Icon: IconBriefcase, exact: false, showsBadge: false }] : [])].map(({ href, label, Icon, exact, showsBadge }) => {
             const isActive = active(href, exact)
             const badge = showsBadge && awaitingCount > 0 ? awaitingCount : null
             return (
@@ -184,7 +185,7 @@ export default function DashboardSidebar({
       </div>
     </aside>
     <nav className="mobile-nav" aria-label="Dashboard navigation">
-      {MOBILE_ITEMS.map(({ href, label, Icon, exact }) => {
+      {[...MOBILE_ITEMS, ...(isCareersAdmin ? [{ href: '/dashboard/applicants', label: 'Applicants', Icon: IconBriefcase, exact: false }] : [])].map(({ href, label, Icon, exact }) => {
         const isActive = active(href, exact)
         return (
           <Link key={href} href={href} className={isActive ? 'active' : ''}>

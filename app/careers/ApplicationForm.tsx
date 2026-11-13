@@ -73,7 +73,7 @@ export default function ApplicationForm({ roleKey, roleTitle, roleQuestion }: Ap
         <div className="form-field"><label htmlFor="firstName">First name *</label><input id="firstName" name="firstName" required maxLength={80} autoComplete="given-name" /></div>
         <div className="form-field"><label htmlFor="lastName">Last name *</label><input id="lastName" name="lastName" required maxLength={80} autoComplete="family-name" /></div>
         <div className="form-field"><label htmlFor="email">Email *</label><input id="email" name="email" type="email" required maxLength={254} autoComplete="email" /></div>
-        <div className="form-field"><label htmlFor="linkedin">LinkedIn URL *</label><input id="linkedin" name="linkedin" type="url" placeholder="https://www.linkedin.com/in/..." required maxLength={500} /></div>
+        <div className="form-field"><label htmlFor="profileUrl">LinkedIn, portfolio, or GitHub URL</label><input id="profileUrl" name="profileUrl" type="url" placeholder="https://" maxLength={500} /></div>
         <div className="form-section-heading form-field-full">
           <span>02</span>
           <div><strong>Education & availability</strong><small>Start typing to see suggestions, or enter your own answer.</small></div>

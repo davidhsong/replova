@@ -6,6 +6,7 @@ import { getSupabaseAdmin } from '@/lib/supabase'
 import { ACTIVE_LOCATION_COOKIE } from '@/lib/activeLocation'
 import { getPlanLimits } from '@/lib/planLimits'
 import type { Plan } from '@/lib/planLimits'
+import { isCareerAdminEmail } from '@/lib/careersAdmin'
 import DashboardSidebar from './DashboardSidebar'
 import TermsModal from './TermsModal'
 
@@ -21,6 +22,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/signin')
+  const isCareersAdmin = await isCareerAdminEmail(user.email)
 
   const admin = getSupabaseAdmin()
 
@@ -165,6 +167,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         activeLocationId={activeRestaurant.id}
         locationLimit={limits.locations}
         awaitingCount={awaitingCount ?? 0}
+        isCareersAdmin={isCareersAdmin}
       />
       <main id="main-content" className="main">{children}</main>
       {needsTermsAcceptance && (
