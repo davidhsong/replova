@@ -20,9 +20,9 @@ const structuredData = {
       url: SITE_URL,
       logo: {
         '@type': 'ImageObject',
-        url: `${SITE_URL}/replova-logo.png`,
-        width: 1254,
-        height: 1254,
+        url: `${SITE_URL}/brand/social/logo-social.png`,
+        width: 1024,
+        height: 1024,
       },
       description: 'AI-powered B2B SaaS for review management, customer feedback analysis, and actionable business insights.',
     },

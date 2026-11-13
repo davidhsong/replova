@@ -1,10 +1,10 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { safeRedirectPath } from '@/lib/safeRedirect'
+import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
 
 type RequestState = 'idle' | 'loading' | 'sent' | 'error'
 
@@ -105,8 +105,7 @@ export default function SignInPage() {
   return (
     <main id="main-content" className="signin-shell">
       <Link className="signin-brand" href="/" aria-label="Replova home">
-        <Image src="/replova-logo-transparent.png" alt="" width={30} height={30} priority />
-        <span>Replova</span>
+        <ReplovaLogo variant="primary" surface="light" height={30} decorative eager />
       </Link>
 
       <section className="signin-card" aria-labelledby="signin-title">

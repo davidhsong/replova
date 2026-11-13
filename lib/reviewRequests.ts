@@ -1,5 +1,6 @@
 import { Resend } from 'resend'
 import { BASE_URL } from '@/lib/baseUrl'
+import { getEmailLogoUrl } from '@/lib/emailBrand'
 
 function escapeHtml(value: string): string {
   return value
@@ -39,6 +40,7 @@ export async function sendReviewRequestEmail(
   const subject = safeHeader(`${customerName ?? 'Hi there'}, how was your experience with ${restaurantName}?`)
   const clickLink = buildTrackingLink(request.id, 'click')
   const openPixel = buildTrackingLink(request.id, 'open')
+  const emailLogo = getEmailLogoUrl()
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -98,6 +100,7 @@ export async function sendReviewRequestEmail(
                 You're receiving this because you recently interacted with ${safeRestaurantName}.
                 This is a one-time message.
               </p>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:16px 0 0 0;"><tr><td bgcolor="#ffffff" style="padding:4px 8px;border:1px solid #f0f0f1;border-radius:4px;"><img src="${emailLogo}" width="100" height="30" alt="Replova" style="display:block;width:100px;height:30px;border:0;object-fit:contain;"></td></tr></table>
             </td>
           </tr>
 

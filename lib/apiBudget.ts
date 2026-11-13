@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from './supabase'
 import { Resend } from 'resend'
+import { getEmailLogoUrl } from './emailBrand'
 
 const ALERT_EMAIL = process.env.DEV_ALERT_EMAIL
 
@@ -69,12 +70,14 @@ async function sendAlert(percent: number, spent: number, budget: number): Promis
 
   const resend = new Resend(process.env.RESEND_API_KEY)
   const from = process.env.RESEND_FROM_EMAIL ?? 'alerts@replova.com'
+  const emailLogo = getEmailLogoUrl()
 
   await resend.emails.send({
     from,
     to: ALERT_EMAIL,
     subject: `Replova API budget ${label}: $${spent.toFixed(2)} / $${budget.toFixed(2)}`,
     html: `
+<div style="display:inline-block;padding:5px 9px;margin:0 0 16px;background:#fff;border:1px solid #ddd;border-radius:4px"><img src="${emailLogo}" width="120" height="36" alt="Replova" style="display:block;width:120px;height:36px;border:0;object-fit:contain"></div>
 <h2 style="margin:0 0 16px">API budget alert</h2>
 <table style="border-collapse:collapse;font-family:monospace;font-size:14px">
   <tr><td style="padding:4px 16px 4px 0;color:#666">Spent</td>

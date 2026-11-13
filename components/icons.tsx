@@ -68,9 +68,6 @@ export function IconUpload({ s = 14, sw = 1.6 }: P) {
 export function IconPin({ s = 14, sw = 1.6 }: P) {
   return <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 22s7-7.58 7-12a7 7 0 0 0-14 0c0 4.42 7 12 7 12z"/></svg>
 }
-export function IconLogo({ s = 14 }: { s?: number }) {
-  return <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor"><path d="M4 6 a2 2 0 0 1 2-2 h12 a2 2 0 0 1 2 2 v8 a2 2 0 0 1-2 2 h-7 l-5 4 z"/></svg>
-}
 export function IconStar({ s = 12 }: { s?: number }) {
   return <svg width={s} height={s} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.27 5.82 22 7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 import { getCareerRoleByKey } from '@/lib/careerRoles'
+import { getEmailLogoUrl } from '@/lib/emailBrand'
 
 export const runtime = 'nodejs'
 
@@ -129,6 +130,7 @@ export async function POST(request: NextRequest) {
     ['Requires sponsorship', sponsorship === 'yes' ? 'Yes' : 'No'],
   ]
   const htmlRows = rows.map(([label, value]) => `<tr><td style="padding:6px 16px 6px 0;color:#6b665e;vertical-align:top">${escapeHtml(label)}</td><td style="padding:6px 0;color:#191713">${escapeHtml(value)}</td></tr>`).join('')
+  const emailLogo = getEmailLogoUrl()
 
   const resend = new Resend(apiKey)
   const { error } = await resend.emails.send({
@@ -138,6 +140,7 @@ export async function POST(request: NextRequest) {
     subject: `${role} application - ${fullName.replace(/[\r\n]/g, ' ')}`,
     html: `
       <div style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;color:#191713">
+        <div style="display:inline-block;padding:5px 9px;background:#ffffff;border:1px solid #e4dfd6;border-radius:4px"><img src="${emailLogo}" width="120" height="36" alt="Replova" style="display:block;width:120px;height:36px;border:0;object-fit:contain"></div>
         <p style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#8a8379">New Replova application</p>
         <h1 style="font-size:26px;margin:8px 0 24px">${escapeHtml(role)}</h1>
         <table style="border-collapse:collapse;width:100%;font-size:14px">${htmlRows}</table>

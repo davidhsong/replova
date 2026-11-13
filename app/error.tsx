@@ -1,20 +1,7 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
-
-function Logo({ size = 20 }: { size?: number }) {
-  const box = size + 6
-  return (
-    <Image
-      src="/replova-logo-transparent.png"
-      alt="Replova"
-      width={box}
-      height={box}
-      style={{ borderRadius: Math.round(box * 0.35), flexShrink: 0 }}
-    />
-  )
-}
+import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
 
 export default function Error({
   reset,
@@ -27,8 +14,7 @@ export default function Error({
       <header style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 32px', height: 56, display: 'flex', alignItems: 'center' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-            <Logo size={18} />
-            <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--t1)' }}>Replova</span>
+            <ReplovaLogo variant="primary" surface="light" height={24} decorative eager />
           </Link>
         </div>
       </header>

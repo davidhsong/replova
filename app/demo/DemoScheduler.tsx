@@ -1,7 +1,7 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
+import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
 import { useMemo, useState } from 'react'
 
 const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT']
@@ -43,15 +43,14 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
     <main id="main-content" className="demo-shell">
       <header className="demo-topbar">
         <Link href="/" className="demo-brand" aria-label="Replova home">
-          <Image src="/replova-logo-transparent.png" alt="" width={27} height={27} priority />
-          <span>Replova</span>
+          <ReplovaLogo variant="primary" surface="light" height={27} decorative eager />
         </Link>
         <span className="demo-preview-badge">Scheduling preview</span>
       </header>
 
       <section className="demo-scheduler" aria-labelledby="demo-title">
         <aside className="demo-intro">
-          <div className="demo-mini-brand"><Image src="/replova-logo-transparent.png" alt="" width={24} height={24} /></div>
+          <div className="demo-mini-brand"><ReplovaLogo variant="icon" surface="light" height={24} decorative /></div>
           <span>Replova</span>
           <h1 id="demo-title">Replova introduction</h1>
           <p><CalendarIcon /> 45 minutes</p>

@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   IconMessage, IconUsers, IconCard, IconCog,
@@ -10,6 +9,7 @@ import {
 import { getSupabaseBrowser } from '@/lib/supabase'
 import LocationSwitcherClient from '@/components/dashboard/LocationSwitcherClient'
 import type { Plan } from '@/lib/planLimits'
+import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
 
 type Location = { id: string; name: string; active: boolean }
 
@@ -69,8 +69,7 @@ export default function DashboardSidebar({
     <>
     <aside className="sidebar">
       <Link href="/dashboard" className="dashboard-brand" aria-label="Replova dashboard">
-        <Image src="/replova-logo-transparent.png" alt="" width={24} height={24} />
-        <span>Replova</span>
+        <ReplovaLogo variant="primary" surface="light" height={24} decorative eager />
       </Link>
 
       {/* Workspace switcher */}

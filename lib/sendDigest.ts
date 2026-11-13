@@ -2,6 +2,7 @@ import { recordUsage } from '@/lib/apiBudget'
 import { Resend } from 'resend'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { BASE_URL } from '@/lib/baseUrl'
+import { getEmailLogoUrl } from '@/lib/emailBrand'
 import { createStructuredResponse, OPENAI_MODEL } from '@/lib/openai'
 
 export interface DigestData {
@@ -298,6 +299,7 @@ function formatDate(d: Date): string {
 function buildHtml(data: DigestData): string {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? BASE_URL
   const dashboardUrl = `${appUrl}/dashboard`
+  const emailLogo = getEmailLogoUrl(appUrl)
 
   const scoreSection = (() => {
     if (data.reputationScore === null) {
@@ -447,7 +449,7 @@ function buildHtml(data: DigestData): string {
           <!-- Header -->
           <tr>
             <td style="background:#1a1a2e;padding:28px 32px;border-radius:8px 8px 0 0;">
-              <p style="margin:0 0 4px 0;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#a5b4fc;">Replova</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 14px 0;"><tr><td bgcolor="#ffffff" style="padding:6px 10px;border-radius:5px;"><img src="${emailLogo}" width="140" height="42" alt="Replova" style="display:block;width:140px;height:42px;border:0;object-fit:contain;"></td></tr></table>
               <h1 style="margin:0 0 6px 0;font-size:22px;font-weight:800;color:#ffffff;">Weekly report for ${escapeHtml(data.restaurantName)}</h1>
               <p style="margin:0;font-size:13px;color:#c7d2fe;">Week of ${formatDate(data.weekStart)} – ${formatDate(data.weekEnd)}</p>
             </td>

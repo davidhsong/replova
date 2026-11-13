@@ -4,7 +4,7 @@ import { Fragment, useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { getSupabaseBrowser } from '@/lib/supabase'
 import Link from 'next/link'
-import Image from 'next/image'
+import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
 
 type Step = 'search' | 'confirm' | 'email' | 'success'
 type Plan = 'starter' | 'growth' | 'agency'
@@ -13,19 +13,6 @@ interface PlaceResult {
   placeId: string
   name: string
   address: string
-}
-
-function Logo({ size = 20 }: { size?: number }) {
-  const box = size + 6;
-  return (
-    <Image
-      src="/replova-logo-transparent.png"
-      alt="Replova"
-      width={box}
-      height={box}
-      style={{ borderRadius: Math.round(box * 0.35), flexShrink: 0 }}
-    />
-  );
 }
 
 const STEP_LABELS: Record<Step, string> = {
@@ -245,7 +232,7 @@ function OnboardPageContent() {
       <header className="onboard-header" style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
         <div className="onboard-header-inner" style={{ maxWidth: 880, margin: '0 auto', padding: '0 32px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
-            <Logo size={18} />
+            <ReplovaLogo variant="primary" surface="light" height={24} decorative eager />
           </Link>
           <a href="/signin" className="t-xs c-t3" style={{ textDecoration: 'none', fontSize: 12 }}>
             Already have an account?{' '}

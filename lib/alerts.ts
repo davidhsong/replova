@@ -2,6 +2,7 @@ import { Resend } from 'resend'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { generateReplies } from '@/lib/generateReplies'
 import { BASE_URL } from '@/lib/baseUrl'
+import { getEmailLogoUrl } from '@/lib/emailBrand'
 
 function escapeHtml(str: string): string {
   return str
@@ -33,6 +34,7 @@ function buildAlertHtml(opts: {
   const ratingBg = opts.rating <= 2 ? '#fee2e2' : '#fef3c7'
   const ratingText = opts.rating <= 2 ? '#dc2626' : '#d97706'
   const reviewCenterUrl = `${appUrl}/dashboard`
+  const emailLogo = getEmailLogoUrl(appUrl)
 
   const recoverySection =
     opts.recoveryOfferEnabled && opts.recoveryOfferText
@@ -61,7 +63,7 @@ function buildAlertHtml(opts: {
           <!-- Header bar -->
           <tr>
             <td style="background:#1a1a2e;padding:24px 32px;border-radius:8px 8px 0 0;">
-              <p style="margin:0;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#a5b4fc;">Replova</p>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 14px 0;"><tr><td bgcolor="#ffffff" style="padding:6px 10px;border-radius:5px;"><img src="${emailLogo}" width="140" height="42" alt="Replova" style="display:block;width:140px;height:42px;border:0;object-fit:contain;"></td></tr></table>
               <h1 style="margin:6px 0 0 0;font-size:22px;font-weight:700;color:#ffffff;">New review alert</h1>
               <p style="margin:4px 0 0 0;font-size:14px;color:#c7d2fe;">${escapeHtml(opts.restaurantName)}</p>
             </td>

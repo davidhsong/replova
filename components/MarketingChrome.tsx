@@ -1,11 +1,10 @@
-import Image from 'next/image'
 import Link from 'next/link'
+import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
 
-export function BrandLogo() {
+export function BrandLogo({ height = 27, eager = false }: { height?: number; eager?: boolean }) {
   return (
     <span className="brand-lockup">
-      <Image src="/replova-logo-transparent.png" alt="" width={27} height={27} className="brand-mark" />
-      <span>Replova</span>
+      <ReplovaLogo variant="primary" surface="light" height={height} decorative eager={eager} />
     </span>
   )
 }
@@ -93,7 +92,7 @@ export function MarketingHeader() {
   return (
     <header className="lp-header">
       <div className="lp-nav-inner">
-        <Link href="/" aria-label="Replova home"><BrandLogo /></Link>
+        <Link href="/" aria-label="Replova home"><BrandLogo eager /></Link>
         <nav className="lp-menu" aria-label="Main navigation">
           <PlatformDropdown />
           <SolutionsDropdown />
@@ -153,7 +152,7 @@ export function MarketingFooter() {
     <footer className="lp-footer">
       <div className="lp-footer-grid">
         <div className="lp-footer-brand">
-          <BrandLogo />
+          <BrandLogo height={32} />
           <div className="lp-footer-socials">
             <a
               href="https://www.linkedin.com/company/replova/"

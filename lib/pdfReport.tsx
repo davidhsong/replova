@@ -2,6 +2,8 @@
 
 import { Document, Page, Text, View, Image, StyleSheet, renderToBuffer, type DocumentProps } from '@react-pdf/renderer'
 import React, { type JSXElementConstructor, type ReactElement } from 'react'
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
 import { getSupabaseAdmin } from '@/lib/supabase'
 
 const colors = {
@@ -46,11 +48,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  logo: {
-    width: 28,
-    height: 28,
+  logoBox: {
+    width: 96,
+    height: 34,
     marginRight: 10,
     borderRadius: 4,
+    padding: 4,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: {
+    width: 88,
+    height: 26,
+    objectFit: 'contain',
   },
   body: {
     padding: '20 30',
@@ -456,11 +467,11 @@ function StarRating({ rating, negative }: { rating: number; negative?: boolean }
   )
 }
 
-type ReportBranding = { logoUrl?: string; brandName?: string }
+type ReportBranding = { logoUrl?: string; logoData?: Buffer; brandName?: string }
 
 function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?: ReportBranding }) {
   const brandName = branding?.brandName
-  const logoUrl = branding?.logoUrl
+  const logoSource = branding?.logoUrl ?? branding?.logoData
   const trendText = data.scoreDelta !== null
     ? data.scoreDelta > 0
       ? `Your score improved by ${data.scoreDelta.toFixed(1)} points vs last month`
@@ -475,9 +486,13 @@ function ReportDocument({ data, branding }: { data: MonthlyReportData; branding?
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            {/* This is @react-pdf/renderer Image; the DOM alt rule does not apply. */}
-            {/* eslint-disable-next-line jsx-a11y/alt-text */}
-            {logoUrl && <Image src={logoUrl} style={styles.logo} />}
+            {logoSource && (
+              <View style={styles.logoBox}>
+                {/* @react-pdf/renderer Image does not support DOM alt text. */}
+                {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                <Image src={logoSource} style={styles.logo} />
+              </View>
+            )}
             <View>
               <Text style={styles.headerTitle}>{brandName ? `${brandName}: ` : ''}Reputation Report</Text>
               <Text style={styles.headerSub}>{data.restaurantName}</Text>
@@ -674,8 +689,15 @@ export async function generatePdfBuffer(
   data: MonthlyReportData,
   branding?: ReportBranding
 ): Promise<Buffer> {
+  const resolvedBranding = branding?.brandName
+    ? branding
+    : {
+        ...branding,
+        logoData: await readFile(path.join(process.cwd(), 'public', 'brand', 'social', 'email-logo.png')),
+      }
+
   try {
-    const buffer = await renderToBuffer(buildDocumentElement(data, branding))
+    const buffer = await renderToBuffer(buildDocumentElement(data, resolvedBranding))
     return Buffer.from(buffer)
   } catch (err) {
     // A user-supplied report_logo_url can be unreachable, non-image, or
