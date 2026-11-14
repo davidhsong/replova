@@ -55,12 +55,14 @@ export async function POST(req: NextRequest) {
           : session.subscription?.id
         if (!ownerEmail || !customerId || !subscriptionId || session.mode !== 'subscription') break
         const subscription = await getStripe().subscriptions.retrieve(subscriptionId)
+        const plan = getPlanFromStripePrice(subscription.items.data[0]?.price.id ?? '')
+        if (!plan) throw new Error('Stripe subscription uses an unrecognized Replova price.')
 
         const { error: accountError } = await admin.from('accounts').upsert(
           {
             owner_email: ownerEmail,
             stripe_customer_id: customerId,
-            plan: resolvePlan(session.metadata?.plan),
+            plan,
           },
           { onConflict: 'owner_email' }
         )
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest) {
         await setOwnerRestaurantAccess(
           ownerEmail,
           subscriptionGrantsAccess(subscription.status),
-          resolvePlan(session.metadata?.plan)
+          plan
         )
         break
       }

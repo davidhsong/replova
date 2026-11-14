@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
@@ -8,11 +7,9 @@ import { ACTIVE_LOCATION_COOKIE } from '@/lib/activeLocation'
 import { getPlanLimits } from '@/lib/planLimits'
 import type { Plan } from '@/lib/planLimits'
 import { isCareerAdminEmail } from '@/lib/careersAdmin'
-import { isDeveloperEmail } from '@/lib/developerAccess'
+import { getAccountForAuthUser } from '@/lib/accountAccess'
 import DashboardSidebar from './DashboardSidebar'
 import TermsModal from './TermsModal'
-import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
-import { IconCog, IconSend } from '@/components/icons'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -31,54 +28,69 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const admin = getSupabaseAdmin()
 
-  // Fetch both the account and workspaces before deciding which dashboard
-  // surface this authenticated user may access.
-  const [{ data: restaurants }, { data: account }] = await Promise.all([
+  const account = await getAccountForAuthUser(admin, user)
+  if (!account) redirect('/onboard/workspace')
+
+  const [{ data: workspaces }, { data: restaurants }] = await Promise.all([
+    admin
+      .from('business_workspaces')
+      .select('id, name, status, created_at')
+      .eq('account_id', account.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: true }),
     admin
       .from('restaurants')
       .select('id, name, active, created_at')
-      .eq('owner_email', user.email)
+      .eq('owner_email', account.owner_email)
       .order('created_at', { ascending: true }),
-    admin
-      .from('accounts')
-      .select('plan, terms_accepted_at')
-      .eq('owner_email', user.email!)
-      .maybeSingle(),
   ])
 
-  if (!restaurants || restaurants.length === 0) {
-    const isVerifiedDeveloper = Boolean(
-      account && user.email_confirmed_at && isDeveloperEmail(user.email)
-    )
+  const workspace = workspaces?.[0]
+  if (!workspace) redirect('/onboard/workspace')
 
-    // Restaurant-free developer access is deliberately limited to YouTube
-    // Settings and the persistent Reply Queue. All business routes remain gated.
-    if (!isVerifiedDeveloper) redirect('/onboard')
-    const developerRoutes = new Set(['/dashboard/settings', '/dashboard/youtube/replies'])
-    if (!developerRoutes.has(pathname)) redirect('/dashboard/settings')
+  const plan: Plan = account.plan
+  const limits = getPlanLimits(plan)
+  const needsTermsAcceptance = !account.terms_accepted_at
+
+  if (!restaurants || restaurants.length === 0) {
+    const accountOnlyRoutes = new Set([
+      '/dashboard',
+      '/dashboard/billing',
+      '/dashboard/settings',
+      '/dashboard/youtube/replies',
+      ...(isCareersAdmin ? ['/dashboard/applicants'] : []),
+    ])
+    if (!accountOnlyRoutes.has(pathname)) redirect('/dashboard')
+
+    const trialEnd = new Date(new Date(account.created_at).getTime() + 30 * 24 * 60 * 60 * 1000)
+    const trialEndDate = trialEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    const displayName = (user.user_metadata?.display_name as string | undefined) ?? ''
+    const avatarUrl = user.user_metadata?.avatar_url as string | undefined
+    const initials = (displayName || (user.email ?? ''))
+      .split(/[\s@]/)
+      .filter(Boolean)
+      .map((part: string) => part[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase() || '?'
 
     return (
       <div className="app">
-        <header className="mobile-app-header">
-          <Link href="/dashboard/settings" className="mobile-app-brand" aria-label="Replova settings">
-            <ReplovaLogo variant="primary" surface="light" height={21} decorative eager />
-          </Link>
-          <div className="mobile-app-context">
-            <span>Developer workspace</span>
-            <small>Integrations</small>
-          </div>
-        </header>
+        <DashboardSidebar
+          restaurantName={workspace.name}
+          plan={plan}
+          displayName={displayName}
+          initials={initials}
+          avatarUrl={avatarUrl}
+          userEmail={user.email!}
+          locations={[]}
+          activeLocationId={null}
+          locationLimit={limits.locations}
+          awaitingCount={0}
+          isCareersAdmin={isCareersAdmin}
+        />
         <main id="main-content" className="main">{children}</main>
-        <nav className="mobile-nav mobile-nav-developer" aria-label="Developer workspace navigation">
-          <Link href="/dashboard/youtube/replies" className={pathname === '/dashboard/youtube/replies' ? 'active' : ''} aria-current={pathname === '/dashboard/youtube/replies' ? 'page' : undefined}>
-            <IconSend s={18} />
-            <span>YouTube</span>
-          </Link>
-          <Link href="/dashboard/settings" className={pathname === '/dashboard/settings' ? 'active' : ''} aria-current={pathname === '/dashboard/settings' ? 'page' : undefined}>
-            <IconCog s={18} />
-            <span>Settings</span>
-          </Link>
-        </nav>
+        {needsTermsAcceptance && <TermsModal plan={plan} trialEndDate={trialEndDate} />}
       </div>
     )
   }
@@ -162,15 +174,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
     )
   }
 
-  const plan: Plan = (account?.plan as Plan) ?? 'starter'
-  const limits = getPlanLimits(plan)
-  const needsTermsAcceptance = !account?.terms_accepted_at
-
   // Trial end date: 30 days from first restaurant creation
   const { data: firstRestaurant } = await admin
     .from('restaurants')
     .select('created_at')
-    .eq('owner_email', user.email!)
+    .eq('owner_email', account.owner_email)
     .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle()

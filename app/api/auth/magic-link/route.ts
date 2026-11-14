@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
 import { BASE_URL } from '@/lib/baseUrl'
 import { safeRedirectPath } from '@/lib/safeRedirect'
+import { isSameOriginRequest } from '@/lib/accountOnboarding'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -29,6 +30,10 @@ function getPublicClient() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!isSameOriginRequest(req)) {
+    return NextResponse.json({ error: 'Invalid request origin.' }, { status: 403 })
+  }
+
   if (!isConfigured()) {
     return NextResponse.json(
       { error: 'Email sign-in is not configured in this environment.' },

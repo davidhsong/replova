@@ -9,10 +9,21 @@
 export interface Account {
   id: string
   owner_email: string
+  auth_user_id: string | null
   plan: 'starter' | 'growth' | 'agency'
   stripe_customer_id: string | null
   terms_accepted_at: string | null
   created_at: string
+}
+
+export interface BusinessWorkspace {
+  id: string
+  account_id: string
+  name: string
+  status: 'active' | 'archived'
+  provisioning_source: 'manual' | 'legacy_backfill' | 'system'
+  created_at: string
+  updated_at: string
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -21,6 +32,7 @@ export interface Account {
 
 export interface Restaurant {
   id: string
+  workspace_id: string | null
   name: string
   place_id: string | null
   owner_email: string
@@ -321,12 +333,17 @@ export type Database = {
     Tables: {
       accounts: {
         Row: Account
-        Insert: Omit<Account, 'id' | 'created_at'>
+        Insert: Omit<Account, 'id' | 'created_at' | 'auth_user_id'> & Partial<Pick<Account, 'auth_user_id'>>
         Update: Partial<Omit<Account, 'id' | 'created_at'>>
+      }
+      business_workspaces: {
+        Row: BusinessWorkspace
+        Insert: Pick<BusinessWorkspace, 'account_id' | 'name'> & Partial<Omit<BusinessWorkspace, 'id' | 'account_id' | 'name' | 'created_at' | 'updated_at'>>
+        Update: Partial<Omit<BusinessWorkspace, 'id' | 'account_id' | 'created_at' | 'updated_at'>>
       }
       restaurants: {
         Row: Restaurant
-        Insert: Omit<Restaurant, 'id' | 'created_at'>
+        Insert: Omit<Restaurant, 'id' | 'created_at' | 'workspace_id'> & Partial<Pick<Restaurant, 'workspace_id'>>
         Update: Partial<Omit<Restaurant, 'id' | 'created_at'>>
       }
       youtube_connections: {

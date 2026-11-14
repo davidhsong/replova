@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { isSameOriginRequest } from '@/lib/accountOnboarding'
 
 function isConfigured() {
   return Boolean(
@@ -34,8 +35,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   if (!isConfigured()) return json({ error: 'Authentication is not configured' }, 503)
 
-  const origin = request.headers.get('origin')
-  if (origin && origin !== new URL(request.url).origin) {
+  if (!isSameOriginRequest(request)) {
     return json({ error: 'Invalid request origin' }, 403)
   }
 

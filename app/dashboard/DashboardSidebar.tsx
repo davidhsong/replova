@@ -22,7 +22,7 @@ interface Props {
   avatarUrl?: string
   userEmail: string
   locations: Location[]
-  activeLocationId: string
+  activeLocationId: string | null
   locationLimit: number
   awaitingCount: number
   isCareersAdmin: boolean
@@ -69,6 +69,16 @@ export default function DashboardSidebar({
   const pathname = usePathname()
   const router = useRouter()
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
+  const hasLocations = locations.length > 0
+  const topItems = hasLocations
+    ? TOP_ITEMS
+    : TOP_ITEMS.filter(item => item.href === '/dashboard' || item.href === '/dashboard/youtube/replies')
+  const bottomItems = hasLocations
+    ? BOTTOM_ITEMS
+    : BOTTOM_ITEMS.filter(item => item.href === '/dashboard/billing' || item.href === '/dashboard/settings')
+  const mobilePrimaryItems = hasLocations
+    ? MOBILE_PRIMARY_ITEMS
+    : MOBILE_PRIMARY_ITEMS.filter(item => item.href === '/dashboard' || item.href === '/dashboard/youtube/replies')
 
   useEffect(() => {
     if (!mobileMoreOpen) return
@@ -129,7 +139,7 @@ export default function DashboardSidebar({
         {locations.length > 1 && (
           <LocationSwitcherClient
             locations={locations}
-            activeLocationId={activeLocationId}
+            activeLocationId={activeLocationId ?? locations[0].id}
             locationLimit={locationLimit}
             currentCount={locations.length}
           />
@@ -138,7 +148,7 @@ export default function DashboardSidebar({
 
       <div className="dashboard-nav-scroll">
         <div className="nav-group">
-          {[...TOP_ITEMS, ...(isCareersAdmin ? [{ href: '/dashboard/applicants', label: 'Applicants', Icon: IconBriefcase, exact: false, showsBadge: false }] : [])].map(({ href, label, Icon, exact, showsBadge }) => {
+          {[...topItems, ...(isCareersAdmin ? [{ href: '/dashboard/applicants', label: 'Applicants', Icon: IconBriefcase, exact: false, showsBadge: false }] : [])].map(({ href, label, Icon, exact, showsBadge }) => {
             const isActive = active(href, exact)
             const badge = showsBadge && awaitingCount > 0 ? awaitingCount : null
             return (
@@ -154,7 +164,7 @@ export default function DashboardSidebar({
         </div>
 
         <div className="nav-group dashboard-nav-secondary">
-          {BOTTOM_ITEMS.map(({ href, label, Icon }) => {
+          {bottomItems.map(({ href, label, Icon }) => {
             const isActive = active(href)
             return (
               <Link key={href} href={href} className={`nav-item${isActive ? ' active' : ''}`}>
@@ -216,7 +226,7 @@ export default function DashboardSidebar({
       </div>
     </aside>
     <nav className="mobile-nav" aria-label="Dashboard navigation">
-      {MOBILE_PRIMARY_ITEMS.map(({ href, label, Icon, exact }) => {
+      {mobilePrimaryItems.map(({ href, label, Icon, exact }) => {
         const isActive = active(href, exact)
         return (
           <Link key={href} href={href} className={isActive ? 'active' : ''} aria-current={isActive ? 'page' : undefined}>
@@ -227,7 +237,7 @@ export default function DashboardSidebar({
       })}
       <button
         type="button"
-        className={mobileMoreOpen || BOTTOM_ITEMS.some(item => active(item.href)) || (isCareersAdmin && active('/dashboard/applicants')) ? 'active' : ''}
+        className={mobileMoreOpen || bottomItems.some(item => active(item.href)) || (isCareersAdmin && active('/dashboard/applicants')) ? 'active' : ''}
         aria-expanded={mobileMoreOpen}
         aria-controls="mobile-more-menu"
         onClick={() => setMobileMoreOpen(open => !open)}
@@ -260,14 +270,14 @@ export default function DashboardSidebar({
               <span>Workspace</span>
               <LocationSwitcherClient
                 locations={locations}
-                activeLocationId={activeLocationId}
+                activeLocationId={activeLocationId ?? locations[0].id}
                 locationLimit={locationLimit}
                 currentCount={locations.length}
               />
             </div>
           )}
           <div className="mobile-more-links">
-            {[...BOTTOM_ITEMS, ...(isCareersAdmin ? [{ href: '/dashboard/applicants', label: 'Applicants', Icon: IconBriefcase }] : [])].map(({ href, label, Icon }) => {
+            {[...bottomItems, ...(isCareersAdmin ? [{ href: '/dashboard/applicants', label: 'Applicants', Icon: IconBriefcase }] : [])].map(({ href, label, Icon }) => {
               const isActive = active(href)
               return (
                 <Link

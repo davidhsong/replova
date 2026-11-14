@@ -3008,3 +3008,197 @@ textarea { touch-action: manipulation; }
   .mobile-more-sheet { max-height: calc(100dvh - 86px); }
   .chatbot-panel { height: calc(100dvh - 112px) !important; }
 }
+
+/* Phase 6B: account-first onboarding and location-free workspace */
+.account-onboarding-shell,
+.workspace-onboarding-shell,
+.location-onboarding-shell {
+  min-height: 100dvh;
+  background: var(--bg);
+}
+.account-onboarding-header {
+  width: min(1180px, calc(100% - 64px));
+  min-height: 72px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+}
+.account-onboarding-header p { margin: 0; color: var(--t3); font-size: 12px; }
+.account-onboarding-header p a { color: var(--t1); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.account-onboarding-grid,
+.workspace-onboarding-grid {
+  width: min(1180px, calc(100% - 64px));
+  min-height: calc(100dvh - 73px);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(360px, .8fr);
+  gap: clamp(56px, 9vw, 132px);
+  align-items: center;
+  padding: 72px 0;
+}
+.account-onboarding-intro,
+.workspace-onboarding-copy { max-width: 650px; }
+.account-onboarding-intro h1,
+.workspace-onboarding-copy h1,
+.location-onboarding-content h1 {
+  max-width: 680px;
+  margin: 14px 0 20px;
+  font-size: clamp(38px, 5vw, 64px);
+  line-height: 1.02;
+  letter-spacing: -.055em;
+  font-weight: 680;
+}
+.account-onboarding-lead,
+.workspace-onboarding-copy > p,
+.location-onboarding-content > p {
+  max-width: 58ch;
+  margin: 0;
+  color: var(--t2);
+  font-size: 15px;
+  line-height: 1.7;
+}
+.account-onboarding-steps,
+.workspace-empty-checklist {
+  max-width: 560px;
+  margin: 48px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line-md);
+}
+.account-onboarding-steps li,
+.workspace-empty-checklist li {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 16px;
+  align-items: start;
+  padding: 17px 0;
+  border-bottom: 1px solid var(--line);
+}
+.account-onboarding-steps li > span,
+.workspace-empty-checklist li > span {
+  color: var(--t4);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+.account-onboarding-steps li[data-state="current"] > span,
+.workspace-empty-checklist li[data-complete="true"] > span { color: var(--pos); }
+.account-onboarding-steps strong,
+.workspace-empty-checklist strong { display: block; font-size: 13px; font-weight: 650; }
+.account-onboarding-steps small,
+.workspace-empty-checklist small { display: block; margin-top: 3px; color: var(--t3); font-size: 11px; line-height: 1.5; }
+.account-onboarding-form-panel {
+  width: 100%;
+  padding: clamp(28px, 4vw, 44px);
+  background: var(--surface);
+  border: 1px solid var(--line-md);
+  border-radius: 18px;
+  box-shadow: 0 20px 50px -36px rgba(20, 20, 20, .28);
+}
+.account-onboarding-form-heading { margin-bottom: 30px; }
+.account-onboarding-form-heading h2,
+.account-onboarding-success h2 { margin: 8px 0 7px; font-size: 24px; letter-spacing: -.035em; }
+.account-onboarding-form-heading > p:last-child,
+.account-onboarding-success > p:not(.t-eyebrow) { margin: 0; color: var(--t3); font-size: 13px; line-height: 1.6; }
+.account-onboarding-field { display: grid; gap: 8px; }
+.account-onboarding-field label { color: var(--t1); font-size: 12px; font-weight: 650; }
+.account-onboarding-field input {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line-md);
+  border-radius: 10px;
+  outline: none;
+  background: var(--surface);
+  transition: border-color .2s cubic-bezier(.16, 1, .3, 1), box-shadow .2s cubic-bezier(.16, 1, .3, 1);
+}
+.account-onboarding-field input:focus { border-color: var(--line-hi); box-shadow: 0 0 0 3px var(--accent-sub); }
+.account-onboarding-field input[aria-invalid="true"] { border-color: var(--neg); }
+.account-onboarding-field small { color: var(--t4); font-size: 11px; line-height: 1.5; }
+.account-onboarding-submit { width: 100%; height: 44px; margin-top: 24px; border-radius: 10px; }
+.account-onboarding-error { margin: 0; color: var(--neg); font-size: 12px; line-height: 1.5; }
+.account-onboarding-terms { margin: 18px 0 0; color: var(--t4); font-size: 10px; line-height: 1.55; text-align: center; }
+.account-onboarding-terms a { color: var(--t2); text-decoration: underline; text-underline-offset: 2px; }
+.account-onboarding-success { display: grid; justify-items: start; gap: 18px; }
+.account-onboarding-success h2,
+.account-onboarding-success p { margin: 0; }
+.workspace-setup-form { display: grid; }
+.workspace-privacy-note {
+  max-width: 560px;
+  margin-top: 36px;
+  padding: 18px 0 18px 20px;
+  border-left: 2px solid var(--line-hi);
+  color: var(--t3);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.location-onboarding-content {
+  width: min(720px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 80px 0;
+}
+.location-onboarding-content h1 { font-size: clamp(36px, 6vw, 54px); }
+.location-onboarding-form,
+.location-confirmation {
+  margin-top: 42px;
+  padding-top: 32px;
+  border-top: 1px solid var(--line-md);
+}
+.location-onboarding-form { display: grid; gap: 22px; }
+.location-onboarding-form .btn { justify-self: end; border-radius: 10px; }
+.location-confirmation { display: grid; gap: 26px; }
+.location-confirmation h2 { margin: 8px 0 4px; font-size: 24px; letter-spacing: -.03em; }
+.location-confirmation p { margin: 0; color: var(--t3); font-size: 13px; }
+.location-confirmation-actions { display: flex; justify-content: space-between; gap: 12px; padding-top: 22px; border-top: 1px solid var(--line); }
+.workspace-empty-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; }
+.workspace-empty-header .t-eyebrow { margin-bottom: 7px; }
+.workspace-empty-header h1 { margin: 0 0 4px; }
+.workspace-empty-status { display: inline-flex; align-items: center; gap: 8px; color: var(--t3); font-size: 11px; font-weight: 650; }
+.workspace-empty-status > span { width: 7px; height: 7px; border-radius: 50%; background: var(--warn); }
+.workspace-empty-body { max-width: 1120px; }
+.workspace-empty-body > .banner { margin-bottom: 20px; }
+.workspace-empty-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(280px, .65fr);
+  gap: clamp(48px, 8vw, 104px);
+  align-items: start;
+  padding: clamp(52px, 8vw, 92px) 0;
+  border-top: 1px solid var(--line-md);
+  border-bottom: 1px solid var(--line-md);
+}
+.workspace-empty-copy h2 { max-width: 650px; margin: 12px 0 16px; font-size: clamp(34px, 5vw, 58px); line-height: 1.02; letter-spacing: -.055em; }
+.workspace-empty-copy > p:not(.t-eyebrow) { max-width: 60ch; margin: 0; color: var(--t2); font-size: 14px; line-height: 1.7; }
+.workspace-empty-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 30px 0 14px; }
+.workspace-empty-actions .btn { border-radius: 10px; }
+.workspace-empty-copy > small { display: block; max-width: 64ch; color: var(--t4); font-size: 10px; line-height: 1.55; }
+.workspace-empty-checklist { margin: 0; }
+.workspace-empty-footnote { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 24px 0; }
+.workspace-empty-footnote strong { font-size: 13px; }
+.workspace-empty-footnote p { margin: 4px 0 0; color: var(--t3); font-size: 11px; }
+
+@media (max-width: 767px) {
+  .account-onboarding-header { width: calc(100% - 32px); min-height: 64px; }
+  .account-onboarding-header p { max-width: 170px; text-align: right; }
+  .account-onboarding-grid,
+  .workspace-onboarding-grid {
+    width: calc(100% - 32px);
+    min-height: auto;
+    grid-template-columns: 1fr;
+    gap: 36px;
+    padding: 42px 0;
+  }
+  .account-onboarding-intro h1,
+  .workspace-onboarding-copy h1 { font-size: 40px; }
+  .account-onboarding-steps { margin-top: 32px; }
+  .account-onboarding-form-panel { padding: 26px 20px; border-radius: 14px; }
+  .location-onboarding-content { width: calc(100% - 32px); padding: 48px 0; }
+  .location-confirmation-actions { align-items: stretch; flex-direction: column-reverse; }
+  .location-confirmation-actions .btn,
+  .location-onboarding-form .btn { width: 100%; }
+  .workspace-empty-header { align-items: flex-start; flex-direction: column; }
+  .workspace-empty-hero { grid-template-columns: 1fr; gap: 44px; padding: 52px 0; }
+  .workspace-empty-actions { align-items: stretch; flex-direction: column; }
+  .workspace-empty-actions .btn { width: 100%; }
+  .workspace-empty-footnote { align-items: flex-start; flex-direction: column; }
+}

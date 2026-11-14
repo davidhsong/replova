@@ -5,13 +5,8 @@ import { getSupabaseAdmin } from '@/lib/supabase'
 import { PLAN_LIMITS } from '@/lib/planLimits'
 import { IconCheck, IconX, IconExternal } from '@/components/icons'
 import type { Plan } from '@/lib/planLimits'
-import { getStripe } from '@/lib/stripe'
-
-type Account = {
-  plan: Plan
-  stripe_customer_id: string | null
-  created_at: string
-}
+import { getStripe, subscriptionGrantsAccess } from '@/lib/stripe'
+import { getAccountForAuthUser } from '@/lib/accountAccess'
 
 const PLAN_META: Record<Plan, {
   label: string
@@ -87,31 +82,36 @@ export default async function BillingPage() {
 
   const admin = getSupabaseAdmin()
 
-  const { data: account } = await admin
-    .from('accounts')
-    .select('plan, stripe_customer_id, created_at')
-    .eq('owner_email', user.email!)
-    .single<Account>()
+  const account = await getAccountForAuthUser(admin, user)
+  if (!account) redirect('/onboard/workspace')
 
   const { data: restaurant } = await admin
     .from('restaurants')
     .select('id, name, active, created_at')
-    .eq('owner_email', user.email!)
+    .eq('owner_email', account.owner_email)
     .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle()
 
-  if (!restaurant) redirect('/onboard')
+  const { data: workspace } = await admin
+    .from('business_workspaces')
+    .select('name')
+    .eq('account_id', account.id)
+    .eq('status', 'active')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+  if (!workspace) redirect('/onboard/workspace')
 
   const { count: locationCount } = await admin
     .from('restaurants')
     .select('id', { count: 'exact', head: true })
-    .eq('owner_email', user.email!)
+    .eq('owner_email', account.owner_email)
 
   const { data: restaurantIds } = await admin
     .from('restaurants')
     .select('id')
-    .eq('owner_email', user.email!)
+    .eq('owner_email', account.owner_email)
 
   const ids = (restaurantIds ?? []).map(r => r.id)
   const { count: competitorCount } = ids.length > 0
@@ -127,17 +127,17 @@ export default async function BillingPage() {
   const limits = PLAN_LIMITS[plan]
   const hasStripe = !!account?.stripe_customer_id
 
-  const trialStart = new Date(restaurant.created_at)
+  const trialStart = new Date(restaurant?.created_at ?? account.created_at)
   const trialEnd = new Date(trialStart)
   trialEnd.setDate(trialEnd.getDate() + 30)
   const now = new Date()
-  const inTrial = restaurant.active && !hasStripe && now < trialEnd
   const daysLeft = Math.max(0, Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
 
   let renewalDate: Date | null = null
   let trialEndsViaStripe: Date | null = null
   let stripeTrialDaysLeft: number | null = null
   let inStripeTrialByDate = false
+  let stripeAccessActive = false
 
   if (hasStripe) {
     try {
@@ -148,6 +148,7 @@ export default async function BillingPage() {
       })
       const sub = subs.data[0]
       if (sub) {
+        stripeAccessActive = subscriptionGrantsAccess(sub.status)
         if (sub.status === 'trialing' && sub.trial_end) {
           trialEndsViaStripe = new Date(sub.trial_end * 1000)
           stripeTrialDaysLeft = Math.max(0, Math.ceil((trialEndsViaStripe.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
@@ -162,6 +163,8 @@ export default async function BillingPage() {
     }
   }
 
+  const accessActive = restaurant?.active ?? (hasStripe ? stripeAccessActive : now < trialEnd)
+  const inTrial = accessActive && !hasStripe && now < trialEnd
   const showingTrial = inTrial || inStripeTrialByDate
   const effectiveDaysLeft = inStripeTrialByDate ? (stripeTrialDaysLeft ?? daysLeft) : daysLeft
   const effectiveTrialEnd = inStripeTrialByDate ? (trialEndsViaStripe ?? trialEnd) : trialEnd
@@ -179,7 +182,7 @@ export default async function BillingPage() {
           <span>Billing</span>
         </div>
         <h1 className="t-h1" style={{ marginBottom: 4 }}>Billing</h1>
-        <p className="t-sm c-t3">{restaurant.name}</p>
+        <p className="t-sm c-t3">{restaurant?.name ?? workspace.name}</p>
       </div>
 
       <div className="page-body" style={{ maxWidth: 1040 }}>
@@ -195,7 +198,7 @@ export default async function BillingPage() {
               <h2 className="t-serif" style={{ fontSize: 36, lineHeight: 1, letterSpacing: '-0.02em' }}>
                 {meta.label}
               </h2>
-              {restaurant.active ? (
+              {accessActive ? (
                 showingTrial
                   ? <span className="pill pill-accent">Free trial</span>
                   : <span className="pill pill-pos">Active</span>
@@ -233,14 +236,14 @@ export default async function BillingPage() {
               </div>
             )}
 
-            {!restaurant.active && (
+            {!accessActive && (
               <div className="banner banner-neg" style={{ marginBottom: 20 }}>
                 Subscription inactive. Reactivate below to resume review management.
               </div>
             )}
 
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-              {!restaurant.active ? (
+              {!accessActive ? (
                 <a href="/api/create-checkout" className="btn btn-primary">
                   Reactivate subscription
                 </a>
@@ -248,7 +251,7 @@ export default async function BillingPage() {
                 <a href="/api/billing-portal" className="btn btn-primary btn-sm">
                   Manage subscription <IconExternal s={11} />
                 </a>
-              ) : restaurant.active ? (
+              ) : accessActive ? (
                 <>
                   <a href="/api/create-checkout" className="btn btn-primary btn-sm">
                     Add payment method <IconExternal s={11} />

@@ -2,14 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
-import { getStripe, subscriptionGrantsAccess } from '@/lib/stripe'
-import type { Plan } from '@/lib/planLimits'
+import { getPlanFromStripePrice, getStripe, subscriptionGrantsAccess } from '@/lib/stripe'
 import { setOwnerRestaurantAccess } from '@/lib/subscriptionAccess'
-
-function resolvePlan(raw: string | undefined): Plan {
-  if (raw === 'starter' || raw === 'agency') return raw
-  return 'growth'
-}
+import { getAccountForAuthUser } from '@/lib/accountAccess'
 
 export async function GET(req: NextRequest) {
   const sessionId = req.nextUrl.searchParams.get('session_id')
@@ -22,6 +17,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(new URL('/signin?next=%2Fdashboard', req.url))
   }
 
+  const admin = getSupabaseAdmin()
+  const account = await getAccountForAuthUser(admin, user)
+  if (!account) {
+    return NextResponse.redirect(new URL('/onboard/workspace', req.url))
+  }
+
   try {
     const stripe = getStripe()
     const session = await stripe.checkout.sessions.retrieve(sessionId)
@@ -32,7 +33,8 @@ export async function GET(req: NextRequest) {
       session.status !== 'complete' ||
       session.mode !== 'subscription' ||
       !ownerEmail ||
-      ownerEmail !== user.email.toLowerCase() ||
+      ownerEmail !== account.owner_email.toLowerCase() ||
+      (session.metadata?.accountId && session.metadata.accountId !== account.id) ||
       !customerId ||
       !session.subscription
     ) {
@@ -47,12 +49,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(new URL('/dashboard/billing?billing_error=inactive_subscription', req.url))
     }
 
-    const admin = getSupabaseAdmin()
-    const plan = resolvePlan(session.metadata?.plan)
+    const plan = getPlanFromStripePrice(subscription.items.data[0]?.price.id ?? '')
+    if (!plan) {
+      return NextResponse.redirect(new URL('/dashboard/billing?billing_error=invalid_checkout', req.url))
+    }
     const { error: accountError } = await admin
       .from('accounts')
       .update({ stripe_customer_id: customerId, plan })
-      .eq('owner_email', ownerEmail)
+      .eq('id', account.id)
 
     if (accountError) throw accountError
 

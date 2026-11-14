@@ -6,6 +6,7 @@ import { getSupabaseAdmin } from '@/lib/supabase'
 import { BASE_URL } from '@/lib/baseUrl'
 import { getStripe, getStripePriceId } from '@/lib/stripe'
 import type { Plan } from '@/lib/planLimits'
+import { getAccountForAuthUser } from '@/lib/accountAccess'
 
 function resolvePlan(raw: string | null): Plan {
   if (raw === 'starter' || raw === 'agency') return raw
@@ -19,22 +20,16 @@ export async function GET(req: NextRequest) {
   if (!user?.email) redirect('/onboard')
 
   const admin = getSupabaseAdmin()
-  const [{ data: restaurant }, { data: account }] = await Promise.all([
-    admin
-      .from('restaurants')
-      .select('id')
-      .eq('owner_email', user.email)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle(),
-    admin
-      .from('accounts')
-      .select('plan, stripe_customer_id')
-      .eq('owner_email', user.email)
-      .maybeSingle(),
-  ])
+  const account = await getAccountForAuthUser(admin, user)
+  if (!account) redirect('/onboard/workspace')
 
-  if (!restaurant || !account) redirect('/onboard')
+  const { data: restaurant } = await admin
+    .from('restaurants')
+    .select('id')
+    .eq('owner_email', account.owner_email)
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
 
   const queryPlan = req.nextUrl.searchParams.get('plan')
   const plan = queryPlan ? resolvePlan(queryPlan) : resolvePlan(account.plan)
@@ -55,7 +50,7 @@ export async function GET(req: NextRequest) {
   }
 
   const subscriptionData = {
-    metadata: { ownerEmail: user.email, plan },
+    metadata: { ownerEmail: account.owner_email, accountId: account.id, plan },
     ...(account.stripe_customer_id ? {} : { trial_period_days: 30 }),
   }
 
@@ -64,9 +59,14 @@ export async function GET(req: NextRequest) {
     line_items: [{ price: getStripePriceId(plan), quantity: 1 }],
     ...(account.stripe_customer_id
       ? { customer: account.stripe_customer_id }
-      : { customer_email: user.email }),
-    client_reference_id: restaurant.id,
-    metadata: { restaurantId: restaurant.id, ownerEmail: user.email, plan },
+      : { customer_email: account.owner_email }),
+    client_reference_id: restaurant?.id ?? account.id,
+    metadata: {
+      accountId: account.id,
+      ...(restaurant ? { restaurantId: restaurant.id } : {}),
+      ownerEmail: account.owner_email,
+      plan,
+    },
     subscription_data: subscriptionData,
     allow_promotion_codes: true,
     success_url: `${BASE_URL}/api/checkout-success?session_id={CHECKOUT_SESSION_ID}`,

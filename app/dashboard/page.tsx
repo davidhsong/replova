@@ -8,6 +8,8 @@ import DemoMode from './DemoMode'
 import AutoDismissBanner from './AutoDismissBanner'
 import StatTile from '@/components/dashboard/StatTile'
 import type { Plan } from '@/lib/planLimits'
+import { getAccountForAuthUser } from '@/lib/accountAccess'
+import WorkspaceEmptyState from './WorkspaceEmptyState'
 
 type Restaurant = {
   id: string
@@ -44,7 +46,7 @@ type ReputationScore = {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ success?: string }>
+  searchParams: Promise<{ success?: string; welcome?: string }>
 }) {
   const cookieStore = await cookies()
   const supabase = createClient(cookieStore)
@@ -55,27 +57,36 @@ export default async function DashboardPage({
 
   const admin = getSupabaseAdmin()
 
+  const account = await getAccountForAuthUser(admin, user)
+  if (!account) redirect('/onboard/workspace')
+
+  const { data: workspace } = await admin
+    .from('business_workspaces')
+    .select('id, name')
+    .eq('account_id', account.id)
+    .eq('status', 'active')
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle()
+  if (!workspace) redirect('/onboard/workspace')
+
   const { data: restaurants } = await admin
     .from('restaurants')
     .select('id, name, active, owner_email, place_id, google_location_name, created_at')
-    .eq('owner_email', user.email)
+    .eq('owner_email', account.owner_email)
     .order('created_at', { ascending: true })
     .returns<Restaurant[]>()
 
-  if (!restaurants || restaurants.length === 0) redirect('/onboard')
+  if (!restaurants || restaurants.length === 0) {
+    return <WorkspaceEmptyState workspaceName={workspace.name} welcome={params.welcome === 'true'} />
+  }
 
   const activeId = cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value
   const restaurant = restaurants.find(r => r.id === activeId && r.active)
     ?? restaurants.find(r => r.active)
     ?? restaurants[0]
 
-  const { data: account } = await admin
-    .from('accounts')
-    .select('plan')
-    .eq('owner_email', user.email!)
-    .maybeSingle()
-
-  const plan: Plan = (account?.plan as Plan) ?? 'starter'
+  const plan: Plan = account.plan
 
   const currentDate = new Date()
   const currentTime = currentDate.getTime()
