@@ -109,15 +109,16 @@ function ReviewRow({
     review.rating === 3 ? 'var(--warn-sub)' : 'var(--surface)'
 
   return (
-    <article style={{
+    <article className="review-item" style={{
       background: rowBg,
       borderTop: '1px solid var(--line)',
       opacity: isReplied ? 0.5 : 1,
       transition: 'opacity 0.15s',
     }}>
       {/* Row header */}
-      <div style={{ display: 'flex', alignItems: 'center' }}>
+      <div className="review-item-summary" style={{ display: 'flex', alignItems: 'center' }}>
         <button
+          className="review-item-toggle"
           onClick={() => setOpen(o => !o)}
           style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, padding: '16px 16px 16px 20px', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', minWidth: 0 }}
         >
@@ -174,7 +175,7 @@ function ReviewRow({
         </button>
 
         {/* Mark-replied toggle */}
-        <div style={{ padding: '0 16px 0 4px', flexShrink: 0 }}>
+        <div className="review-status-action" style={{ padding: '0 16px 0 4px', flexShrink: 0 }}>
           <button
             onClick={handleToggle}
             disabled={toggling}
@@ -192,7 +193,7 @@ function ReviewRow({
 
       {/* Expanded panel */}
       {open && (
-        <div className="fade-in" style={{ padding: '0 20px 20px 20px', borderTop: '1px solid var(--line)' }}>
+        <div className="fade-in review-item-detail" style={{ padding: '0 20px 20px 20px', borderTop: '1px solid var(--line)' }}>
           {/* Context hint */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, margin: '14px 0', fontSize: 12 }}>
             {isLowRating && !isReplied && <span style={{ color: 'var(--neg)', fontWeight: 500 }}>Priority: reply soon</span>}
@@ -219,11 +220,12 @@ function ReviewRow({
 
           {/* Reply drafts */}
           {(review.reply_draft_1 || review.reply_draft_2 || review.reply_draft_3) ? (
-            <div style={{ background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 'var(--r-5)', padding: 16 }}>
+            <div className="review-draft-panel" style={{ background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 'var(--r-5)', padding: 16 }}>
               <div className="t-eyebrow" style={{ marginBottom: 12 }}>Suggested reply</div>
-              <div style={{ display: 'flex', gap: 3, marginBottom: 12, background: 'var(--surface)', borderRadius: 'var(--r-4)', padding: 3, border: '1px solid var(--line)', width: 'fit-content' }}>
+              <div className="review-draft-tabs" style={{ display: 'flex', gap: 3, marginBottom: 12, background: 'var(--surface)', borderRadius: 'var(--r-4)', padding: 3, border: '1px solid var(--line)', width: 'fit-content' }}>
                 {REPLY_LABELS.map(({ label, field }) => (
                   <button
+                    className="review-draft-tab"
                     key={field}
                     onClick={() => setActiveTab(field)}
                     style={{
@@ -242,7 +244,7 @@ function ReviewRow({
               {activeText && (
                 <>
                   <p style={{ fontSize: 13, color: 'var(--t2)', lineHeight: 1.75, margin: '0 0 14px' }}>{activeText}</p>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+                  <div className="review-draft-actions" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
                     <button
                       onClick={handleToggle}
                       disabled={toggling}
@@ -251,7 +253,7 @@ function ReviewRow({
                     >
                       {isReplied ? 'Undo replied' : 'Mark as replied'}
                     </button>
-                    <div style={{ display: 'flex', gap: 6 }}>
+                    <div className="review-publish-actions" style={{ display: 'flex', gap: 6 }}>
                       <CopyButton text={activeText} />
                       <PostReplyButton
                         replyText={activeText}
@@ -358,14 +360,15 @@ export default function ReviewList({
             </button>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="review-filter-controls" style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {/* Rating filter pills */}
-          <div style={{
+          <div className="review-rating-filters" style={{
             display: 'flex', gap: 2,
             background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 'var(--r-4)', padding: 3, flexShrink: 0,
           }}>
             {RATING_FILTERS.map(f => (
               <button
+                className="review-rating-filter"
                 key={f.value}
                 onClick={() => setRatingFilter(f.value)}
                 style={{
@@ -398,7 +401,7 @@ export default function ReviewList({
       </div>
 
       {/* Search */}
-      <div style={{ position: 'relative', marginTop: 10, marginBottom: 0 }}>
+      <div className="review-search" style={{ position: 'relative', marginTop: 10, marginBottom: 0 }}>
         <svg
           style={{ position: 'absolute', left: 11, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--t4)' }}
           width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
@@ -416,7 +419,7 @@ export default function ReviewList({
       </div>
 
       {/* Review list */}
-      <div style={{ border: '1px solid var(--line)', borderRadius: 0, overflow: 'hidden', marginTop: 10, borderTop: 'none' }}>
+      <div className="review-list-shell" style={{ border: '1px solid var(--line)', borderRadius: 'var(--r-6)', overflow: 'hidden', marginTop: 10 }}>
         {filtered.length === 0 ? (
           <div style={{ padding: '48px 24px', textAlign: 'center' }}>
             <p className="t-serif t-italic c-t3" style={{ fontSize: 18, marginBottom: 6 }}>No reviews match this view.</p>

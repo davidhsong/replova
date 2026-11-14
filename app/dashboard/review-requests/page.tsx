@@ -323,17 +323,17 @@ export default function ReviewRequestsPage() {
                     const sc = STATUS_COLORS[r.status] ?? STATUS_COLORS.sent
                     return (
                       <tr key={r.id}>
-                        <td style={{ fontWeight: 600 }}>
+                        <td data-label="Customer" style={{ fontWeight: 600 }}>
                           {r.customer_name ?? <span className="c-t3">-</span>}
                         </td>
-                        <td className="t-mono t-xs c-t2">{r.customer_email}</td>
-                        <td>
+                        <td data-label="Email" className="t-mono t-xs c-t2">{r.customer_email}</td>
+                        <td data-label="Status">
                           <span className="pill" style={{ background: sc.bg, color: sc.c, borderColor: 'transparent' }}>
                             <span className="dot" style={{ background: sc.c, opacity: 0.7 }} />
                             {sc.label}
                           </span>
                         </td>
-                        <td className="tnum t-xs c-t3" style={{ textAlign: 'right' }}>
+                        <td data-label="Sent" className="tnum t-xs c-t3" style={{ textAlign: 'right' }}>
                           {formatDate(r.sent_at)}
                         </td>
                       </tr>

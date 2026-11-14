@@ -5,6 +5,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { classifyAndGenerateYouTubeDraft } from './generateYouTubeReply'
 import { getYouTubeDraftCapacity } from './youtubeAutomationPolicy'
 import { isClaimedYouTubeDraftSafe } from './youtubeDraftingPolicy'
+import { selectRelevantReplyKnowledge } from './replyKnowledge'
+import { loadYouTubeReplyKnowledge } from './youtubeKnowledge'
 
 const HOURLY_DRAFT_LIMIT = 10
 const RATE_WINDOW_MS = 60 * 60 * 1000
@@ -14,6 +16,7 @@ type ClaimedRow = {
   author_channel_id: string | null
   author_display_name: string | null
   comment_text: string
+  video_id: string
   processing_state: string
   reply_verification_status: string
   draft_attempts: number
@@ -159,6 +162,13 @@ export async function draftYouTubePendingComments({
   if (selfSkipError) console.error('[YouTube drafting] Self-comment update failed:', selfSkipError.code)
   summary.selfSkipped = selfSkipped ?? 0
 
+  const knowledge = await loadYouTubeReplyKnowledge(admin, {
+    id: connection.id,
+    userId: connection.userId,
+    channelId: connection.channelId,
+    channelTitle: connection.channelTitle,
+  })
+
   const { data, error: claimError } = await admin.rpc('claim_youtube_draft_items', {
     batch_size: capacity.batchSize,
     worker_id: workerId,
@@ -240,12 +250,18 @@ export async function draftYouTubePendingComments({
     })
 
     try {
+      const knowledgeContext = selectRelevantReplyKnowledge({
+        knowledge,
+        commentText: item.comment_text,
+        videoId: item.video_id,
+      })
       const decision = await classifyAndGenerateYouTubeDraft({
         channelTitle: connection.channelTitle ?? 'your YouTube channel',
         author: item.author_display_name ?? 'Viewer',
         commentText: item.comment_text,
         usageOperation,
         signal,
+        knowledgeContext,
       })
       const update = decision.shouldDraft
         ? {
@@ -255,6 +271,10 @@ export async function draftYouTubePendingComments({
             edited_reply: null,
             processing_state: 'awaiting_approval',
             approval_status: 'pending',
+            requires_manual_review: decision.requiresManualReview,
+            manual_review_reason: decision.manualReviewReason,
+            knowledge_entry_ids: knowledgeContext.entryIds,
+            knowledge_context_used_at: new Date().toISOString(),
           }
         : {
             category: decision.category,
@@ -263,6 +283,10 @@ export async function draftYouTubePendingComments({
             edited_reply: null,
             processing_state: 'skipped',
             approval_status: 'pending',
+            requires_manual_review: false,
+            manual_review_reason: null,
+            knowledge_entry_ids: [],
+            knowledge_context_used_at: null,
           }
       const { data: saved, error: saveError } = await admin
         .from('youtube_comment_queue')
@@ -296,7 +320,13 @@ export async function draftYouTubePendingComments({
         message: decision.shouldDraft
           ? 'YouTube AI draft saved for manual approval.'
           : 'YouTube comment classified as spam and skipped.',
-        metadata: { category: decision.category, confidence: decision.confidence, drafted: decision.shouldDraft },
+        metadata: {
+          category: decision.category,
+          confidence: decision.confidence,
+          drafted: decision.shouldDraft,
+          requires_manual_review: decision.requiresManualReview,
+          knowledge_entry_count: knowledgeContext.entryIds.length,
+        },
       })
     } catch (error) {
       if (signal?.aborted) {

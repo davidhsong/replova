@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
-import { generateYouTubeReply } from '@/lib/generateYouTubeReply'
+import { generateYouTubeReplyWithContext } from '@/lib/generateYouTubeReply'
+import { selectRelevantReplyKnowledge } from '@/lib/replyKnowledge'
 import { getSupabaseAdmin } from '@/lib/supabase'
+import { loadYouTubeReplyKnowledge } from '@/lib/youtubeKnowledge'
 import { createClient } from '@/utils/supabase/server'
 
 const RATE_LIMIT = 10
@@ -15,6 +17,7 @@ type GenerateBody = {
   author?: unknown
   text?: unknown
   previousDraft?: unknown
+  videoId?: unknown
 }
 
 export async function POST(request: NextRequest) {
@@ -39,6 +42,7 @@ export async function POST(request: NextRequest) {
   const author = typeof body.author === 'string' ? body.author.trim() : ''
   const text = typeof body.text === 'string' ? body.text.trim() : ''
   const previousDraft = typeof body.previousDraft === 'string' ? body.previousDraft.trim() : ''
+  const videoId = typeof body.videoId === 'string' ? body.videoId.trim() : ''
 
   if (!COMMENT_ID_RE.test(commentId)) {
     return NextResponse.json({ error: 'A valid YouTube comment ID is required.' }, { status: 400 })
@@ -55,13 +59,16 @@ export async function POST(request: NextRequest) {
   if (previousDraft.length > 1000) {
     return NextResponse.json({ error: 'Previous draft is too long.' }, { status: 400 })
   }
+  if (body.videoId !== undefined && !/^[A-Za-z0-9_-]{1,200}$/.test(videoId)) {
+    return NextResponse.json({ error: 'A valid YouTube video ID is required.' }, { status: 400 })
+  }
 
   const admin = getSupabaseAdmin()
   const { data: connection, error: connectionError } = await admin
     .from('youtube_connections')
-    .select('channel_title')
+    .select('id, user_id, channel_id, channel_title')
     .eq('user_id', user.id)
-    .maybeSingle<{ channel_title: string | null }>()
+    .maybeSingle<{ id: string; user_id: string; channel_id: string; channel_title: string | null }>()
 
   if (connectionError) {
     console.error('[YouTube AI reply] Connection lookup failed:', connectionError.code)
@@ -75,14 +82,19 @@ export async function POST(request: NextRequest) {
   const userBucket = createHash('sha256').update(user.id).digest('hex').slice(0, 20)
   const usageOperation = `youtube_reply_draft:${userBucket}`
   const windowStart = new Date(Date.now() - RATE_WINDOW_MS).toISOString()
-  const { count, error: rateError } = await admin
-    .from('api_usage_log')
-    .select('*', { count: 'exact', head: true })
-    .eq('operation', usageOperation)
-    .gte('created_at', windowStart)
+  const [{ count, error: rateError }, { data: budget, error: budgetError }] = await Promise.all([
+    admin.from('api_usage_log')
+      .select('*', { count: 'exact', head: true })
+      .eq('operation', usageOperation)
+      .gte('created_at', windowStart),
+    admin.from('api_budget_state')
+      .select('spent_usd, budget_usd')
+      .eq('id', 'default')
+      .maybeSingle<{ spent_usd: number; budget_usd: number }>(),
+  ])
 
-  if (rateError) {
-    console.error('[YouTube AI reply] Rate-limit lookup failed:', rateError.code)
+  if (rateError || budgetError || !budget) {
+    console.error('[YouTube AI reply] Usage lookup failed:', rateError?.code ?? budgetError?.code)
     return NextResponse.json({ error: 'Reply generation is temporarily unavailable.' }, { status: 503 })
   }
   if ((count ?? 0) >= RATE_LIMIT) {
@@ -91,20 +103,35 @@ export async function POST(request: NextRequest) {
       { status: 429 }
     )
   }
+  if (budget.spent_usd >= budget.budget_usd) {
+    return NextResponse.json({ error: 'The configured AI budget has been reached.' }, { status: 429 })
+  }
   if (generationInFlight.has(userBucket)) {
     return NextResponse.json({ error: 'A reply is already being generated. Please wait.' }, { status: 429 })
   }
 
   generationInFlight.add(userBucket)
   try {
-    const reply = await generateYouTubeReply({
+    const knowledge = await loadYouTubeReplyKnowledge(admin, {
+      id: connection.id,
+      userId: connection.user_id,
+      channelId: connection.channel_id,
+      channelTitle: connection.channel_title,
+    })
+    const knowledgeContext = selectRelevantReplyKnowledge({ knowledge, commentText: text, videoId })
+    const result = await generateYouTubeReplyWithContext({
       channelTitle: connection.channel_title ?? 'your YouTube channel',
       author: author || 'Viewer',
       commentText: text,
       previousDraft: previousDraft || undefined,
       usageOperation,
+      knowledgeContext,
     })
-    return NextResponse.json({ reply })
+    return NextResponse.json({
+      reply: result.reply,
+      requiresManualReview: result.requiresManualReview,
+      manualReviewReason: result.manualReviewReason,
+    })
   } catch (error) {
     const status = typeof error === 'object' && error && 'status' in error
       ? Number((error as { status?: unknown }).status)

@@ -2,9 +2,10 @@
 
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import {
   IconMessage, IconUsers, IconBriefcase, IconCard, IconCog,
-  IconChevDown, IconSignOut, IconSend,
+  IconChevDown, IconSignOut, IconSend, IconUpload,
 } from '@/components/icons'
 import { getSupabaseBrowser } from '@/lib/supabase'
 import LocationSwitcherClient from '@/components/dashboard/LocationSwitcherClient'
@@ -40,17 +41,26 @@ const TOP_ITEMS = [
 ]
 
 const BOTTOM_ITEMS = [
+  { href: '/dashboard/review-requests', label: 'Review Requests', Icon: IconUpload },
   { href: '/dashboard/billing', label: 'Billing', Icon: IconCard },
   { href: '/dashboard/settings', label: 'Settings', Icon: IconCog },
 ]
 
-const MOBILE_ITEMS = [
+const MOBILE_PRIMARY_ITEMS = [
   { href: '/dashboard', label: 'Reviews', Icon: IconMessage, exact: true },
   { href: '/dashboard/youtube/replies', label: 'YouTube', Icon: IconSend, exact: false },
   { href: '/dashboard/competitors', label: 'Compare', Icon: IconUsers, exact: false },
-  { href: '/dashboard/billing', label: 'Billing', Icon: IconCard, exact: false },
-  { href: '/dashboard/settings', label: 'Settings', Icon: IconCog, exact: false },
 ]
+
+function MoreIcon({ s = 18 }: { s?: number }) {
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <circle cx="5" cy="12" r="1.6" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.6" fill="currentColor" />
+      <circle cx="19" cy="12" r="1.6" fill="currentColor" />
+    </svg>
+  )
+}
 
 export default function DashboardSidebar({
   restaurantName, plan, displayName, initials, avatarUrl, userEmail,
@@ -58,6 +68,16 @@ export default function DashboardSidebar({
 }: Props) {
   const pathname = usePathname()
   const router = useRouter()
+  const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
+
+  useEffect(() => {
+    if (!mobileMoreOpen) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMobileMoreOpen(false)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [mobileMoreOpen])
 
   function active(href: string, exact = false) {
     return exact ? pathname === href : pathname.startsWith(href)
@@ -70,6 +90,15 @@ export default function DashboardSidebar({
 
   return (
     <>
+    <header className="mobile-app-header">
+      <Link href="/dashboard" className="mobile-app-brand" aria-label="Replova dashboard">
+        <ReplovaLogo variant="primary" surface="light" height={21} decorative eager />
+      </Link>
+      <div className="mobile-app-context" aria-label={`Current workspace: ${restaurantName}`}>
+        <span>{restaurantName}</span>
+        <small>{PLAN_LABELS[plan]}</small>
+      </div>
+    </header>
     <aside className="sidebar">
       <Link href="/dashboard" className="dashboard-brand" aria-label="Replova dashboard">
         <ReplovaLogo variant="primary" surface="light" height={24} decorative eager />
@@ -187,16 +216,87 @@ export default function DashboardSidebar({
       </div>
     </aside>
     <nav className="mobile-nav" aria-label="Dashboard navigation">
-      {[...MOBILE_ITEMS, ...(isCareersAdmin ? [{ href: '/dashboard/applicants', label: 'Applicants', Icon: IconBriefcase, exact: false }] : [])].map(({ href, label, Icon, exact }) => {
+      {MOBILE_PRIMARY_ITEMS.map(({ href, label, Icon, exact }) => {
         const isActive = active(href, exact)
         return (
-          <Link key={href} href={href} className={isActive ? 'active' : ''}>
-            <Icon s={16} />
+          <Link key={href} href={href} className={isActive ? 'active' : ''} aria-current={isActive ? 'page' : undefined}>
+            <Icon s={18} />
             <span>{label}</span>
           </Link>
         )
       })}
+      <button
+        type="button"
+        className={mobileMoreOpen || BOTTOM_ITEMS.some(item => active(item.href)) || (isCareersAdmin && active('/dashboard/applicants')) ? 'active' : ''}
+        aria-expanded={mobileMoreOpen}
+        aria-controls="mobile-more-menu"
+        onClick={() => setMobileMoreOpen(open => !open)}
+      >
+        <MoreIcon />
+        <span>More</span>
+      </button>
     </nav>
+    {mobileMoreOpen && (
+      <>
+        <button
+          type="button"
+          className="mobile-more-backdrop"
+          aria-label="Close menu"
+          onClick={() => setMobileMoreOpen(false)}
+        />
+        <section id="mobile-more-menu" className="mobile-more-sheet" role="dialog" aria-modal="true" aria-label="More dashboard destinations">
+          <div className="mobile-more-handle" aria-hidden="true" />
+          <div className="mobile-more-heading">
+            <div>
+              <strong>More</strong>
+              <span>{restaurantName}</span>
+            </div>
+            <button type="button" className="mobile-sheet-close" onClick={() => setMobileMoreOpen(false)} aria-label="Close menu">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          {locations.length > 1 && (
+            <div className="mobile-location-switcher">
+              <span>Workspace</span>
+              <LocationSwitcherClient
+                locations={locations}
+                activeLocationId={activeLocationId}
+                locationLimit={locationLimit}
+                currentCount={locations.length}
+              />
+            </div>
+          )}
+          <div className="mobile-more-links">
+            {[...BOTTOM_ITEMS, ...(isCareersAdmin ? [{ href: '/dashboard/applicants', label: 'Applicants', Icon: IconBriefcase }] : [])].map(({ href, label, Icon }) => {
+              const isActive = active(href)
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={isActive ? 'active' : ''}
+                  aria-current={isActive ? 'page' : undefined}
+                  onClick={() => setMobileMoreOpen(false)}
+                >
+                  <span className="mobile-more-icon"><Icon s={18} /></span>
+                  <span>{label}</span>
+                  <span className="mobile-more-chevron" aria-hidden="true">›</span>
+                </Link>
+              )
+            })}
+          </div>
+          <div className="mobile-more-account">
+            <div className="mobile-more-avatar" aria-hidden="true">{initials}</div>
+            <div>
+              <strong>{displayName || restaurantName}</strong>
+              <span>{userEmail}</span>
+            </div>
+            <button type="button" onClick={handleSignOut} aria-label="Sign out">
+              <IconSignOut s={18} />
+            </button>
+          </div>
+        </section>
+      </>
+    )}
     </>
   )
 }

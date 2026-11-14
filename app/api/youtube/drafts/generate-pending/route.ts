@@ -2,8 +2,10 @@ import { createHash, randomUUID } from 'node:crypto'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import { classifyAndGenerateYouTubeDraft } from '@/lib/generateYouTubeReply'
+import { selectRelevantReplyKnowledge } from '@/lib/replyKnowledge'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { isClaimedYouTubeDraftSafe } from '@/lib/youtubeDraftingPolicy'
+import { loadYouTubeReplyKnowledge } from '@/lib/youtubeKnowledge'
 import { createClient } from '@/utils/supabase/server'
 
 const HOURLY_DRAFT_LIMIT = 10
@@ -18,6 +20,7 @@ type ClaimedRow = {
   author_channel_id: string | null
   author_display_name: string | null
   comment_text: string
+  video_id: string
   processing_state: string
   reply_verification_status: string
   draft_attempts: number
@@ -101,6 +104,17 @@ export async function POST(request: NextRequest) {
   const batchSize = Math.max(1, Math.min(settings.max_drafts_per_run, remainingHourly, 100))
   const runId = randomUUID()
   const workerId = `manual:${userBucket}:${runId.slice(0, 8)}`
+  let knowledge
+  try {
+    knowledge = await loadYouTubeReplyKnowledge(admin, {
+      id: connection.id,
+      userId: user.id,
+      channelId: connection.channel_id,
+      channelTitle: connection.channel_title,
+    })
+  } catch {
+    return NextResponse.json({ error: 'Reply context is temporarily unavailable.' }, { status: 503 })
+  }
 
   async function log(row: {
     queueId?: string
@@ -237,11 +251,17 @@ export async function POST(request: NextRequest) {
       })
 
       try {
+        const knowledgeContext = selectRelevantReplyKnowledge({
+          knowledge,
+          commentText: item.comment_text,
+          videoId: item.video_id,
+        })
         const decision = await classifyAndGenerateYouTubeDraft({
           channelTitle: connection.channel_title ?? 'your YouTube channel',
           author: item.author_display_name ?? 'Viewer',
           commentText: item.comment_text,
           usageOperation,
+          knowledgeContext,
         })
 
         const update = decision.shouldDraft
@@ -252,6 +272,10 @@ export async function POST(request: NextRequest) {
               edited_reply: null,
               processing_state: 'awaiting_approval',
               approval_status: 'pending',
+              requires_manual_review: decision.requiresManualReview,
+              manual_review_reason: decision.manualReviewReason,
+              knowledge_entry_ids: knowledgeContext.entryIds,
+              knowledge_context_used_at: new Date().toISOString(),
             }
           : {
               category: decision.category,
@@ -260,6 +284,10 @@ export async function POST(request: NextRequest) {
               edited_reply: null,
               processing_state: 'skipped',
               approval_status: 'pending',
+              requires_manual_review: false,
+              manual_review_reason: null,
+              knowledge_entry_ids: [],
+              knowledge_context_used_at: null,
             }
 
         const { data: saved, error: saveError } = await admin
@@ -292,7 +320,13 @@ export async function POST(request: NextRequest) {
           message: decision.shouldDraft
             ? 'YouTube AI draft saved for manual approval.'
             : 'YouTube comment classified as spam and skipped.',
-          metadata: { category: decision.category, confidence: decision.confidence, drafted: decision.shouldDraft },
+          metadata: {
+            category: decision.category,
+            confidence: decision.confidence,
+            drafted: decision.shouldDraft,
+            requires_manual_review: decision.requiresManualReview,
+            knowledge_entry_count: knowledgeContext.entryIds.length,
+          },
         })
       } catch (error) {
         failed += 1

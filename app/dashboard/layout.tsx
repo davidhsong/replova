@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import Link from 'next/link'
 import { cookies, headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
@@ -10,6 +11,8 @@ import { isCareerAdminEmail } from '@/lib/careersAdmin'
 import { isDeveloperEmail } from '@/lib/developerAccess'
 import DashboardSidebar from './DashboardSidebar'
 import TermsModal from './TermsModal'
+import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
+import { IconCog, IconSend } from '@/components/icons'
 
 export const metadata: Metadata = {
   title: 'Dashboard',
@@ -56,7 +59,26 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
     return (
       <div className="app">
+        <header className="mobile-app-header">
+          <Link href="/dashboard/settings" className="mobile-app-brand" aria-label="Replova settings">
+            <ReplovaLogo variant="primary" surface="light" height={21} decorative eager />
+          </Link>
+          <div className="mobile-app-context">
+            <span>Developer workspace</span>
+            <small>Integrations</small>
+          </div>
+        </header>
         <main id="main-content" className="main">{children}</main>
+        <nav className="mobile-nav mobile-nav-developer" aria-label="Developer workspace navigation">
+          <Link href="/dashboard/youtube/replies" className={pathname === '/dashboard/youtube/replies' ? 'active' : ''} aria-current={pathname === '/dashboard/youtube/replies' ? 'page' : undefined}>
+            <IconSend s={18} />
+            <span>YouTube</span>
+          </Link>
+          <Link href="/dashboard/settings" className={pathname === '/dashboard/settings' ? 'active' : ''} aria-current={pathname === '/dashboard/settings' ? 'page' : undefined}>
+            <IconCog s={18} />
+            <span>Settings</span>
+          </Link>
+        </nav>
       </div>
     )
   }

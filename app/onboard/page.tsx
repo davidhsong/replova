@@ -26,11 +26,11 @@ const STEP_ORDER: Step[] = ['search', 'confirm', 'email']
 function StepDots({ current }: { current: Step }) {
   const idx = STEP_ORDER.indexOf(current)
   return (
-    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 48 }}>
+    <div className="onboard-stepper" style={{ display: 'flex', alignItems: 'center', marginBottom: 48 }}>
       {STEP_ORDER.map((s, i) => (
         <Fragment key={s}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{
+          <div className="onboard-step" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div className="onboard-step-dot" style={{
               width: 24, height: 24, borderRadius: '50%',
               border: '1px solid',
               borderColor: i <= idx ? 'var(--accent)' : 'var(--line-md)',
@@ -45,12 +45,12 @@ function StepDots({ current }: { current: Step }) {
                 </svg>
               ) : i + 1}
             </div>
-            <span style={{ fontSize: 12, fontWeight: 600, color: i === idx ? 'var(--t1)' : 'var(--t3)', letterSpacing: '0.01em' }}>
+            <span className="onboard-step-label" style={{ fontSize: 12, fontWeight: 600, color: i === idx ? 'var(--t1)' : 'var(--t3)', letterSpacing: '0.01em' }}>
               {STEP_LABELS[s]}
             </span>
           </div>
           {i < STEP_ORDER.length - 1 && (
-            <div style={{ flex: 1, height: 1, background: i < idx ? 'var(--accent)' : 'var(--line)', margin: '0 16px' }} />
+            <div className="onboard-step-divider" style={{ flex: 1, height: 1, background: i < idx ? 'var(--accent)' : 'var(--line)', margin: '0 16px' }} />
           )}
         </Fragment>
       ))}
@@ -294,7 +294,7 @@ function OnboardPageContent() {
               </div>
             )}
 
-            <div style={{ marginTop: 4, paddingTop: 24, borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end' }}>
+            <div className="onboard-actions" style={{ marginTop: 4, paddingTop: 24, borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'flex-end' }}>
               <button
                 type="submit"
                 disabled={searching || !restaurantName.trim() || !city.trim()}
@@ -331,7 +331,7 @@ function OnboardPageContent() {
               </div>
             )}
 
-            <div style={{ paddingTop: 24, borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between' }}>
+            <div className="onboard-actions" style={{ paddingTop: 24, borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between' }}>
               <button
                 type="button"
                 className="btn btn-quiet"
@@ -390,7 +390,7 @@ function OnboardPageContent() {
               </div>
             )}
 
-            <div style={{ marginTop: 4, paddingTop: 24, borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between' }}>
+            <div className="onboard-actions" style={{ marginTop: 4, paddingTop: 24, borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between' }}>
               <button type="button" className="btn btn-quiet" onClick={() => setStep('confirm')}>
                 Back
               </button>

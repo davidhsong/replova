@@ -5,11 +5,13 @@ import pLimit from 'p-limit'
 import { fetchYouTubeCommentsPage, YouTubeCommentsError, type FetchedYouTubeComment } from '@/lib/youtubeComments'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { getValidYouTubeAccessToken, type YouTubeConnectionTokenFields } from '@/lib/youtubeAuth'
+import { refreshYouTubeVideoMetadata } from '@/lib/youtubeKnowledge'
 import { createClient } from '@/utils/supabase/server'
 
 type ConnectionRow = YouTubeConnectionTokenFields & {
   id: string
   channel_id: string
+  channel_title: string | null
 }
 
 type SyncSummary = {
@@ -20,6 +22,7 @@ type SyncSummary = {
   verificationUnknown: number
   pages: number
   partial: boolean
+  videoContextUnavailable: boolean
 }
 
 export async function POST(request: NextRequest) {
@@ -36,7 +39,7 @@ export async function POST(request: NextRequest) {
   const admin = getSupabaseAdmin()
   const { data: connection, error: connectionError } = await admin
     .from('youtube_connections')
-    .select('id, user_id, channel_id, access_token_encrypted, refresh_token_encrypted, token_expires_at')
+    .select('id, user_id, channel_id, channel_title, access_token_encrypted, refresh_token_encrypted, token_expires_at')
     .eq('user_id', user.id)
     .maybeSingle<ConnectionRow>()
 
@@ -125,6 +128,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: fetchFailure.message }, { status })
   }
 
+  let videoContextUnavailable = false
+  try {
+    await refreshYouTubeVideoMetadata({
+      admin,
+      connection: {
+        id: connection.id,
+        userId: connection.user_id,
+        channelId: connection.channel_id,
+        channelTitle: connection.channel_title,
+      },
+      accessToken,
+      videoIds: fetched.map(comment => comment.videoId),
+    })
+  } catch {
+    videoContextUnavailable = true
+  }
+
   const checkedAt = new Date().toISOString()
   const commentIds = fetched.map(comment => comment.id)
   const { data: existing, error: existingError } = commentIds.length > 0
@@ -209,7 +229,8 @@ export async function POST(request: NextRequest) {
     publishedDetected: published.length - publishedUpdateFailures,
     verificationUnknown,
     pages,
-    partial: Boolean(fetchFailure || publishedUpdateFailures || verificationUnknown),
+    partial: Boolean(fetchFailure || publishedUpdateFailures || verificationUnknown || videoContextUnavailable),
+    videoContextUnavailable,
   }
 
   if (summary.partial) {

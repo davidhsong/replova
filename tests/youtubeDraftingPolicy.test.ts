@@ -32,6 +32,8 @@ test('spam is classified without retaining a draft', () => {
     confidence: 0.988,
     shouldDraft: false,
     reply: null,
+    requiresManualReview: false,
+    manualReviewReason: null,
   })
 })
 

@@ -855,11 +855,15 @@ export default function Chatbot(props: ChatbotProps) {
       <style>{`
         @media (max-width: 440px) {
           .chatbot-panel {
-            width: calc(100vw - 24px) !important;
-            right: 12px !important;
-            left: 12px !important;
-            bottom: 76px !important;
+            width: calc(100vw - 20px) !important;
+            right: 10px !important;
+            left: 10px !important;
+            bottom: calc(88px + env(safe-area-inset-bottom)) !important;
+            height: min(520px, calc(100dvh - 160px - env(safe-area-inset-top))) !important;
           }
+          .chatbot-input { min-height: 44px; font-size: 16px !important; }
+          .chatbot-chip { min-height: 40px; }
+          .chatbot-launcher { bottom: calc(86px + env(safe-area-inset-bottom)) !important; right: 14px !important; }
         }
         .chatbot-input:focus {
           outline: none;
@@ -1017,7 +1021,7 @@ export default function Chatbot(props: ChatbotProps) {
       {/* Toggle */}
       <button
         onClick={() => setOpen(o => !o)}
-        className="btn-press"
+        className="btn-press chatbot-launcher"
         style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 111, width: 46, height: 46, borderRadius: 12, background: 'var(--t1)', border: '1px solid rgba(255,255,255,.08)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 10px 28px rgba(18,27,43,0.18), 0 2px 5px rgba(18,27,43,0.08)' }}
         aria-label={open ? 'Close chat' : 'Open chat'}
       >

@@ -4,6 +4,7 @@ import pLimit from 'p-limit'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { buildYouTubeSyncQueueRow } from './youtubeAutomationPolicy'
 import { fetchYouTubeCommentsPage } from './youtubeComments'
+import { refreshYouTubeVideoMetadata } from './youtubeKnowledge'
 
 export type YouTubeSyncPageSummary = {
   fetched: number
@@ -14,6 +15,7 @@ export type YouTubeSyncPageSummary = {
   publishedUpdateFailures: number
   nextPageToken: string | null
   partial: boolean
+  videoContextUnavailable: boolean
 }
 
 type ExistingRow = {
@@ -34,6 +36,8 @@ export async function syncYouTubeCommentsPage({
   admin,
   connectionId,
   channelId,
+  ownerUserId,
+  channelTitle,
   accessToken,
   pageToken,
   maxResults,
@@ -42,6 +46,8 @@ export async function syncYouTubeCommentsPage({
   admin: SupabaseClient
   connectionId: string
   channelId: string
+  ownerUserId: string
+  channelTitle: string | null
   accessToken: string
   pageToken?: string
   maxResults: number
@@ -55,6 +61,23 @@ export async function syncYouTubeCommentsPage({
     signal,
   })
   const checkedAt = new Date().toISOString()
+  let videoContextUnavailable = false
+  try {
+    await refreshYouTubeVideoMetadata({
+      admin,
+      connection: {
+        id: connectionId,
+        userId: ownerUserId,
+        channelId,
+        channelTitle,
+      },
+      accessToken,
+      videoIds: page.comments.map(comment => comment.videoId),
+      signal,
+    })
+  } catch {
+    videoContextUnavailable = true
+  }
   const commentIds = page.comments.map(comment => comment.id)
   const { data: existing, error: existingError } = commentIds.length > 0
     ? await admin
@@ -111,6 +134,7 @@ export async function syncYouTubeCommentsPage({
     verificationUnknown,
     publishedUpdateFailures,
     nextPageToken: page.nextPageToken,
-    partial: publishedUpdateFailures > 0 || verificationUnknown > 0,
+    partial: publishedUpdateFailures > 0 || verificationUnknown > 0 || videoContextUnavailable,
+    videoContextUnavailable,
   }
 }

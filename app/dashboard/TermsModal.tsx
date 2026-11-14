@@ -67,7 +67,7 @@ export default function TermsModal({ plan, trialEndDate }: Props) {
   return (
     <>
       {/* Backdrop */}
-      <div style={{
+      <div className="terms-modal-backdrop" role="presentation" style={{
         position: 'fixed', inset: 0, zIndex: 1000,
         background: 'rgba(0,0,0,0.65)',
         backdropFilter: 'blur(4px)',
@@ -75,7 +75,7 @@ export default function TermsModal({ plan, trialEndDate }: Props) {
         padding: '16px',
       }}>
         {/* Modal */}
-        <div style={{
+        <div className="terms-modal-panel" role="dialog" aria-modal="true" aria-labelledby="terms-modal-title" style={{
           background: 'var(--surface-1)',
           border: '1px solid var(--border)',
           borderRadius: 20,
@@ -102,7 +102,7 @@ export default function TermsModal({ plan, trialEndDate }: Props) {
                 <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
               </svg>
             </div>
-            <h2 style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)', letterSpacing: '-0.025em', marginBottom: 6 }}>
+            <h2 id="terms-modal-title" style={{ fontSize: 18, fontWeight: 800, color: 'var(--t1)', letterSpacing: '-0.025em', marginBottom: 6 }}>
               Welcome to Replova {meta.label}
             </h2>
             <p style={{ fontSize: 13, color: 'var(--t3)', lineHeight: 1.6 }}>
@@ -170,23 +170,13 @@ export default function TermsModal({ plan, trialEndDate }: Props) {
           </div>
 
           {/* Agreement checkbox */}
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginBottom: 20 }}>
-            <div
-              onClick={() => setAgreed(v => !v)}
-              style={{
-                width: 18, height: 18, borderRadius: 5, flexShrink: 0, marginTop: 1,
-                border: `2px solid ${agreed ? 'var(--accent)' : 'var(--border-md)'}`,
-                background: agreed ? 'var(--accent)' : 'transparent',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.12s',
-              }}
-            >
-              {agreed && (
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 6L9 17l-5-5"/>
-                </svg>
-              )}
-            </div>
+          <label className="terms-modal-agreement" style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer', marginBottom: 20 }}>
+            <input
+              type="checkbox"
+              className="terms-modal-checkbox"
+              checked={agreed}
+              onChange={event => setAgreed(event.target.checked)}
+            />
             <span style={{ fontSize: 13, color: 'var(--t2)', lineHeight: 1.6 }}>
               I have read and agree to Replova&apos;s{' '}
               <a href="/terms" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--t1)', fontWeight: 600, textDecoration: 'underline' }}>Terms of Service</a>,{' '}
@@ -203,6 +193,7 @@ export default function TermsModal({ plan, trialEndDate }: Props) {
 
           {/* CTA */}
           <button
+            className="terms-modal-cta"
             onClick={handleAccept}
             disabled={!agreed || loading}
             style={{

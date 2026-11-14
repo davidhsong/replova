@@ -14,12 +14,16 @@ export type YouTubeDraftDecision = {
   confidence: number
   shouldDraft: boolean
   reply: string | null
+  requiresManualReview: boolean
+  manualReviewReason: string | null
 }
 
 export function normalizeYouTubeDraftDecision(value: {
   category: string
   confidence: number
   reply: string
+  requiresManualReview?: boolean
+  manualReviewReason?: string
 }): YouTubeDraftDecision {
   if (!YOUTUBE_DRAFT_CATEGORIES.includes(value.category as YouTubeDraftCategory)) {
     throw new Error('AI returned an unsupported YouTube comment category')
@@ -29,11 +33,17 @@ export function normalizeYouTubeDraftDecision(value: {
   }
 
   const category = value.category as YouTubeDraftCategory
+  const requiresManualReview = category !== 'spam' && value.requiresManualReview === true
+  const manualReviewReason = requiresManualReview
+    ? (value.manualReviewReason ?? '').trim().slice(0, 500) || 'The reply needs factual review.'
+    : null
   return {
     category,
     confidence: Math.round(value.confidence * 1000) / 1000,
     shouldDraft: category !== 'spam',
     reply: category === 'spam' ? null : value.reply.trim(),
+    requiresManualReview,
+    manualReviewReason,
   }
 }
 

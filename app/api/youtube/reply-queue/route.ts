@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
 
   let query = admin
     .from('youtube_comment_queue')
-    .select('id, youtube_comment_id, video_id, author_display_name, comment_text, comment_published_at, category, category_confidence, processing_state, approval_status, generated_reply, edited_reply, published_reply_id, published_reply_url, published_at, publish_result_uncertain, reply_verification_status, last_error_message, updated_at')
+    .select('id, youtube_comment_id, video_id, author_display_name, comment_text, comment_published_at, category, category_confidence, processing_state, approval_status, generated_reply, edited_reply, published_reply_id, published_reply_url, published_at, publish_result_uncertain, reply_verification_status, requires_manual_review, manual_review_reason, last_error_message, updated_at')
     .eq('connection_id', connection.id)
 
   if (filterValue === 'needs_review') {
@@ -83,6 +83,8 @@ export async function GET(request: NextRequest) {
       publishedAt: item.published_at,
       publishResultUncertain: item.publish_result_uncertain,
       replyVerificationStatus: item.reply_verification_status,
+      requiresManualReview: item.requires_manual_review,
+      manualReviewReason: item.manual_review_reason,
       lastError: item.last_error_message,
       updatedAt: item.updated_at,
     })),

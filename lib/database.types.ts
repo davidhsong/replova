@@ -110,6 +110,10 @@ export interface YouTubeCommentQueue {
   reply_verification_status: YouTubeReplyVerificationStatus
   reply_verification_checked_at: string | null
   reply_verification_error: string | null
+  requires_manual_review: boolean
+  manual_review_reason: string | null
+  knowledge_entry_ids: string[]
+  knowledge_context_used_at: string | null
   last_error_stage: string | null
   last_error_code: string | null
   last_error_message: string | null
@@ -160,6 +164,34 @@ export interface YouTubeAutomationRuntime {
   last_run_id: string | null
   last_error_code: string | null
   last_error_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface KnowledgeBase {
+  id: string
+  owner_user_id: string
+  provider: string
+  provider_connection_id: string
+  display_name: string | null
+  description: string
+  response_guidelines: string
+  created_at: string
+  updated_at: string
+}
+
+export interface KnowledgeEntry {
+  id: string
+  knowledge_base_id: string
+  owner_user_id: string
+  entry_type: 'faq' | 'fact' | 'video_context'
+  title: string
+  content: string
+  scope_type: 'general' | 'youtube_video'
+  scope_key: string | null
+  source_title: string | null
+  source_description: string | null
+  source_fetched_at: string | null
   created_at: string
   updated_at: string
 }
@@ -318,6 +350,16 @@ export type Database = {
         Row: YouTubeAutomationRuntime
         Insert: Pick<YouTubeAutomationRuntime, 'connection_id'> & Partial<Omit<YouTubeAutomationRuntime, 'connection_id' | 'created_at' | 'updated_at'>>
         Update: Partial<Omit<YouTubeAutomationRuntime, 'connection_id' | 'created_at' | 'updated_at'>>
+      }
+      knowledge_bases: {
+        Row: KnowledgeBase
+        Insert: Pick<KnowledgeBase, 'owner_user_id' | 'provider' | 'provider_connection_id'> & Partial<Omit<KnowledgeBase, 'id' | 'owner_user_id' | 'provider' | 'provider_connection_id' | 'created_at' | 'updated_at'>>
+        Update: Partial<Omit<KnowledgeBase, 'id' | 'owner_user_id' | 'created_at' | 'updated_at'>>
+      }
+      knowledge_entries: {
+        Row: KnowledgeEntry
+        Insert: Pick<KnowledgeEntry, 'knowledge_base_id' | 'owner_user_id' | 'entry_type' | 'title'> & Partial<Omit<KnowledgeEntry, 'id' | 'knowledge_base_id' | 'owner_user_id' | 'entry_type' | 'title' | 'created_at' | 'updated_at'>>
+        Update: Partial<Omit<KnowledgeEntry, 'id' | 'knowledge_base_id' | 'owner_user_id' | 'created_at' | 'updated_at'>>
       }
       reviews: {
         Row: Review

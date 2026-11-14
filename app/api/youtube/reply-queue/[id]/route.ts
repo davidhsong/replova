@@ -3,8 +3,9 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 import {
   classifyAndGenerateYouTubeDraft,
-  generateYouTubeReply,
+  generateYouTubeReplyWithContext,
 } from '@/lib/generateYouTubeReply'
+import { selectRelevantReplyKnowledge } from '@/lib/replyKnowledge'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import {
   canUseYouTubeQueueAction,
@@ -12,6 +13,7 @@ import {
   type YouTubeQueueAction,
 } from '@/lib/youtubeQueuePolicy'
 import { createClient } from '@/utils/supabase/server'
+import { loadYouTubeReplyKnowledge } from '@/lib/youtubeKnowledge'
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const HOURLY_DRAFT_LIMIT = 10
@@ -24,12 +26,13 @@ type ActionBody = {
   expectedUpdatedAt?: unknown
 }
 
-type ConnectionRow = { id: string; channel_title: string | null }
+type ConnectionRow = { id: string; user_id: string; channel_id: string; channel_title: string | null }
 type QueueRow = {
   id: string
   connection_id: string
   author_display_name: string | null
   comment_text: string
+  video_id: string
   category: string | null
   category_confidence: number | null
   processing_state: string
@@ -104,7 +107,7 @@ export async function PATCH(
   const admin = getSupabaseAdmin()
   const { data: connection, error: connectionError } = await admin
     .from('youtube_connections')
-    .select('id, channel_title')
+    .select('id, user_id, channel_id, channel_title')
     .eq('user_id', user.id)
     .maybeSingle<ConnectionRow>()
   if (connectionError) {
@@ -117,7 +120,7 @@ export async function PATCH(
 
   const { data: current, error: currentError } = await admin
     .from('youtube_comment_queue')
-    .select('id, connection_id, author_display_name, comment_text, category, category_confidence, processing_state, approval_status, generated_reply, edited_reply, published_reply_id, reply_verification_status, updated_at, lock_token')
+    .select('id, connection_id, video_id, author_display_name, comment_text, category, category_confidence, processing_state, approval_status, generated_reply, edited_reply, published_reply_id, reply_verification_status, updated_at, lock_token')
     .eq('id', id)
     .eq('connection_id', connection.id)
     .maybeSingle<QueueRow>()
@@ -205,29 +208,50 @@ export async function PATCH(
     let category: string | null = claimed.category
     let confidence: number | null = claimed.category_confidence
     let skip = false
+    let requiresManualReview = false
+    let manualReviewReason: string | null = null
+    const knowledge = await loadYouTubeReplyKnowledge(admin, {
+      id: connection.id,
+      userId: connection.user_id,
+      channelId: connection.channel_id,
+      channelTitle: connection.channel_title,
+    })
+    const knowledgeContext = selectRelevantReplyKnowledge({
+      knowledge,
+      commentText: claimed.comment_text,
+      videoId: claimed.video_id,
+    })
 
     if (previousDraft) {
-      nextDraft = await generateYouTubeReply({
+      const result = await generateYouTubeReplyWithContext({
         channelTitle: connection.channel_title ?? 'your YouTube channel',
         author: claimed.author_display_name ?? 'Viewer',
         commentText: claimed.comment_text,
         previousDraft,
         usageOperation,
+        knowledgeContext,
+        knownCategory: claimed.category,
       })
+      nextDraft = result.reply
+      requiresManualReview = result.requiresManualReview
+      manualReviewReason = result.manualReviewReason
     } else {
       const decision = await classifyAndGenerateYouTubeDraft({
         channelTitle: connection.channel_title ?? 'your YouTube channel',
         author: claimed.author_display_name ?? 'Viewer',
         commentText: claimed.comment_text,
         usageOperation,
+        knowledgeContext,
       })
       nextDraft = decision.reply
       category = decision.category
       confidence = decision.confidence
       skip = !decision.shouldDraft
+      requiresManualReview = decision.requiresManualReview
+      manualReviewReason = decision.manualReviewReason
     }
 
-    const { data: finished, error: finishError } = await admin.rpc('finish_youtube_reply_regeneration', {
+    const { data: finished, error: finishError } = await admin.rpc('finish_youtube_reply_regeneration_with_context', {
       p_connection_id: connection.id,
       p_queue_id: claimed.id,
       p_lock_token: claimed.lock_token,
@@ -236,6 +260,9 @@ export async function PATCH(
       p_category: category,
       p_confidence: confidence,
       p_skip: skip,
+      p_requires_manual_review: requiresManualReview,
+      p_manual_review_reason: manualReviewReason,
+      p_knowledge_entry_ids: knowledgeContext.entryIds,
     })
     if (finishError) throw new Error('regeneration_save_failed')
     return NextResponse.json({ item: finished })

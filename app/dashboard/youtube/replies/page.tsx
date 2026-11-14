@@ -23,6 +23,8 @@ type QueueItem = {
   publishedAt: string | null
   publishResultUncertain: boolean
   replyVerificationStatus: string
+  requiresManualReview: boolean
+  manualReviewReason: string | null
   lastError: string | null
   updatedAt: string
 }
@@ -237,6 +239,7 @@ export default function YouTubeReplyQueuePage() {
                     <div className="youtube-queue-badges">
                       {item.category && <span>{item.category.replace('_', ' ')}</span>}
                       {item.confidence !== null && <span>{Math.round(item.confidence * 100)}% confidence</span>}
+                      {item.requiresManualReview && <span data-state="manual_review">Factual review</span>}
                       <span data-state={item.processingState}>{statusLabel(item)}</span>
                     </div>
                   </div>
@@ -267,6 +270,11 @@ export default function YouTubeReplyQueuePage() {
                     </div>
                   ) : null}
                   {item.lastError && <p className="simple-message is-error">{item.lastError}</p>}
+                  {item.requiresManualReview && (
+                    <p className="youtube-queue-review-flag">
+                      Manual factual review required. {item.manualReviewReason ?? 'The available context may not support a complete answer.'}
+                    </p>
+                  )}
 
                   <div className="youtube-queue-actions">
                     {editable && (

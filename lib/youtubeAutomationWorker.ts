@@ -244,6 +244,8 @@ export async function runYouTubeSyncAndDraftAutomation({
         admin,
         connectionId: connection.id,
         channelId: connection.channel_id,
+        ownerUserId: connection.user_id,
+        channelTitle: connection.channel_title,
         accessToken,
         pageToken: lease.sync_page_token ?? undefined,
         maxResults: settings.max_comments_per_sync,
@@ -280,6 +282,7 @@ export async function runYouTubeSyncAndDraftAutomation({
           published_detected: syncSummary.publishedDetected,
           verification_unknown: syncSummary.verificationUnknown,
           checkpoint_pending: !checkpoint.cycleComplete,
+          video_context_unavailable: syncSummary.videoContextUnavailable,
         },
       })
 
@@ -328,6 +331,7 @@ export async function runYouTubeSyncAndDraftAutomation({
           verificationUnknown: syncSummary.verificationUnknown,
           publishedUpdateFailures: syncSummary.publishedUpdateFailures,
           partial: syncSummary.partial,
+          videoContextUnavailable: syncSummary.videoContextUnavailable,
           checkpointPending: Boolean(syncSummary.nextPageToken),
         },
         drafts: draftSummary,

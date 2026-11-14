@@ -162,7 +162,6 @@ export default function Home() {
           <p>Replova answers Google reviews in your voice, keeps the response workflow moving, and shows what paying customers are really telling you.</p>
           <div className="hero-actions hero-actions-centered">
             <Link href="/demo" className="btn btn-primary btn-lg">Request a demo <ArrowIcon /></Link>
-            <Link href="#platform" className="text-link">Explore the platform</Link>
           </div>
           <div className="hero-note hero-note-centered"><span>45-minute product walkthrough</span><span>See the complete workflow</span></div>
           <div className="hero-product hero-product-wide fade-up"><ProductPreview /></div>

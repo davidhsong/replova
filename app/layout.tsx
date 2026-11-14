@@ -7,6 +7,7 @@ import {
   SITE_TITLE,
   SITE_URL,
 } from "@/lib/seo";
+import OfflineStatus from "@/components/OfflineStatus";
 import "./globals.css";
 
 const onest = Onest({
@@ -84,6 +85,7 @@ export default function RootLayout({
     >
       <body data-theme="light" data-density="comfortable">
         <a className="skip-link" href="#main-content">Skip to content</a>
+        <OfflineStatus />
         {children}
       </body>
       {process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_GA_ID && (

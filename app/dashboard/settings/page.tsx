@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { IconRefresh, IconSignOut } from '@/components/icons'
+import YouTubeKnowledgeBase from '@/components/YouTubeKnowledgeBase'
 import { getSupabaseBrowser } from '@/lib/supabase'
 
 type GoogleStatus = 'loading' | 'not_connected' | 'token_only' | 'connected'
@@ -67,6 +68,7 @@ export default function SettingsPage() {
   const [youtubeReplyDrafts, setYoutubeReplyDrafts] = useState<Record<string, string>>({})
   const [youtubeReplyLoading, setYoutubeReplyLoading] = useState<Record<string, boolean>>({})
   const [youtubeReplyErrors, setYoutubeReplyErrors] = useState<Record<string, string>>({})
+  const [youtubeReplyWarnings, setYoutubeReplyWarnings] = useState<Record<string, string>>({})
   const [youtubePublishLoading, setYoutubePublishLoading] = useState<Record<string, boolean>>({})
   const [youtubePublishErrors, setYoutubePublishErrors] = useState<Record<string, string>>({})
   const [youtubePublished, setYoutubePublished] = useState<Record<string, { replyUrl: string | null }>>({})
@@ -424,6 +426,11 @@ export default function SettingsPage() {
       delete next[comment.id]
       return next
     })
+    setYoutubeReplyWarnings(current => {
+      const next = { ...current }
+      delete next[comment.id]
+      return next
+    })
 
     try {
       const response = await fetch('/api/youtube/replies/generate', {
@@ -433,6 +440,7 @@ export default function SettingsPage() {
           commentId: comment.id,
           author: comment.author,
           text: comment.text,
+          videoId: comment.videoId,
           ...(previousDraft ? { previousDraft } : {}),
         }),
       })
@@ -440,6 +448,14 @@ export default function SettingsPage() {
       if (!response.ok) throw new Error(data.error ?? 'Could not generate a reply.')
       if (typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('The AI returned an empty reply.')
       setYoutubeReplyDrafts(current => ({ ...current, [comment.id]: data.reply }))
+      if (data.requiresManualReview === true) {
+        setYoutubeReplyWarnings(current => ({
+          ...current,
+          [comment.id]: typeof data.manualReviewReason === 'string' && data.manualReviewReason.trim()
+            ? data.manualReviewReason
+            : 'This draft needs factual review before publishing.',
+        }))
+      }
     } catch (error) {
       setYoutubeReplyErrors(current => ({
         ...current,
@@ -751,6 +767,9 @@ export default function SettingsPage() {
                         {youtubeReplyErrors[comment.id] && (
                           <p className="youtube-comment-ai-error" role="alert">{youtubeReplyErrors[comment.id]}</p>
                         )}
+                        {youtubeReplyWarnings[comment.id] && (
+                          <p className="youtube-comment-ai-warning" role="status">Manual review: {youtubeReplyWarnings[comment.id]}</p>
+                        )}
                         {youtubePublishErrors[comment.id] && (
                           <p className="youtube-comment-ai-error" role="alert">{youtubePublishErrors[comment.id]}</p>
                         )}
@@ -769,6 +788,7 @@ export default function SettingsPage() {
                   )}
                 </div>
               )}
+              <YouTubeKnowledgeBase />
             </>
           )}
           {youtubeStatus === 'not_connected' && (
