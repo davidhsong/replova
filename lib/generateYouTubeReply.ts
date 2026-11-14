@@ -135,10 +135,12 @@ export async function classifyAndGenerateYouTubeDraft(
 
 Categories:
 - praise: a positive reaction or compliment.
+- thanks: a direct expression of gratitude without substantive feedback.
+- neutral_feedback: a relevant suggestion or substantive neutral observation.
 - question: a genuine request for information, including skeptical questions.
 - complaint: dissatisfaction, criticism, or a negative experience.
-- feedback: a suggestion or substantive neutral observation.
-- other_legitimate: a real, relevant comment that does not fit the categories above.
+- negative_feedback: negative sentiment or criticism that is not a specific complaint.
+- other: a real, relevant comment that does not fit the categories above.
 - spam: advertising, scams, repetitive nonsense, malicious links, or unrelated solicitation.
 
 Questions and complaints are legitimate and should receive drafts. Short, critical, awkward, or low-context comments are not spam merely because they are difficult to answer.

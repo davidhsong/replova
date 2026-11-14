@@ -55,7 +55,10 @@ export interface YouTubeAutomationSettings {
   auto_publish_authorized_at: string | null
   auto_publish_authorized_by: string | null
   auto_publish_consent_version: string | null
+  auto_publish_consent_scope_hash: string | null
   auto_publish_revoked_at: string | null
+  publishing_mode: 'manual_approval' | 'auto_publish'
+  emergency_paused: boolean
   category_rules: Record<string, unknown>
   max_comments_per_sync: number
   max_drafts_per_run: number
@@ -64,6 +67,9 @@ export interface YouTubeAutomationSettings {
   max_auto_publishes_per_day: number
   min_auto_publish_confidence: number
   reply_delay_minutes: number
+  commenter_cooldown_hours: number
+  eligible_video_filter_mode: 'all' | 'include' | 'exclude'
+  eligible_video_ids: string[]
   created_at: string
   updated_at: string
 }
@@ -126,6 +132,8 @@ export type YouTubeAutomationEventType =
   | 'draft_started' | 'draft_succeeded' | 'draft_failed' | 'draft_edited' | 'approval_changed'
   | 'publish_attempted' | 'publish_succeeded' | 'publish_failed'
   | 'publish_uncertain' | 'worker_lease_expired'
+  | 'settings_updated' | 'consent_granted' | 'consent_revoked' | 'consent_invalidated'
+  | 'automation_paused' | 'automation_resumed'
 
 export interface YouTubeAutomationLog {
   id: string

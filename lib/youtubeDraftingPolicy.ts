@@ -1,9 +1,11 @@
 export const YOUTUBE_DRAFT_CATEGORIES = [
   'praise',
+  'thanks',
+  'neutral_feedback',
   'question',
   'complaint',
-  'feedback',
-  'other_legitimate',
+  'negative_feedback',
+  'other',
   'spam',
 ] as const
 
