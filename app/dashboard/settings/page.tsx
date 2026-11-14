@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { IconRefresh, IconSignOut } from '@/components/icons'
 import YouTubeKnowledgeBase from '@/components/YouTubeKnowledgeBase'
+import YouTubeAutoPublishingSettings from '@/components/YouTubeAutoPublishingSettings'
 import { getSupabaseBrowser } from '@/lib/supabase'
 
 type GoogleStatus = 'loading' | 'not_connected' | 'token_only' | 'connected'
@@ -646,6 +647,7 @@ export default function SettingsPage() {
                   disabled={!youtubeAutomationLoaded || youtubeAutoDraftSaving}
                 />
               </div>
+              <YouTubeAutoPublishingSettings />
               <div className="youtube-comments-controls">
                 <a href="/dashboard/youtube/replies" className="btn btn-primary btn-sm">Open Reply Queue</a>
                 <button
