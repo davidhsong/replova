@@ -34,6 +34,136 @@ export interface Restaurant {
   created_at: string
 }
 
+export interface YouTubeConnection {
+  id: string
+  user_id: string
+  channel_id: string
+  channel_title: string | null
+  access_token_encrypted: string
+  refresh_token_encrypted: string
+  token_expires_at: number
+  granted_scopes: string[]
+  created_at: string
+  updated_at: string
+}
+
+export interface YouTubeAutomationSettings {
+  id: string
+  connection_id: string
+  automation_enabled: boolean
+  auto_publish_enabled: boolean
+  auto_publish_authorized_at: string | null
+  auto_publish_authorized_by: string | null
+  auto_publish_consent_version: string | null
+  auto_publish_revoked_at: string | null
+  category_rules: Record<string, unknown>
+  max_comments_per_sync: number
+  max_drafts_per_run: number
+  max_draft_attempts: number
+  max_publish_attempts: number
+  max_auto_publishes_per_day: number
+  min_auto_publish_confidence: number
+  reply_delay_minutes: number
+  created_at: string
+  updated_at: string
+}
+
+export type YouTubeQueueState =
+  | 'discovered' | 'queued_for_draft' | 'generating' | 'awaiting_approval'
+  | 'ready_to_publish' | 'publishing' | 'published' | 'rejected' | 'skipped'
+  | 'draft_failed' | 'publish_failed' | 'publish_uncertain'
+
+export type YouTubeApprovalStatus = 'pending' | 'approved' | 'rejected' | 'not_required'
+export type YouTubeReplyVerificationStatus = 'unknown' | 'verified_unpublished' | 'verified_published'
+
+export interface YouTubeCommentQueue {
+  id: string
+  connection_id: string
+  youtube_comment_id: string
+  youtube_thread_id: string
+  video_id: string
+  author_channel_id: string | null
+  author_display_name: string | null
+  comment_text: string
+  comment_published_at: string
+  comment_updated_at: string | null
+  reply_count: number
+  category: string | null
+  category_confidence: number | null
+  processing_state: YouTubeQueueState
+  approval_status: YouTubeApprovalStatus
+  generated_reply: string | null
+  edited_reply: string | null
+  scheduled_publish_at: string | null
+  published_reply_id: string | null
+  published_reply_url: string | null
+  published_at: string | null
+  draft_attempts: number
+  publish_attempts: number
+  next_attempt_at: string | null
+  last_attempt_at: string | null
+  lock_token: string | null
+  locked_by: string | null
+  locked_at: string | null
+  lease_expires_at: string | null
+  publish_result_uncertain: boolean
+  reply_verification_status: YouTubeReplyVerificationStatus
+  reply_verification_checked_at: string | null
+  reply_verification_error: string | null
+  last_error_stage: string | null
+  last_error_code: string | null
+  last_error_message: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type YouTubeAutomationEventType =
+  | 'sync_started' | 'sync_succeeded' | 'sync_failed' | 'comment_discovered'
+  | 'draft_started' | 'draft_succeeded' | 'draft_failed' | 'draft_edited' | 'approval_changed'
+  | 'publish_attempted' | 'publish_succeeded' | 'publish_failed'
+  | 'publish_uncertain' | 'worker_lease_expired'
+
+export interface YouTubeAutomationLog {
+  id: string
+  connection_id: string
+  queue_id: string | null
+  run_id: string
+  event_type: YouTubeAutomationEventType
+  severity: 'debug' | 'info' | 'warning' | 'error'
+  attempt_number: number | null
+  idempotency_key: string | null
+  message: string | null
+  error_code: string | null
+  metadata: Record<string, unknown>
+  created_at: string
+}
+
+export interface YouTubeAutoPublishDailyUsage {
+  connection_id: string
+  usage_date: string
+  reserved_count: number
+  published_count: number
+  created_at: string
+  updated_at: string
+}
+
+export interface YouTubeAutomationRuntime {
+  connection_id: string
+  sync_page_token: string | null
+  sync_cycle_started_at: string | null
+  last_sync_at: string | null
+  last_draft_at: string | null
+  lease_token: string | null
+  leased_by: string | null
+  leased_at: string | null
+  lease_expires_at: string | null
+  last_run_id: string | null
+  last_error_code: string | null
+  last_error_at: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface Review {
   id: string
   restaurant_id: string
@@ -158,6 +288,36 @@ export type Database = {
         Row: Restaurant
         Insert: Omit<Restaurant, 'id' | 'created_at'>
         Update: Partial<Omit<Restaurant, 'id' | 'created_at'>>
+      }
+      youtube_connections: {
+        Row: YouTubeConnection
+        Insert: Omit<YouTubeConnection, 'id' | 'created_at'> & { created_at?: string; updated_at?: string }
+        Update: Partial<Omit<YouTubeConnection, 'id' | 'user_id' | 'created_at'>>
+      }
+      youtube_automation_settings: {
+        Row: YouTubeAutomationSettings
+        Insert: { connection_id: string } & Partial<Omit<YouTubeAutomationSettings, 'id' | 'connection_id' | 'created_at' | 'updated_at'>>
+        Update: Partial<Omit<YouTubeAutomationSettings, 'id' | 'connection_id' | 'created_at' | 'updated_at'>>
+      }
+      youtube_comment_queue: {
+        Row: YouTubeCommentQueue
+        Insert: Pick<YouTubeCommentQueue, 'connection_id' | 'youtube_comment_id' | 'youtube_thread_id' | 'video_id' | 'comment_text' | 'comment_published_at'> & Partial<Omit<YouTubeCommentQueue, 'id' | 'connection_id' | 'youtube_comment_id' | 'youtube_thread_id' | 'video_id' | 'comment_text' | 'comment_published_at' | 'created_at' | 'updated_at'>>
+        Update: Partial<Omit<YouTubeCommentQueue, 'id' | 'connection_id' | 'youtube_comment_id' | 'created_at'>>
+      }
+      youtube_automation_logs: {
+        Row: YouTubeAutomationLog
+        Insert: Pick<YouTubeAutomationLog, 'connection_id' | 'event_type'> & Partial<Omit<YouTubeAutomationLog, 'id' | 'connection_id' | 'event_type' | 'created_at'>>
+        Update: never
+      }
+      youtube_auto_publish_daily_usage: {
+        Row: YouTubeAutoPublishDailyUsage
+        Insert: Pick<YouTubeAutoPublishDailyUsage, 'connection_id'> & Partial<Omit<YouTubeAutoPublishDailyUsage, 'connection_id' | 'created_at' | 'updated_at'>>
+        Update: Partial<Pick<YouTubeAutoPublishDailyUsage, 'reserved_count' | 'published_count'>>
+      }
+      youtube_automation_runtime: {
+        Row: YouTubeAutomationRuntime
+        Insert: Pick<YouTubeAutomationRuntime, 'connection_id'> & Partial<Omit<YouTubeAutomationRuntime, 'connection_id' | 'created_at' | 'updated_at'>>
+        Update: Partial<Omit<YouTubeAutomationRuntime, 'connection_id' | 'created_at' | 'updated_at'>>
       }
       reviews: {
         Row: Review

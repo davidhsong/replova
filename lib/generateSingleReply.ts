@@ -1,5 +1,6 @@
 import { recordUsage } from './apiBudget'
 import { getOpenAI, OPENAI_MODEL } from './openai'
+import { NATURAL_REPLY_STYLE, validateReplyOutput } from './replyStyle'
 
 interface GenerateSingleReplyParams {
   restaurantName: string
@@ -29,7 +30,8 @@ Keep replies under 150 words.
 1-2 stars: acknowledge issue, apologize sincerely, invite them back.
 3 stars: thank them, acknowledge mixed experience, invite feedback.
 4-5 stars: express genuine gratitude, mention something specific from their review.
-Never offer discounts or mention competitor names.${personaLine ? `\n${personaLine}` : ''}`
+Never offer discounts or mention competitor names.
+${personaLine ? `${personaLine}\n` : ''}${NATURAL_REPLY_STYLE}`
 
   const response = await getOpenAI().responses.create({
     model: OPENAI_MODEL,
@@ -46,7 +48,5 @@ Never offer discounts or mention competitor names.${personaLine ? `\n${personaLi
     response.usage?.input_tokens ?? 0,
     response.usage?.output_tokens ?? 0
   )
-  const text = response.output_text.trim()
-  if (!text) throw new Error('OpenAI returned an empty reply')
-  return text
+  return validateReplyOutput(response.output_text, 1000)
 }

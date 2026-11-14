@@ -7,6 +7,7 @@ import { ACTIVE_LOCATION_COOKIE } from '@/lib/activeLocation'
 import { getPlanLimits } from '@/lib/planLimits'
 import type { Plan } from '@/lib/planLimits'
 import { isCareerAdminEmail } from '@/lib/careersAdmin'
+import { isDeveloperEmail } from '@/lib/developerAccess'
 import DashboardSidebar from './DashboardSidebar'
 import TermsModal from './TermsModal'
 
@@ -23,17 +24,42 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/signin')
   const isCareersAdmin = await isCareerAdminEmail(user.email)
+  const pathname = requestHeaders.get('x-replova-pathname') ?? '/dashboard'
 
   const admin = getSupabaseAdmin()
 
-  // Fetch the workspaces needed by the persistent dashboard navigation.
-  const { data: restaurants } = await admin
-    .from('restaurants')
-    .select('id, name, active, created_at')
-    .eq('owner_email', user.email)
-    .order('created_at', { ascending: true })
+  // Fetch both the account and workspaces before deciding which dashboard
+  // surface this authenticated user may access.
+  const [{ data: restaurants }, { data: account }] = await Promise.all([
+    admin
+      .from('restaurants')
+      .select('id, name, active, created_at')
+      .eq('owner_email', user.email)
+      .order('created_at', { ascending: true }),
+    admin
+      .from('accounts')
+      .select('plan, terms_accepted_at')
+      .eq('owner_email', user.email!)
+      .maybeSingle(),
+  ])
 
-  if (!restaurants || restaurants.length === 0) redirect('/onboard')
+  if (!restaurants || restaurants.length === 0) {
+    const isVerifiedDeveloper = Boolean(
+      account && user.email_confirmed_at && isDeveloperEmail(user.email)
+    )
+
+    // Restaurant-free developer access is deliberately limited to YouTube
+    // Settings and the persistent Reply Queue. All business routes remain gated.
+    if (!isVerifiedDeveloper) redirect('/onboard')
+    const developerRoutes = new Set(['/dashboard/settings', '/dashboard/youtube/replies'])
+    if (!developerRoutes.has(pathname)) redirect('/dashboard/settings')
+
+    return (
+      <div className="app">
+        <main id="main-content" className="main">{children}</main>
+      </div>
+    )
+  }
 
   // Prefer the selected location when it is enabled. After a downgrade, an
   // old cookie may point at a location outside the new plan limit.
@@ -43,7 +69,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     ?? restaurants[0]
 
   // Gate inactive workspaces while leaving Billing reachable for reactivation.
-  if (!activeRestaurant.active && requestHeaders.get('x-replova-pathname') !== '/dashboard/billing') {
+  if (!activeRestaurant.active && pathname !== '/dashboard/billing') {
     const plans = [
       {
         key: 'starter', label: 'Starter', price: '$39', sub: '1 location',
@@ -113,13 +139,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
       </div>
     )
   }
-
-  // Get account plan and terms acceptance.
-  const { data: account } = await admin
-    .from('accounts')
-    .select('plan, terms_accepted_at')
-    .eq('owner_email', user.email!)
-    .maybeSingle()
 
   const plan: Plan = (account?.plan as Plan) ?? 'starter'
   const limits = getPlanLimits(plan)

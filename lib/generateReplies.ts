@@ -1,5 +1,6 @@
 import { recordUsage } from './apiBudget'
 import { createStructuredResponse, OPENAI_MODEL } from './openai'
+import { NATURAL_REPLY_STYLE, validateReplyOutput } from './replyStyle'
 
 interface GenerateRepliesParams {
   restaurantName: string
@@ -43,17 +44,12 @@ Goals:
 
 Rules:
 - Write like the owner typed the reply themselves
-- Never sound robotic, corporate, promotional, or overly polished
 - Never over-apologize or be defensive
 - Adapt your tone to the sentiment and content of the review
 - Reference specific details mentioned (products, staff, experience, wait times, etc.)
-- Be concise and specific. Remove filler phrases
-- Avoid generic openers like "Thank you for your feedback!" without any substance
-- Do not use em dashes
-- Do not use formulaic phrases such as "we're thrilled," "we're delighted," "it means the world," "rest assured," "not just," or "more than"
-- Use contractions when they sound natural
-- Each response should sound like an attentive business owner, not a marketing team
-- Never offer discounts or mention competitor names${personaLine}`,
+- Never offer discounts or mention competitor names
+${personaLine}
+${NATURAL_REPLY_STYLE}`,
     input: `Write 3 reply variants for this Google review.
 
 Business: ${restaurantName}
@@ -78,13 +74,13 @@ Brief: concise and genuine, under 40 words.`,
 
   await recordUsage(OPENAI_MODEL, 'reply_draft', inputTokens, outputTokens)
 
-  if (
-    typeof data.professional !== 'string' ||
-    typeof data.warm !== 'string' ||
-    typeof data.brief !== 'string'
-  ) {
+  if (typeof data.professional !== 'string' || typeof data.warm !== 'string' || typeof data.brief !== 'string') {
     throw new Error('OpenAI response missing required reply fields')
   }
 
-  return data
+  return {
+    professional: validateReplyOutput(data.professional, 1000),
+    warm: validateReplyOutput(data.warm, 1000),
+    brief: validateReplyOutput(data.brief, 500),
+  }
 }

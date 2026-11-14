@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   IconMessage, IconUsers, IconBriefcase, IconCard, IconCog,
-  IconChevDown, IconSignOut,
+  IconChevDown, IconSignOut, IconSend,
 } from '@/components/icons'
 import { getSupabaseBrowser } from '@/lib/supabase'
 import LocationSwitcherClient from '@/components/dashboard/LocationSwitcherClient'
@@ -35,6 +35,7 @@ const PLAN_LABELS: Record<Plan, string> = {
 
 const TOP_ITEMS = [
   { href: '/dashboard', label: 'Reviews', Icon: IconMessage, exact: true, showsBadge: true },
+  { href: '/dashboard/youtube/replies', label: 'YouTube Queue', Icon: IconSend, exact: false, showsBadge: false },
   { href: '/dashboard/competitors', label: 'Competitors', Icon: IconUsers, exact: false, showsBadge: false },
 ]
 
@@ -45,6 +46,7 @@ const BOTTOM_ITEMS = [
 
 const MOBILE_ITEMS = [
   { href: '/dashboard', label: 'Reviews', Icon: IconMessage, exact: true },
+  { href: '/dashboard/youtube/replies', label: 'YouTube', Icon: IconSend, exact: false },
   { href: '/dashboard/competitors', label: 'Compare', Icon: IconUsers, exact: false },
   { href: '/dashboard/billing', label: 'Billing', Icon: IconCard, exact: false },
   { href: '/dashboard/settings', label: 'Settings', Icon: IconCog, exact: false },

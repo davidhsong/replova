@@ -21,12 +21,14 @@ export async function createStructuredResponse<T>({
   input,
   schema,
   maxOutputTokens,
+  signal,
 }: {
   name: string
   instructions: string
   input: string
   schema: JsonSchema
   maxOutputTokens: number
+  signal?: AbortSignal
 }): Promise<{ data: T; inputTokens: number; outputTokens: number }> {
   const response = await getOpenAI().responses.create({
     model: OPENAI_MODEL,
@@ -43,7 +45,7 @@ export async function createStructuredResponse<T>({
         schema,
       },
     },
-  })
+  }, { signal })
 
   if (!response.output_text) throw new Error('OpenAI returned an empty response')
 
