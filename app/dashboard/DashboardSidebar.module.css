@@ -72,7 +72,7 @@
 }
 
 .workspaceCopy strong {
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 630;
 }
 
@@ -81,7 +81,7 @@
   align-items: center;
   gap: 5px;
   color: #7a828d;
-  font-size: 10px;
+  font-size: 10.5px;
 }
 
 .workspaceCopy i {
@@ -116,7 +116,7 @@
   padding: 0 9px;
   display: block;
   color: #9299a4;
-  font: 600 9px/1.2 var(--font-mono);
+  font: 600 9.5px/1.2 var(--font-mono);
   letter-spacing: .065em;
   text-transform: uppercase;
 }
@@ -136,7 +136,7 @@
   border: 1px solid transparent;
   border-radius: 7px;
   color: #555e69;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 540;
   transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 120ms ease;
 }
@@ -214,14 +214,14 @@
 }
 
 .userCopy strong {
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 620;
 }
 
 .userCopy span {
   overflow: hidden;
   color: #838a94;
-  font-size: 9px;
+  font-size: 10px;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
