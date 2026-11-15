@@ -55,6 +55,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!restaurants || restaurants.length === 0) {
     const accountOnlyRoutes = new Set([
       '/dashboard',
+      '/dashboard/feedback-demo',
       '/dashboard/billing',
       '/dashboard/settings',
       ...(isCareersAdmin ? ['/dashboard/applicants'] : []),
