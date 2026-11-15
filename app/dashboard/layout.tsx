@@ -8,6 +8,7 @@ import { getPlanLimits } from '@/lib/planLimits'
 import type { Plan } from '@/lib/planLimits'
 import { isCareerAdminEmail } from '@/lib/careersAdmin'
 import { getAccountForAuthUser } from '@/lib/accountAccess'
+import DashboardAppShell from '@/components/dashboard/shell/DashboardAppShell'
 import DashboardSidebar from './DashboardSidebar'
 import TermsModal from './TermsModal'
 
@@ -75,23 +76,30 @@ export default async function DashboardLayout({ children }: { children: React.Re
       .toUpperCase() || '?'
 
     return (
-      <div className="app">
-        <DashboardSidebar
-          restaurantName={workspace.name}
+      <>
+        <DashboardAppShell
+          workspaceName={workspace.name}
           plan={plan}
-          displayName={displayName}
-          initials={initials}
-          avatarUrl={avatarUrl}
-          userEmail={user.email!}
-          locations={[]}
-          activeLocationId={null}
-          locationLimit={limits.locations}
-          awaitingCount={0}
-          isCareersAdmin={isCareersAdmin}
-        />
-        <main id="main-content" className="main">{children}</main>
+          sidebar={(
+            <DashboardSidebar
+              restaurantName={workspace.name}
+              plan={plan}
+              displayName={displayName}
+              initials={initials}
+              avatarUrl={avatarUrl}
+              userEmail={user.email!}
+              locations={[]}
+              activeLocationId={null}
+              locationLimit={limits.locations}
+              awaitingCount={0}
+              isCareersAdmin={isCareersAdmin}
+            />
+          )}
+        >
+          {children}
+        </DashboardAppShell>
         {needsTermsAcceptance && <TermsModal plan={plan} trialEndDate={trialEndDate} />}
-      </div>
+      </>
     )
   }
 
@@ -204,24 +212,31 @@ export default async function DashboardLayout({ children }: { children: React.Re
     .toUpperCase() || '?'
 
   return (
-    <div className="app">
-      <DashboardSidebar
-        restaurantName={activeRestaurant.name}
+    <>
+      <DashboardAppShell
+        workspaceName={workspace.name}
         plan={plan}
-        displayName={displayName}
-        initials={initials}
-        avatarUrl={avatarUrl}
-        userEmail={user.email!}
-        locations={restaurants}
-        activeLocationId={activeRestaurant.id}
-        locationLimit={limits.locations}
-        awaitingCount={awaitingCount ?? 0}
-        isCareersAdmin={isCareersAdmin}
-      />
-      <main id="main-content" className="main">{children}</main>
+        sidebar={(
+          <DashboardSidebar
+            restaurantName={activeRestaurant.name}
+            plan={plan}
+            displayName={displayName}
+            initials={initials}
+            avatarUrl={avatarUrl}
+            userEmail={user.email!}
+            locations={restaurants}
+            activeLocationId={activeRestaurant.id}
+            locationLimit={limits.locations}
+            awaitingCount={awaitingCount ?? 0}
+            isCareersAdmin={isCareersAdmin}
+          />
+        )}
+      >
+        {children}
+      </DashboardAppShell>
       {needsTermsAcceptance && (
         <TermsModal plan={plan} trialEndDate={trialEndDate} />
       )}
-    </div>
+    </>
   )
 }
