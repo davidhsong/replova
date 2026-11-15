@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import { BASE_URL } from '@/lib/baseUrl'
+import { getAuthEmailRedirectTo } from '@/lib/authRedirect'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import {
   isExistingAuthIdentityError,
@@ -42,6 +42,11 @@ export async function POST(request: NextRequest) {
   if (!email) {
     return NextResponse.json({ error: 'Enter a valid email address.' }, { status: 400 })
   }
+  const next = '/onboard/workspace'
+  const emailRedirectTo = getAuthEmailRedirectTo(request, next)
+  if (!emailRedirectTo) {
+    return NextResponse.json({ error: 'Invalid authentication origin.' }, { status: 403 })
+  }
   // Creating an unconfirmed Auth identity first lets every OTP call keep the
   // shouldCreateUser:false invariant. No Replova account is created until the
   // recipient proves control of this inbox and opens an authenticated session.
@@ -53,12 +58,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unable to prepare secure signup.' }, { status: 500 })
   }
 
-  const next = '/onboard/workspace'
   const { error: linkError } = await getPublicClient().auth.signInWithOtp({
     email,
     options: {
       shouldCreateUser: false,
-      emailRedirectTo: `${BASE_URL}/signin?next=${encodeURIComponent(next)}`,
+      emailRedirectTo,
     },
   })
 

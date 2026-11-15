@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import { BASE_URL } from '@/lib/baseUrl'
+import { getAuthEmailRedirectTo } from '@/lib/authRedirect'
 import { safeRedirectPath } from '@/lib/safeRedirect'
 import { isSameOriginRequest } from '@/lib/accountOnboarding'
 
@@ -57,6 +57,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Enter a valid email address' }, { status: 400 })
   }
   const next = typeof body.next === 'string' ? safeRedirectPath(body.next) : '/dashboard'
+  const emailRedirectTo = getAuthEmailRedirectTo(req, next)
+  if (!emailRedirectTo) {
+    return NextResponse.json({ error: 'Invalid authentication origin.' }, { status: 403 })
+  }
 
   // Only registered account owners may receive a link. This is also why every
   // signInWithOtp call must set shouldCreateUser to false.
@@ -82,7 +86,7 @@ export async function POST(req: NextRequest) {
     email: normalizedEmail,
     options: {
       shouldCreateUser: false,
-      emailRedirectTo: `${BASE_URL}/signin?next=${encodeURIComponent(next)}`,
+      emailRedirectTo,
     },
   })
 

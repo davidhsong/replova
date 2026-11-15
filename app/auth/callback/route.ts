@@ -1,16 +1,23 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextRequest, NextResponse } from 'next/server'
-import { safeRedirectPath } from '@/lib/safeRedirect'
+import { getAuthCallbackRedirects } from '@/lib/authRedirect'
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const code = searchParams.get('code')
   const tokenHash = searchParams.get('token_hash')
-  const type = searchParams.get('type') as 'magiclink' | 'signup' | 'email' | null
-  const next = safeRedirectPath(searchParams.get('next'))
+  const rawType = searchParams.get('type')
+  const type = rawType === 'magiclink' || rawType === 'signup' || rawType === 'email'
+    ? rawType
+    : null
+  const redirects = getAuthCallbackRedirects(req.url, searchParams.get('next'))
 
-  const errorResponse = NextResponse.redirect(new URL('/signin?error=invalid_link', req.url))
-  const successResponse = NextResponse.redirect(new URL(next, req.url))
+  if (!redirects) {
+    return NextResponse.json({ error: 'Invalid authentication callback origin.' }, { status: 400 })
+  }
+
+  const errorResponse = NextResponse.redirect(redirects.error)
+  const successResponse = NextResponse.redirect(redirects.success)
 
   if (code || (tokenHash && type)) {
     // Build the supabase client writing cookies onto whichever response we end up returning.
