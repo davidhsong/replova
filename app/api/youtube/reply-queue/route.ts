@@ -5,6 +5,7 @@ import { isYouTubeQueueFilter } from '@/lib/youtubeQueuePolicy'
 import { createClient } from '@/utils/supabase/server'
 
 const PAGE_SIZE = 30
+const VIDEO_ID_RE = /^[A-Za-z0-9_-]{1,200}$/
 
 export async function GET(request: NextRequest) {
   const cookieStore = await cookies()
@@ -19,6 +20,10 @@ export async function GET(request: NextRequest) {
   const pageValue = Number(request.nextUrl.searchParams.get('page') ?? '0')
   if (!Number.isInteger(pageValue) || pageValue < 0 || pageValue > 1000) {
     return NextResponse.json({ error: 'Invalid page.' }, { status: 400 })
+  }
+  const videoId = request.nextUrl.searchParams.get('videoId')?.trim() ?? ''
+  if (videoId && !VIDEO_ID_RE.test(videoId)) {
+    return NextResponse.json({ error: 'Invalid YouTube video.' }, { status: 400 })
   }
 
   const admin = getSupabaseAdmin()
@@ -37,8 +42,10 @@ export async function GET(request: NextRequest) {
 
   let query = admin
     .from('youtube_comment_queue')
-    .select('id, youtube_comment_id, video_id, author_display_name, comment_text, comment_published_at, category, category_confidence, processing_state, approval_status, generated_reply, edited_reply, published_reply_id, published_reply_url, published_at, publish_result_uncertain, reply_verification_status, requires_manual_review, manual_review_reason, last_error_message, updated_at')
+    .select('id, youtube_comment_id, video_id, author_display_name, comment_text, comment_published_at, category, category_confidence, processing_state, approval_status, generated_reply, edited_reply, published_reply_id, published_reply_url, published_at, publish_result_uncertain, reply_verification_status, reply_verification_error, requires_manual_review, manual_review_reason, knowledge_entry_ids, knowledge_context_used_at, last_error_message, updated_at')
     .eq('connection_id', connection.id)
+
+  if (videoId) query = query.eq('video_id', videoId)
 
   if (filterValue === 'needs_review') {
     query = query.eq('processing_state', 'awaiting_approval').eq('approval_status', 'pending')
@@ -53,17 +60,45 @@ export async function GET(request: NextRequest) {
   }
 
   const from = pageValue * PAGE_SIZE
-  const { data, error } = await query
-    .order('comment_published_at', { ascending: false })
-    .range(from, from + PAGE_SIZE)
+  const [queueResult, videoResult] = await Promise.all([
+    query.order('comment_published_at', { ascending: false }).range(from, from + PAGE_SIZE),
+    videoId
+      ? admin.from('youtube_videos')
+        .select('video_id, title, thumbnail_url, published_at, view_count, comment_count, privacy_status')
+        .eq('connection_id', connection.id)
+        .eq('video_id', videoId)
+        .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+  ])
+  const { data, error } = queueResult
   if (error) {
     console.error('[YouTube queue] Queue lookup failed:', error.code)
     return NextResponse.json({ error: 'Unable to load the YouTube Reply Queue.' }, { status: 500 })
+  }
+  if (videoResult.error) {
+    const missingSchema = videoResult.error.code === 'PGRST205' || videoResult.error.code === '42P01'
+    return NextResponse.json({
+      error: missingSchema
+        ? 'YouTube Studio catalog migration 030 must be applied before opening a video.'
+        : 'Unable to load this YouTube video.',
+    }, { status: missingSchema ? 503 : 500 })
+  }
+  if (videoId && !videoResult.data) {
+    return NextResponse.json({ error: 'This video is not in the connected channel catalog.' }, { status: 404 })
   }
 
   const rows = data ?? []
   return NextResponse.json({
     channelTitle: connection.channel_title,
+    video: videoResult.data ? {
+      videoId: videoResult.data.video_id,
+      title: videoResult.data.title,
+      thumbnailUrl: videoResult.data.thumbnail_url,
+      publishedAt: videoResult.data.published_at,
+      viewCount: videoResult.data.view_count,
+      commentCount: videoResult.data.comment_count,
+      privacyStatus: videoResult.data.privacy_status,
+    } : null,
     items: rows.slice(0, PAGE_SIZE).map(item => ({
       id: item.id,
       youtubeCommentId: item.youtube_comment_id,
@@ -83,8 +118,11 @@ export async function GET(request: NextRequest) {
       publishedAt: item.published_at,
       publishResultUncertain: item.publish_result_uncertain,
       replyVerificationStatus: item.reply_verification_status,
+      replyVerificationError: item.reply_verification_error,
       requiresManualReview: item.requires_manual_review,
       manualReviewReason: item.manual_review_reason,
+      knowledgeGrounded: item.knowledge_context_used_at !== null,
+      knowledgeEntryCount: item.knowledge_entry_ids?.length ?? 0,
       lastError: item.last_error_message,
       updatedAt: item.updated_at,
     })),

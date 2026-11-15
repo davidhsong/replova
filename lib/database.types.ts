@@ -59,6 +59,67 @@ export interface YouTubeConnection {
   updated_at: string
 }
 
+export interface YouTubeChannelProfile {
+  connection_id: string
+  channel_id: string
+  title: string
+  avatar_url: string | null
+  channel_url: string
+  uploads_playlist_id: string
+  subscriber_count: number | null
+  video_count: number | null
+  view_count: number | null
+  subscriber_count_hidden: boolean
+  catalog_partial: boolean
+  synced_at: string
+  updated_at: string
+}
+
+export interface YouTubeVideo {
+  id: string
+  connection_id: string
+  video_id: string
+  channel_id: string
+  title: string
+  description: string
+  thumbnail_url: string | null
+  published_at: string | null
+  view_count: number | null
+  comment_count: number | null
+  privacy_status: 'public' | 'unlisted' | 'private' | null
+  upload_position: number | null
+  is_available: boolean
+  synced_at: string
+  created_at: string
+  updated_at: string
+}
+
+export interface YouTubePlaylist {
+  id: string
+  connection_id: string
+  playlist_id: string
+  channel_id: string
+  title: string
+  description: string
+  thumbnail_url: string | null
+  published_at: string | null
+  item_count: number
+  is_active: boolean
+  membership_complete: boolean
+  membership_synced_at: string | null
+  synced_at: string
+  created_at: string
+  updated_at: string
+}
+
+export interface YouTubePlaylistVideo {
+  connection_id: string
+  playlist_id: string
+  video_id: string
+  position: number
+  synced_at: string
+}
+
 export interface YouTubeAutomationSettings {
   id: string
   connection_id: string
@@ -350,6 +411,26 @@ export type Database = {
         Row: YouTubeConnection
         Insert: Omit<YouTubeConnection, 'id' | 'created_at'> & { created_at?: string; updated_at?: string }
         Update: Partial<Omit<YouTubeConnection, 'id' | 'user_id' | 'created_at'>>
+      }
+      youtube_channel_profiles: {
+        Row: YouTubeChannelProfile
+        Insert: YouTubeChannelProfile
+        Update: Partial<Omit<YouTubeChannelProfile, 'connection_id' | 'channel_id'>>
+      }
+      youtube_videos: {
+        Row: YouTubeVideo
+        Insert: Omit<YouTubeVideo, 'id' | 'created_at' | 'updated_at'> & Partial<Pick<YouTubeVideo, 'id' | 'created_at' | 'updated_at'>>
+        Update: Partial<Omit<YouTubeVideo, 'id' | 'connection_id' | 'video_id' | 'created_at' | 'updated_at'>>
+      }
+      youtube_playlists: {
+        Row: YouTubePlaylist
+        Insert: Omit<YouTubePlaylist, 'id' | 'created_at' | 'updated_at' | 'membership_synced_at'> & Partial<Pick<YouTubePlaylist, 'id' | 'created_at' | 'updated_at' | 'membership_synced_at'>>
+        Update: Partial<Omit<YouTubePlaylist, 'id' | 'connection_id' | 'playlist_id' | 'created_at' | 'updated_at'>>
+      }
+      youtube_playlist_videos: {
+        Row: YouTubePlaylistVideo
+        Insert: YouTubePlaylistVideo
+        Update: Partial<Pick<YouTubePlaylistVideo, 'position' | 'synced_at'>>
       }
       youtube_automation_settings: {
         Row: YouTubeAutomationSettings

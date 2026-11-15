@@ -48,7 +48,7 @@ export function decryptYouTubeToken(payload: string): string {
 export async function getValidYouTubeAccessToken(
   connection: YouTubeConnectionTokenFields,
   admin: SupabaseClient,
-  options: { preserveConnectionOnRefreshFailure?: boolean; signal?: AbortSignal } = {}
+  options: { signal?: AbortSignal } = {}
 ): Promise<string | null> {
   if (Date.now() < connection.token_expires_at - REFRESH_WINDOW_MS) {
     try {
@@ -82,12 +82,10 @@ export async function getValidYouTubeAccessToken(
 
   if (!response.ok) {
     console.error(`[YouTube OAuth] Token refresh failed with status ${response.status}`)
-    if (
-      response.status >= 400 && response.status < 500
-      && !options.preserveConnectionOnRefreshFailure
-    ) {
-      await admin.from('youtube_connections').delete().eq('user_id', connection.user_id)
-    }
+    // A revoked or expired grant must not cascade-delete the connection's
+    // saved queue, approvals, publishing history, or Knowledge Base. Callers
+    // surface a reconnect-required state while an in-place reconnect preserves
+    // the connection id and all dependent records.
     return null
   }
 

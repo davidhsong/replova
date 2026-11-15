@@ -18,8 +18,7 @@ type YouTubeConnectionRow = YouTubeConnectionTokenFields & {
 }
 
 export async function POST(request: NextRequest) {
-  const origin = request.headers.get('origin')
-  if (origin && origin !== request.nextUrl.origin) {
+  if (request.headers.get('origin') !== request.nextUrl.origin) {
     return NextResponse.json({ error: 'Invalid request origin.' }, { status: 403 })
   }
 
@@ -28,7 +27,7 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let body: { commentId?: unknown; threadId?: unknown; replyText?: unknown }
+  let body: { commentId?: unknown; threadId?: unknown; replyText?: unknown; confirmed?: unknown }
   try {
     body = await request.json()
   } catch {
@@ -43,6 +42,9 @@ export async function POST(request: NextRequest) {
   }
   if (!replyText || replyText.length > 1000) {
     return NextResponse.json({ error: 'Reply text must be between 1 and 1,000 characters.' }, { status: 400 })
+  }
+  if (body.confirmed !== true) {
+    return NextResponse.json({ error: 'Explicit publishing confirmation is required.' }, { status: 400 })
   }
 
   const requestKey = `${user.id}:${commentId}`

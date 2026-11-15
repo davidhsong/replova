@@ -21,8 +21,7 @@ type GenerateBody = {
 }
 
 export async function POST(request: NextRequest) {
-  const origin = request.headers.get('origin')
-  if (origin && origin !== request.nextUrl.origin) {
+  if (request.headers.get('origin') !== request.nextUrl.origin) {
     return NextResponse.json({ error: 'Invalid request origin.' }, { status: 403 })
   }
 

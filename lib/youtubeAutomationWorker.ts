@@ -188,7 +188,6 @@ export async function runYouTubeSyncAndDraftAutomation({
     let accessToken: string | null
     try {
       accessToken = await getValidYouTubeAccessToken(connection, admin, {
-        preserveConnectionOnRefreshFailure: true,
         signal: workerSignal,
       })
     } catch {

@@ -1,32 +1,7 @@
 import 'server-only'
 
-import { findChannelReply, type ChannelReplyStatus, type YouTubeReplySummary } from './youtubeReplyStatus'
-
-const YOUTUBE_API = 'https://www.googleapis.com/youtube/v3'
-
-type YouTubeCommentThreadResponse = {
-  nextPageToken?: string
-  items?: Array<{
-    id?: string
-    snippet?: {
-      videoId?: string
-      totalReplyCount?: number
-      topLevelComment?: {
-        id?: string
-        snippet?: {
-          videoId?: string
-          authorChannelId?: { value?: string }
-          authorDisplayName?: string
-          textDisplay?: string
-          publishedAt?: string
-          updatedAt?: string
-        }
-      }
-    }
-    replies?: { comments?: YouTubeReplySummary[] }
-  }>
-  error?: { errors?: Array<{ reason?: string }> }
-}
+import { findChannelReply, type ChannelReplyStatus } from './youtubeReplyStatus'
+import { requestYouTubeCommentThreadsPage } from './youtubeCommentApiPage'
 
 export type FetchedYouTubeComment = {
   id: string
@@ -80,28 +55,23 @@ export async function fetchYouTubeCommentsPage({
   nextPageToken: string | null
   replyVerificationWarning: boolean
 }> {
-  const params = new URLSearchParams({
-    part: 'snippet,replies',
-    allThreadsRelatedToChannelId: channelId,
-    maxResults: String(Math.max(1, Math.min(100, maxResults))),
-    order: 'time',
-    textFormat: 'plainText',
-  })
-  if (pageToken) params.set('pageToken', pageToken)
-
   let response: Response
+  let data: Awaited<ReturnType<typeof requestYouTubeCommentThreadsPage>>['data']
   try {
-    response = await fetch(`${YOUTUBE_API}/commentThreads?${params.toString()}`, {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: 'no-store',
+    const page = await requestYouTubeCommentThreadsPage({
+      accessToken,
+      channelId,
+      pageToken,
+      maxResults,
       signal,
     })
+    response = page.response
+    data = page.data
   } catch {
     if (signal?.aborted) throw signal.reason
     throw new YouTubeCommentsError('YouTube comments are temporarily unavailable.', 502, 'networkError')
   }
 
-  const data = await response.json().catch(() => ({})) as YouTubeCommentThreadResponse
   if (!response.ok) {
     const reason = data.error?.errors?.[0]?.reason ?? 'unknown'
     throw new YouTubeCommentsError(errorMessage(response.status, reason), response.status, reason)

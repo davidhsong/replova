@@ -206,14 +206,18 @@ export default function SettingsPage() {
     if (oauthError) {
       const messages: Record<string, string> = {
         access_denied: 'YouTube connection was cancelled.',
+        authorization_failed: 'Google could not complete YouTube authorization. Try connecting again.',
         state_mismatch: 'The YouTube security check failed. Try connecting again.',
         session_expired: 'Your session expired. Sign in and try again.',
+        email_unverified: 'Verify your Replova email before connecting YouTube.',
+        workspace_required: 'Create a business workspace before connecting YouTube.',
         not_configured: 'YouTube is not configured yet.',
         token_exchange_failed: 'YouTube connection failed. Try again.',
         missing_permissions: 'The required YouTube permission was not granted.',
         missing_refresh_token: 'Google did not return offline access. Try connecting again.',
         channel_lookup_failed: 'Replova could not load your YouTube channel.',
         channel_not_found: 'No YouTube channel was found for that Google account.',
+        channel_mismatch: 'This Replova connection belongs to another YouTube channel. Disconnect it explicitly before switching channels.',
         save_failed: 'YouTube connected, but Replova could not save the connection.',
       }
       oauthNotice = { ok: false, message: messages[oauthError] ?? 'YouTube connection failed.' }
@@ -271,10 +275,15 @@ export default function SettingsPage() {
   }
 
   async function disconnectYoutube() {
+    if (!window.confirm('Disconnect YouTube? This removes the saved YouTube Reply Queue and Knowledge Base for this connection. Published replies on YouTube are not deleted.')) return
     setDisconnectingYoutube(true)
     setYoutubeNotice(null)
     try {
-      const response = await fetch('/api/auth/youtube/disconnect', { method: 'DELETE' })
+      const response = await fetch('/api/auth/youtube/disconnect', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ confirmed: true }),
+      })
       const data = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(data.error ?? 'Could not disconnect YouTube.')
       setYoutubeStatus('not_connected')
@@ -470,6 +479,7 @@ export default function SettingsPage() {
   async function publishYoutubeReply(comment: YouTubeComment) {
     const replyText = youtubeReplyDrafts[comment.id]?.trim()
     if (!replyText || youtubePublished[comment.id] || youtubePublishBlocked[comment.id] || youtubePublishLoading[comment.id]) return
+    if (!window.confirm('Publish this reply publicly on YouTube?')) return
 
     setYoutubePublishLoading(current => ({ ...current, [comment.id]: true }))
     setYoutubePublishErrors(current => {
@@ -486,6 +496,7 @@ export default function SettingsPage() {
           commentId: comment.id,
           threadId: comment.threadId,
           replyText,
+          confirmed: true,
         }),
       })
       const data = await response.json().catch(() => ({}))
@@ -612,12 +623,12 @@ export default function SettingsPage() {
           )}
         </section>}
 
-        <section className="simple-settings-section">
+        <section className="simple-settings-section" id="youtube">
           <div className="simple-section-heading">
             <div>
               <span>{hasRestaurant === false ? '01' : '02'}</span>
               <h2>YouTube</h2>
-              <p>Connect the channel whose comments you want Replova to manage.</p>
+              <p>Secondary integration for developer testing and optional channel comment management.</p>
             </div>
           </div>
 
@@ -632,9 +643,12 @@ export default function SettingsPage() {
                   <strong><i className="connection-dot" /> Connected</strong>
                   <span>{youtubeChannelTitle ?? 'YouTube channel'}</span>
                 </div>
-                <button type="button" className="text-link" onClick={disconnectYoutube} disabled={disconnectingYoutube}>
-                  {disconnectingYoutube ? 'Disconnecting…' : 'Disconnect'}
-                </button>
+                <div className="google-connection-actions">
+                  <a href="/api/auth/youtube" className="text-link">Reconnect</a>
+                  <button type="button" className="text-link" onClick={disconnectYoutube} disabled={disconnectingYoutube}>
+                    {disconnectingYoutube ? 'Disconnecting…' : 'Disconnect'}
+                  </button>
+                </div>
               </div>
               <div className="simple-setting-row">
                 <div>

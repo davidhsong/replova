@@ -135,7 +135,7 @@ test('sync upserts omit draft and approval fields so saved work survives', () =>
   assert.equal('processing_state' in row, false)
 })
 
-test('revoked authorization in worker mode does not delete the connection', async () => {
+test('revoked authorization never deletes the connection or dependent saved work', async () => {
   const originalKey = process.env.YOUTUBE_TOKEN_ENCRYPTION_KEY
   const originalClientId = process.env.GOOGLE_CLIENT_ID
   const originalClientSecret = process.env.GOOGLE_CLIENT_SECRET
@@ -159,7 +159,7 @@ test('revoked authorization in worker mode does not delete the connection', asyn
       access_token_encrypted: encryptYouTubeToken('expired-access-token'),
       refresh_token_encrypted: encryptYouTubeToken('revoked-refresh-token'),
       token_expires_at: 0,
-    }, admin, { preserveConnectionOnRefreshFailure: true })
+    }, admin)
 
     assert.equal(token, null)
     assert.deepEqual(databaseCalls, [])
