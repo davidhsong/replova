@@ -10,6 +10,7 @@ import StatTile from '@/components/dashboard/StatTile'
 import type { Plan } from '@/lib/planLimits'
 import { getAccountForAuthUser } from '@/lib/accountAccess'
 import WorkspaceEmptyState from './WorkspaceEmptyState'
+import styles from './Overview.module.css'
 
 type Restaurant = {
   id: string
@@ -82,22 +83,16 @@ export default async function DashboardPage({
   }
 
   const activeId = cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value
-  const restaurant = restaurants.find(r => r.id === activeId && r.active)
-    ?? restaurants.find(r => r.active)
+  const restaurant = restaurants.find(location => location.id === activeId && location.active)
+    ?? restaurants.find(location => location.active)
     ?? restaurants[0]
 
   const plan: Plan = account.plan
-
   const currentDate = new Date()
   const currentTime = currentDate.getTime()
   const sevenDaysAgo = new Date(currentTime - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
 
-  const [
-    repScoreResult,
-    priorScoreResult,
-    reviewsResult,
-    allStatsResult,
-  ] = await Promise.all([
+  const [repScoreResult, priorScoreResult, reviewsResult, allStatsResult] = await Promise.all([
     admin
       .from('reputation_scores')
       .select('score, reviews_this_month, score_date')
@@ -131,136 +126,134 @@ export default async function DashboardPage({
   const reviews = reviewsResult.data ?? []
   const allRows = allStatsResult.data ?? []
 
-  const unrepliedCount = allRows.filter(r => r.status !== 'replied').length
-  const urgentCount = allRows.filter(r => r.status !== 'replied' && r.rating != null && r.rating <= 2).length
+  const unrepliedCount = allRows.filter(row => row.status !== 'replied').length
+  const repliedCount = allRows.length - unrepliedCount
+  const urgentCount = allRows.filter(row => row.status !== 'replied' && row.rating != null && row.rating <= 2).length
+  const positiveCount = allRows.filter(row => row.rating != null && row.rating >= 4).length
+  const responseRate = allRows.length > 0 ? Math.round((repliedCount / allRows.length) * 100) : 0
   const nowSeconds = Math.floor(currentTime / 1000)
   const ninetyDaysAgoSeconds = nowSeconds - 90 * 24 * 60 * 60
   const monthStartSeconds = Math.floor(new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getTime() / 1000)
-  const recentRatedRows = allRows.filter(r => r.rating != null && (r.review_timestamp ?? 0) >= ninetyDaysAgoSeconds)
+  const recentRatedRows = allRows.filter(row => row.rating != null && (row.review_timestamp ?? 0) >= ninetyDaysAgoSeconds)
   const computedAvgRating = recentRatedRows.length > 0
     ? recentRatedRows.reduce((sum, row) => sum + (row.rating ?? 0), 0) / recentRatedRows.length
     : null
   const reviewsThisMonth = allRows.filter(row => (row.review_timestamp ?? 0) >= monthStartSeconds).length
-
   const scoreDelta = plan !== 'starter' && repScore?.score != null && priorScore?.score != null
     ? Math.round((repScore.score - priorScore.score) * 10) / 10
     : null
 
-  const displayAvgRating = computedAvgRating
-
   return (
-    <>
-      {/* Page header */}
-      <div className="page-header">
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
-          <div>
-            <div className="t-eyebrow" style={{ marginBottom: 6 }}>
-              <span style={{ color: 'var(--t3)' }}>Workspace</span>
-              {' › '}
-              <span>Reviews</span>
-            </div>
-            <h1 className="t-h1" style={{ marginBottom: 4 }}>{restaurant.name}</h1>
-            <p className="t-sm c-t3">Auto-syncs every 6h</p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--pos)', fontSize: 12, fontWeight: 600 }}>
-            <span className="pulse-dot" aria-hidden="true" style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--pos)', display: 'inline-block' }} />
-            Monitoring
-          </div>
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <div>
+          <div className={styles.eyebrow}><span>Workspace</span><span aria-hidden="true">›</span><span>Review center</span></div>
+          <h1>{restaurant.name}</h1>
+          <p>Review operations · Auto-syncs every 6 hours</p>
         </div>
-      </div>
+        <div className={styles.monitoring}><span aria-hidden="true" />Monitoring</div>
+      </header>
 
-      <div className="page-body">
-        {/* Google Business connection banner */}
+      <div className={styles.body}>
         {!restaurant.google_location_name && !params.success && (
-          <div className="banner banner-warn fade-up" style={{ marginBottom: 20 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            <span>
-              Connect your Google Business account to sync reviews and enable direct replies.{' '}
-              <a href="/dashboard/settings" style={{ color: 'inherit', fontWeight: 700, textDecoration: 'underline' }}>
-                Go to Settings
-              </a>
-            </span>
+          <div className={`${styles.banner} ${styles.warningBanner}`}>
+            <strong>Google Business is not connected.</strong>
+            <span>Connect an authorized profile to sync reviews and enable direct replies.</span>
+            <a href="/dashboard/settings">Open settings</a>
           </div>
         )}
 
         {params.success && (
-          <AutoDismissBanner className="banner banner-pos fade-up" delay={4000} style={{ marginBottom: 20 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-            </svg>
-            You&apos;re all set. Connect your Google Business in{' '}
-            <a href="/dashboard/settings" style={{ color: 'inherit', fontWeight: 700, textDecoration: 'underline' }}>
-              Settings
-            </a>{' '}
-            to start syncing reviews.
+          <AutoDismissBanner className={`${styles.banner} ${styles.successBanner}`} delay={4000}>
+            <strong>You&apos;re all set.</strong>
+            <span>Connect Google Business in Settings when you are ready to sync reviews.</span>
+            <a href="/dashboard/settings">Open settings</a>
           </AutoDismissBanner>
         )}
 
-        {/* Urgent banner */}
         {urgentCount > 0 && (
-          <div className="banner banner-neg fade-up" style={{ marginBottom: 20 }}>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-              <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-            <div>
-              <strong>{urgentCount} negative review{urgentCount > 1 ? 's' : ''} {urgentCount > 1 ? 'need' : 'needs'} a reply</strong>
-              <span style={{ color: 'inherit', opacity: 0.8, marginLeft: 8 }}>
-                Try to respond within 24 hours while the visit is still fresh.
-              </span>
-            </div>
+          <div className={`${styles.banner} ${styles.urgentBanner}`}>
+            <strong>{urgentCount} negative review{urgentCount === 1 ? '' : 's'} need{urgentCount === 1 ? 's' : ''} attention</strong>
+            <span>Reply while the customer experience is still fresh.</span>
           </div>
         )}
-        {/* Stats strip */}
-        <div className="dashboard-stats">
+
+        <section className={styles.stats} aria-label="Review performance summary">
           <StatTile
             label="Replova score"
-            value={plan !== 'starter' && repScore?.score != null ? Math.round(repScore.score) : '-'}
-            delta={scoreDelta !== null ? scoreDelta : undefined}
-            sub="vs last week"
+            value={plan !== 'starter' && repScore?.score != null ? Math.round(repScore.score) : '–'}
+            delta={scoreDelta ?? undefined}
+            sub={plan === 'starter' ? 'Available on Growth' : 'vs last week'}
           />
           <StatTile
             label="Google rating"
-            value={
-              displayAvgRating != null
-                ? <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 2 }}>
-                    {displayAvgRating.toFixed(1)}
-                    <span style={{ color: 'var(--gold)', fontSize: 20, lineHeight: 1, marginLeft: 1 }}>★</span>
-                  </span>
-                : '-'
-            }
-            sub={`${recentRatedRows.length} review${recentRatedRows.length !== 1 ? 's' : ''} · last 90 days`}
+            value={computedAvgRating != null ? (
+              <span className={styles.ratingValue}>{computedAvgRating.toFixed(1)}<span aria-hidden="true">★</span></span>
+            ) : '–'}
+            sub={`${recentRatedRows.length} review${recentRatedRows.length === 1 ? '' : 's'} · last 90 days`}
           />
           <StatTile
-            label="New this month"
+            label="New reviews"
             value={repScore?.reviews_this_month ?? reviewsThisMonth}
-            sub="this month"
+            sub="received this month"
           />
           <StatTile
             label="Awaiting reply"
             value={unrepliedCount}
             urgent={unrepliedCount > 0}
             allClear={unrepliedCount === 0}
-            sub={unrepliedCount === 0 ? 'All caught up' : `need${unrepliedCount === 1 ? 's' : ''} a reply`}
+            sub={unrepliedCount === 0 ? 'All caught up' : 'in the response queue'}
           />
-        </div>
+        </section>
 
-        <div className="dashboard-review-workspace">
-          {reviews.length === 0 ? (
-            <DemoMode />
-          ) : (
-            <ReviewList
-              reviews={reviews}
-              currentPage={1}
-              totalPages={1}
-              sentimentEnabled={plan !== 'starter'}
-            />
-          )}
-        </div>
+        <section className={styles.operationsGrid}>
+          <div className={styles.reviewWorkspace}>
+            <header className={styles.sectionHeader}>
+              <div>
+                <span>Review inbox</span>
+                <h2>Customer feedback and replies</h2>
+              </div>
+              <small>Latest {reviews.length} records</small>
+            </header>
+            <div className={styles.reviewContent}>
+              {reviews.length === 0 ? (
+                <DemoMode />
+              ) : (
+                <ReviewList
+                  reviews={reviews}
+                  currentPage={1}
+                  totalPages={1}
+                  sentimentEnabled={plan !== 'starter'}
+                />
+              )}
+            </div>
+          </div>
 
+          <aside className={styles.queuePanel} aria-labelledby="queue-health-title">
+            <header className={styles.sectionHeader}>
+              <div>
+                <span>Operations</span>
+                <h2 id="queue-health-title">Queue health</h2>
+              </div>
+            </header>
+            <div className={styles.rateBlock}>
+              <div><span>Response rate</span><strong>{responseRate}%</strong></div>
+              <div className={styles.rateTrack} aria-hidden="true"><span style={{ width: `${responseRate}%` }} /></div>
+              <small>{repliedCount} of {allRows.length} reviews marked replied</small>
+            </div>
+            <dl className={styles.queueMetrics}>
+              <div><dt>Urgent</dt><dd data-tone={urgentCount > 0 ? 'negative' : 'positive'}>{urgentCount}</dd></div>
+              <div><dt>Awaiting reply</dt><dd>{unrepliedCount}</dd></div>
+              <div><dt>Positive ratings</dt><dd data-tone="positive">{positiveCount}</dd></div>
+              <div><dt>Total reviews</dt><dd>{allRows.length}</dd></div>
+            </dl>
+            <div className={styles.scopeNote}>
+              <strong>Live workspace data</strong>
+              <p>This overview uses only authorized reviews for this location. Synthetic demo records stay isolated in Feedback Demo.</p>
+            </div>
+          </aside>
+        </section>
       </div>
-    </>
+    </div>
   )
 }

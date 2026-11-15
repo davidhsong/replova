@@ -1,0 +1,268 @@
+.sidebar {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: #f3f4f6;
+  color: #15181d;
+}
+
+.brand {
+  min-height: 58px;
+  padding: 0 18px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #dfe2e6;
+}
+
+.workspaceCard {
+  margin: 12px 10px 6px;
+  overflow: hidden;
+  border: 1px solid #dfe2e6;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.workspaceRow {
+  min-height: 58px;
+  padding: 9px 10px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.workspaceSymbol,
+.avatarFallback {
+  display: grid;
+  place-items: center;
+  background: #e8eaed;
+  color: #414854;
+  font-family: var(--font-mono);
+  font-weight: 650;
+}
+
+.workspaceSymbol {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  border: 1px solid #d5d9de;
+  border-radius: 7px;
+  font-size: 10px;
+}
+
+.workspaceCopy,
+.userCopy {
+  min-width: 0;
+  display: grid;
+}
+
+.workspaceCopy {
+  gap: 3px;
+}
+
+.workspaceCopy strong,
+.userCopy strong {
+  overflow: hidden;
+  color: #15181d;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspaceCopy strong {
+  font-size: 12.5px;
+  font-weight: 630;
+}
+
+.workspaceCopy span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #7a828d;
+  font-size: 10.5px;
+}
+
+.workspaceCopy i {
+  width: 2px;
+  height: 2px;
+  border-radius: 50%;
+  background: #a4aab3;
+}
+
+.locationSwitcher {
+  border-top: 1px solid #e6e8eb;
+}
+
+.locationSwitcher > div {
+  padding: 9px 10px 10px !important;
+}
+
+.navigation {
+  flex: 1;
+  min-height: 0;
+  padding: 7px 8px 16px;
+  overflow-y: auto;
+}
+
+.navGroup + .navGroup {
+  margin-top: 17px;
+  padding-top: 14px;
+  border-top: 1px solid #e1e4e8;
+}
+
+.navLabel {
+  padding: 0 9px;
+  display: block;
+  color: #9299a4;
+  font: 600 9.5px/1.2 var(--font-mono);
+  letter-spacing: .065em;
+  text-transform: uppercase;
+}
+
+.navList {
+  margin-top: 6px;
+  display: grid;
+  gap: 2px;
+}
+
+.navItem {
+  min-height: 36px;
+  padding: 0 9px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: #555e69;
+  font-size: 12.5px;
+  font-weight: 540;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 120ms ease;
+}
+
+.navItem:hover {
+  background: rgba(255, 255, 255, .68);
+  color: #15181d;
+}
+
+.navItem:active {
+  transform: scale(.985);
+}
+
+.navItemActive {
+  border-color: #e1e4e7;
+  background: #ffffff;
+  color: #15181d;
+  box-shadow: 0 1px 2px rgba(35, 42, 50, .04);
+}
+
+.navIcon {
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  color: #6c7480;
+}
+
+.navItemActive .navIcon {
+  color: #15181d;
+}
+
+.navCounter {
+  min-width: 19px;
+  height: 18px;
+  margin-left: auto;
+  padding: 0 5px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #d9dde1;
+  border-radius: 5px;
+  background: #f4f5f6;
+  color: #555e69;
+  font: 600 9px/1 var(--font-mono);
+}
+
+.userFooter {
+  min-height: 64px;
+  padding: 9px 10px;
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 30px;
+  align-items: center;
+  gap: 9px;
+  border-top: 1px solid #dfe2e6;
+}
+
+.avatar,
+.avatarFallback {
+  width: 30px;
+  height: 30px;
+  border-radius: 7px;
+}
+
+.avatar {
+  display: block;
+  object-fit: cover;
+}
+
+.avatarFallback {
+  font-size: 9px;
+}
+
+.userCopy {
+  gap: 2px;
+}
+
+.userCopy strong {
+  font-size: 11.5px;
+  font-weight: 620;
+}
+
+.userCopy span {
+  overflow: hidden;
+  color: #838a94;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.userFooter button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #7a828d;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease, transform 120ms ease;
+}
+
+.userFooter button:hover {
+  background: #e8eaed;
+  color: #15181d;
+}
+
+.userFooter button:active {
+  transform: scale(.96);
+}
+
+@media (max-width: 899px) {
+  .navItem {
+    min-height: 42px;
+    font-size: 13px;
+  }
+
+  .userFooter {
+    padding-bottom: max(9px, env(safe-area-inset-bottom));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navItem,
+  .userFooter button {
+    transition-duration: .01ms;
+  }
+}

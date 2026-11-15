@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   calculateFeedbackDemoMetrics,
   createInitialFeedbackDemoState,
@@ -95,6 +95,9 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
     priority: 'medium',
     linkedFindingId: null,
   })
+  const recoveryCloseRef = useRef<HTMLButtonElement>(null)
+  const recoveryDrawerRef = useRef<HTMLElement>(null)
+  const recoveryTriggerRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     const loadTimer = window.setTimeout(() => {
@@ -119,6 +122,54 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
     if (!state) return
     window.localStorage.setItem(storageKey, JSON.stringify(state))
   }, [state, storageKey])
+
+  useEffect(() => {
+    function closeRecoveryForAssistant() {
+      setSelectedIssueId(null)
+      window.requestAnimationFrame(() => recoveryTriggerRef.current?.focus())
+    }
+
+    window.addEventListener('replova:close-feedback-recovery', closeRecoveryForAssistant)
+    return () => window.removeEventListener('replova:close-feedback-recovery', closeRecoveryForAssistant)
+  }, [])
+
+  useEffect(() => {
+    if (!selectedIssueId) return
+
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const focusFrame = window.requestAnimationFrame(() => recoveryCloseRef.current?.focus())
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setSelectedIssueId(null)
+        window.requestAnimationFrame(() => recoveryTriggerRef.current?.focus())
+        return
+      }
+
+      if (event.key !== 'Tab' || !recoveryDrawerRef.current) return
+      const focusable = Array.from(recoveryDrawerRef.current.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), select:not([disabled]), textarea:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+      ))
+      if (focusable.length === 0) return
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    }
+
+    window.addEventListener('keydown', handleEscape)
+    return () => {
+      window.cancelAnimationFrame(focusFrame)
+      window.removeEventListener('keydown', handleEscape)
+      document.body.style.overflow = previousOverflow
+    }
+  }, [selectedIssueId])
 
   const selectedIssue = useMemo(
     () => state?.feedback.find(entry => entry.id === selectedIssueId) ?? null,
@@ -158,11 +209,18 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
     } : current)
   }
 
-  function openRecovery(entry: DemoFeedbackEntry) {
+  function openRecovery(entry: DemoFeedbackEntry, trigger?: HTMLButtonElement) {
+    window.dispatchEvent(new CustomEvent('replova:close-assistant'))
+    if (trigger) recoveryTriggerRef.current = trigger
     setSelectedIssueId(entry.id)
     setIssueStatus(entry.issueStatus)
     setFollowUpStatus(entry.followUpStatus)
     setResolutionNote(entry.resolutionNote)
+  }
+
+  function closeRecovery() {
+    setSelectedIssueId(null)
+    window.requestAnimationFrame(() => recoveryTriggerRef.current?.focus())
   }
 
   async function runAnalysis() {
@@ -218,7 +276,11 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
       priority,
       linkedFindingId: findingId,
     })
-    document.getElementById('feedback-demo-task-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    document.getElementById('feedback-demo-task-form')?.scrollIntoView({
+      behavior: reducedMotion ? 'auto' : 'smooth',
+      block: 'center',
+    })
   }
 
   function createTask() {
@@ -328,7 +390,7 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
         </section>
 
         <section className={styles.primaryGrid}>
-          <div className={styles.findingsPanel}>
+          <div className={styles.findingsPanel} id="feedback-priorities">
             <div className={styles.sectionHeading}>
               <div>
                 <span>AI operational review</span>
@@ -379,7 +441,12 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
                           <strong>{finding.recommendation}</strong>
                         </div>
                         <div className={styles.findingActions}>
-                          <button type="button" onClick={() => setOpenFindingId(isOpen ? null : finding.id)}>
+                          <button
+                            type="button"
+                            aria-expanded={isOpen}
+                            aria-controls={`finding-evidence-${finding.id}`}
+                            onClick={() => setOpenFindingId(isOpen ? null : finding.id)}
+                          >
                             {isOpen ? 'Hide evidence' : `View ${evidence.length} supporting entries`}
                           </button>
                           <button
@@ -394,7 +461,7 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
                           </button>
                         </div>
                         {isOpen && (
-                          <div className={styles.evidenceList}>
+                          <div className={styles.evidenceList} id={`finding-evidence-${finding.id}`}>
                             {evidence.map(entry => (
                               <div key={entry.id}>
                                 <div>
@@ -415,7 +482,7 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
             )}
           </div>
 
-          <aside className={styles.recoveryPanel}>
+          <aside className={styles.recoveryPanel} id="customer-recovery">
             <div className={styles.sectionHeading}>
               <div>
                 <span>Customer recovery</span>
@@ -429,7 +496,8 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
                   key={entry.id}
                   type="button"
                   className={selectedIssueId === entry.id ? styles.issueSelected : undefined}
-                  onClick={() => openRecovery(entry)}
+                  aria-haspopup="dialog"
+                  onClick={event => openRecovery(entry, event.currentTarget)}
                 >
                   <span data-rating={entry.rating <= 1 ? 'critical' : 'attention'}>{entry.rating}/5</span>
                   <div>
@@ -441,49 +509,9 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
               ))}
             </div>
 
-            {selectedIssue ? (
-              <div className={styles.recoveryEditor}>
-                <div className={styles.editorHeading}>
-                  <div>
-                    <span>Recovery record</span>
-                    <strong>{selectedIssue.customerName}</strong>
-                  </div>
-                  <button type="button" onClick={() => setSelectedIssueId(null)} aria-label="Close recovery record">Close</button>
-                </div>
-                <label>
-                  Issue status
-                  <select value={issueStatus} onChange={event => setIssueStatus(event.target.value as FeedbackIssueStatus)}>
-                    <option value="new">New issue</option>
-                    <option value="in_progress">In progress</option>
-                    <option value="resolved">Resolved</option>
-                  </select>
-                </label>
-                <label>
-                  Follow-up
-                  <select value={followUpStatus} onChange={event => setFollowUpStatus(event.target.value as FeedbackFollowUpStatus)}>
-                    <option value="not_started">Not started</option>
-                    <option value="contacted">Customer contacted</option>
-                    <option value="awaiting_reply">Awaiting customer</option>
-                    <option value="confirmed_resolved">Customer confirmed</option>
-                  </select>
-                </label>
-                <label>
-                  Resolution note
-                  <textarea
-                    value={resolutionNote}
-                    onChange={event => setResolutionNote(event.target.value)}
-                    maxLength={800}
-                    placeholder="Record what was offered, what changed, and the next follow-up."
-                  />
-                  <small>Private demo note. Never published externally.</small>
-                </label>
-                <button type="button" className="btn btn-primary btn-block" onClick={saveRecovery}>Save recovery update</button>
-              </div>
-            ) : (
-              <div className={styles.recoveryHint}>
-                Select an issue to record a resolution and update the customer follow-up status.
-              </div>
-            )}
+            <div className={styles.recoveryHint}>
+              Select an issue to open its recovery record. The editor stays visible while you update follow-up and resolution details.
+            </div>
           </aside>
         </section>
 
@@ -533,7 +561,7 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
           </div>
         </section>
 
-        <section className={styles.taskSection}>
+        <section className={styles.taskSection} id="improvement-tasks">
           <div className={styles.sectionHeading}>
             <div>
               <span>Operational follow-through</span>
@@ -543,6 +571,13 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
           </div>
           <div className={styles.taskGrid}>
             <div className={styles.taskList}>
+              <div className={styles.taskTableHeader} aria-hidden="true">
+                <span>Complete</span>
+                <span>Improvement</span>
+                <span>Owner</span>
+                <span>Priority</span>
+                <span>Status</span>
+              </div>
               {state.tasks.map(task => (
                 <article key={task.id} data-status={task.status}>
                   <button
@@ -638,13 +673,103 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
                 <p>{entry.text}</p>
                 <div className={styles.feedbackThemes}>
                   {entry.themes.map(theme => <span key={theme}>{theme}</span>)}
-                  {entry.requiresRecovery && <button type="button" onClick={() => openRecovery(entry)}>{labelFollowUp(entry.followUpStatus)}</button>}
+                  {entry.requiresRecovery && (
+                    <button
+                      type="button"
+                      aria-haspopup="dialog"
+                      onClick={event => openRecovery(entry, event.currentTarget)}
+                    >
+                      {labelFollowUp(entry.followUpStatus)}
+                    </button>
+                  )}
                 </div>
               </article>
             ))}
           </div>
         </section>
       </main>
+
+      {selectedIssue && (
+        <div className={styles.recoveryLayer}>
+          <button
+            type="button"
+            className={styles.recoveryBackdrop}
+            aria-label="Close recovery record"
+            onClick={closeRecovery}
+          />
+          <aside
+            ref={recoveryDrawerRef}
+            className={styles.recoveryDrawer}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="recovery-drawer-title"
+          >
+            <header className={styles.drawerHeader}>
+              <div>
+                <span>Customer recovery</span>
+                <h2 id="recovery-drawer-title">{selectedIssue.customerName}</h2>
+              </div>
+              <button
+                ref={recoveryCloseRef}
+                type="button"
+                onClick={closeRecovery}
+                aria-label="Close recovery record"
+              >
+                <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" /></svg>
+              </button>
+            </header>
+
+            <div className={styles.drawerBody}>
+              <section className={styles.selectedFeedback} aria-label="Selected synthetic feedback">
+                <div>
+                  <span data-rating={selectedIssue.rating <= 1 ? 'critical' : 'attention'}>{selectedIssue.rating}/5</span>
+                  <div>
+                    <strong>{selectedIssue.service}</strong>
+                    <small>{selectedIssue.channel} · {dateFormatter.format(new Date(selectedIssue.receivedAt))}</small>
+                  </div>
+                </div>
+                <p>{selectedIssue.text}</p>
+                <small>Synthetic demo record · {selectedIssue.id}</small>
+              </section>
+
+              <div className={styles.drawerFields}>
+                <label>
+                  Issue status
+                  <select value={issueStatus} onChange={event => setIssueStatus(event.target.value as FeedbackIssueStatus)}>
+                    <option value="new">New issue</option>
+                    <option value="in_progress">In progress</option>
+                    <option value="resolved">Resolved</option>
+                  </select>
+                </label>
+                <label>
+                  Follow-up
+                  <select value={followUpStatus} onChange={event => setFollowUpStatus(event.target.value as FeedbackFollowUpStatus)}>
+                    <option value="not_started">Not started</option>
+                    <option value="contacted">Customer contacted</option>
+                    <option value="awaiting_reply">Awaiting customer</option>
+                    <option value="confirmed_resolved">Customer confirmed</option>
+                  </select>
+                </label>
+                <label>
+                  Resolution note
+                  <textarea
+                    value={resolutionNote}
+                    onChange={event => setResolutionNote(event.target.value)}
+                    maxLength={800}
+                    placeholder="Record what was offered, what changed, and the next follow-up."
+                  />
+                  <small>Private demo note. Never published externally.</small>
+                </label>
+              </div>
+            </div>
+
+            <footer className={styles.drawerFooter}>
+              <button type="button" className="btn btn-ghost" onClick={closeRecovery}>Cancel</button>
+              <button type="button" className="btn btn-primary" onClick={saveRecovery}>Save recovery update</button>
+            </footer>
+          </aside>
+        </div>
+      )}
     </div>
   )
 }
