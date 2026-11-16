@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { ArrowIcon, MarketingFooter, MarketingHeader } from '@/components/MarketingChrome'
+import { HomeFaq } from '@/components/marketing/HomeFaq'
+import { HomePricing } from '@/components/marketing/HomePricing'
 import { createPageMetadata, SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from '@/lib/seo'
 
 export const metadata: Metadata = createPageMetadata({
@@ -38,21 +40,6 @@ const structuredData = {
   ],
 }
 
-const plans = [
-  {
-    name: 'Starter', key: 'starter', price: 39, description: 'The essentials for one business location.',
-    features: ['1 location', '3 AI reply styles', 'Urgent review alerts', 'Weekly digest'], featured: false,
-  },
-  {
-    name: 'Growth', key: 'growth', price: 99, description: 'Deeper intelligence for growing local brands.',
-    features: ['Up to 5 locations', 'Reputation and sentiment scores', '5 competitors per location', 'Priority review monitoring'], featured: true,
-  },
-  {
-    name: 'Agency', key: 'agency', price: 199, description: 'Advanced control for larger, multi-location teams.',
-    features: ['Up to 15 locations', 'Custom reply persona', '10 competitors per location', 'Multi-location oversight'], featured: false,
-  },
-] as const
-
 const industries = [
   { name: 'Healthcare & wellness', note: 'Surface patient experience themes while keeping every public reply thoughtful.', href: '/industries/healthcare-wellness', icon: '✦' },
   { name: 'Home services', note: 'Track communication, punctuality, craftsmanship, and recurring service gaps.', href: '/industries/home-services', icon: '⌂' },
@@ -60,14 +47,6 @@ const industries = [
   { name: 'Professional services', note: 'Turn client feedback into specific improvements across every office.', href: '/industries/professional-services', icon: '□' },
   { name: 'Retail & hospitality', note: 'Spot location-level trends in service, products, atmosphere, and value.', href: '/industries/retail-hospitality', icon: '○' },
   { name: 'Any local business', note: 'If customers review you on Google, Replova can support the feedback loop.', href: '/industries/local-businesses', icon: '↗' },
-] as const
-
-const faqs = [
-  ['Who is Replova built for?', 'Any business with a Google Business Profile, from a single local shop to a multi-location operator or agency.'],
-  ['Does Replova post replies automatically?', 'It can, but you stay in control. Review three draft styles, publish manually, or enable delayed auto-reply with safeguards in Settings.'],
-  ['How does the AI learn our voice?', 'Every plan gets professional, warm, and brief drafts. Agency teams can add a custom reply persona for more specific brand guidance.'],
-  ['What happens when a low rating arrives?', 'Replova flags it as urgent and can email the owner with the review and a suggested response based on the configured threshold.'],
-  ['Can I cancel or change plans?', 'Yes. Billing is managed through Stripe, and you can change or cancel from the Billing page.'],
 ] as const
 
 function ProductPreview() {
@@ -257,30 +236,9 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="lp-container faq-section">
-          <div className="section-intro"><div className="t-eyebrow c-accent">FAQ</div><h2>A few things worth knowing.</h2></div>
-          <div className="faq-grid">
-            {faqs.map(([question, answer]) => <details key={question}><summary>{question}<span>+</span></summary><p>{answer}</p></details>)}
-          </div>
-        </section>
+        <HomeFaq />
 
-        <section id="pricing" className="lp-container pricing-section">
-          <div className="pricing-heading">
-            <div><div className="t-eyebrow c-accent">Pricing</div><h2 className="lp-pricing-h2">Start with one location. Scale when you are ready.</h2></div>
-            <p>Every plan includes AI reply drafts, urgent review alerts, Google review monitoring, and weekly digests.</p>
-          </div>
-          <div className="lp-plan-grid">
-            {plans.map(plan => (
-              <article key={plan.key} className={`lp-plan-col plan-card${plan.featured ? ' plan-card-featured' : ''}`}>
-                <div className="plan-topline"><span className="t-eyebrow">{plan.name}</span>{plan.featured && <span className="pill pill-accent">Most popular</span>}</div>
-                <div className="plan-price"><strong>${plan.price}</strong><span>/ month</span></div>
-                <p>{plan.description}</p>
-                <ul>{plan.features.map(feature => <li key={feature}>{feature}</li>)}</ul>
-                <Link href={`/onboard?plan=${plan.key}`} className={`btn btn-block ${plan.featured ? 'btn-primary' : 'btn-ghost'}`}>Choose {plan.name}</Link>
-              </article>
-            ))}
-          </div>
-        </section>
+        <HomePricing />
 
         <section className="final-cta">
           <div className="final-cta-inner">

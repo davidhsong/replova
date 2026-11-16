@@ -1,5 +1,6 @@
 import Stripe from 'stripe'
 import type { Plan } from '@/lib/planLimits'
+import { getActiveStripePriceId, identifyPlanFromStripePrice } from '@/lib/pricing'
 
 let stripe: Stripe | null = null
 
@@ -11,26 +12,11 @@ export function getStripe(): Stripe {
 }
 
 export function getStripePriceId(plan: Plan): string {
-  const priceIds: Record<Plan, string | undefined> = {
-    starter: process.env.STRIPE_PRICE_ID_STARTER,
-    growth: process.env.STRIPE_PRICE_ID_GROWTH ?? process.env.STRIPE_PRICE_ID,
-    agency: process.env.STRIPE_PRICE_ID_AGENCY,
-  }
-  const priceId = priceIds[plan]
-  if (!priceId) throw new Error(`Stripe price is not configured for the ${plan} plan`)
-  return priceId
+  return getActiveStripePriceId(plan)
 }
 
 export function getPlanFromStripePrice(priceId: string): Plan | null {
-  const plans: Plan[] = ['starter', 'growth', 'agency']
-  for (const plan of plans) {
-    try {
-      if (getStripePriceId(plan) === priceId) return plan
-    } catch {
-      // A missing unrelated price must not stop webhook processing.
-    }
-  }
-  return null
+  return identifyPlanFromStripePrice(priceId)
 }
 
 export function subscriptionGrantsAccess(status: Stripe.Subscription.Status): boolean {
