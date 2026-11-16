@@ -221,6 +221,25 @@ test('routes enforce verified workspace ownership, same-origin mutations, eviden
   assert.doesNotMatch(demoSuggest, /\.from\('playbook_/)
 })
 
+test('authenticated dashboard identity comes from the session and workspace, never QA fixtures', () => {
+  const layout = readFileSync('app/dashboard/layout.tsx', 'utf8')
+  const sidebar = readFileSync('app/dashboard/DashboardSidebar.tsx', 'utf8')
+  const shell = readFileSync('components/dashboard/shell/DashboardAppShell.tsx', 'utf8')
+  const authenticatedIdentitySurface = `${layout}\n${sidebar}\n${shell}`
+  const demo = readFileSync('lib/playbookDemo.ts', 'utf8')
+
+  assert.doesNotMatch(
+    authenticatedIdentitySurface,
+    /Maya Chen|maya@example\.com|Northstar Auto Care/,
+  )
+  assert.match(layout, /user\.user_metadata\?\.display_name/)
+  assert.match(layout, /userEmail=\{user\.email!\}/)
+  assert.match(layout, /restaurantName=\{activeRestaurant\.name\}/)
+  assert.match(layout, /workspaceName=\{workspace\.name\}/)
+  assert.match(demo, /Maya Chen \(demo\)/)
+  assert.doesNotMatch(demo, /maya@example\.com|Northstar Auto Care/)
+})
+
 test('UI exposes only working Playbook actions, labels demo data, and includes responsive breakpoints', () => {
   const client = readFileSync('app/dashboard/playbook/PlaybookClient.tsx', 'utf8')
   const css = readFileSync('app/dashboard/playbook/Playbook.module.css', 'utf8')
@@ -233,6 +252,9 @@ test('UI exposes only working Playbook actions, labels demo data, and includes r
   assert.match(client, /Nothing can publish externally/)
   assert.match(client, /window\.localStorage/)
   assert.match(sidebar, /href: '\/dashboard\/playbook\/demo'/)
+  assert.match(sidebar, /replova:playbook-review-count/)
+  assert.match(client, /replova:playbook-review-count/)
+  assert.match(client, /More procedure actions/)
   assert.doesNotMatch(client, />Real workspace</)
   assert.match(layout, /pathname\.startsWith\('\/dashboard\/playbook'\)/)
   assert.match(css, /@media \(max-width: 1100px\)/)

@@ -1,5 +1,6 @@
 .shell:global(.app) {
   --dash-sidebar-width: 216px;
+  --dash-sidebar-collapsed-width: 64px;
   --dash-assistant-width: 320px;
   --dash-header-height: 50px;
   --dash-canvas: #eef0f2;
@@ -27,6 +28,14 @@
 
 .shell[data-assistant-open='false'] {
   grid-template-columns: var(--dash-sidebar-width) minmax(0, 1fr);
+}
+
+.shell[data-navigation-collapsed='true'] {
+  grid-template-columns: var(--dash-sidebar-collapsed-width) minmax(0, 1fr) var(--dash-assistant-width);
+}
+
+.shell[data-navigation-collapsed='true'][data-assistant-open='false'] {
+  grid-template-columns: var(--dash-sidebar-collapsed-width) minmax(0, 1fr);
 }
 
 .navigationSlot {
@@ -148,6 +157,7 @@
 }
 
 .menuButton,
+.collapseButton,
 .assistantToggle,
 .assistantHeader button {
   border: 0;
@@ -158,6 +168,7 @@
 }
 
 .menuButton:active,
+.collapseButton:active,
 .assistantToggle:active,
 .assistantHeader button:active {
   transform: scale(.97);
@@ -171,12 +182,23 @@
   border-radius: 7px;
 }
 
+.collapseButton {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+}
+
 .menuButton:hover,
+.collapseButton:hover,
+.collapseButton[aria-pressed='true'],
 .assistantHeader button:hover {
   background: var(--dash-surface-subtle);
 }
 
 .menuButton svg,
+.collapseButton svg,
 .assistantIcon svg,
 .assistantHeader button svg {
   width: 17px;
@@ -413,6 +435,11 @@
     grid-template-columns: var(--dash-sidebar-width) minmax(0, 1fr);
   }
 
+  .shell[data-navigation-collapsed='true'],
+  .shell[data-navigation-collapsed='true'][data-assistant-open='false'] {
+    grid-template-columns: var(--dash-sidebar-collapsed-width) minmax(0, 1fr);
+  }
+
   .assistantSlot {
     display: block;
     position: fixed;
@@ -437,7 +464,9 @@
 
 @media (max-width: 899px) {
   .shell:global(.app),
-  .shell[data-assistant-open='false'] {
+  .shell[data-assistant-open='false'],
+  .shell[data-navigation-collapsed='true'],
+  .shell[data-navigation-collapsed='true'][data-assistant-open='false'] {
     grid-template-columns: minmax(0, 1fr);
   }
 
@@ -465,6 +494,10 @@
 
   .menuButton {
     display: grid;
+  }
+
+  .collapseButton {
+    display: none;
   }
 
   .workspaceName {
@@ -522,6 +555,7 @@
   .assistantToggle,
   .suggestionBlock a,
   .menuButton,
+  .collapseButton,
   .assistantHeader button {
     transition-duration: .01ms;
   }

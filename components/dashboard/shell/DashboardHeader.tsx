@@ -6,8 +6,10 @@ type Props = {
   plan: Plan
   pathname: string
   navigationOpen: boolean
+  navigationCollapsed: boolean
   assistantOpen: boolean
   onNavigationToggle: () => void
+  onNavigationCollapseToggle: () => void
   onAssistantToggle: () => void
 }
 
@@ -43,6 +45,16 @@ function MenuIcon() {
   )
 }
 
+function NavigationRailIcon({ collapsed }: { collapsed: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3.5" y="4" width="17" height="16" rx="2" />
+      <path d="M9 4v16" />
+      <path d={collapsed ? 'm13 9 3 3-3 3' : 'm16 9-3 3 3 3'} />
+    </svg>
+  )
+}
+
 function AssistantIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -57,8 +69,10 @@ export default function DashboardHeader({
   plan,
   pathname,
   navigationOpen,
+  navigationCollapsed,
   assistantOpen,
   onNavigationToggle,
+  onNavigationCollapseToggle,
   onAssistantToggle,
 }: Props) {
   const trail = pageTrail(pathname)
@@ -75,6 +89,16 @@ export default function DashboardHeader({
           onClick={onNavigationToggle}
         >
           <MenuIcon />
+        </button>
+        <button
+          type="button"
+          className={styles.collapseButton}
+          aria-label={navigationCollapsed ? 'Expand navigation' : 'Collapse navigation'}
+          aria-controls="dashboard-navigation"
+          aria-pressed={navigationCollapsed}
+          onClick={onNavigationCollapseToggle}
+        >
+          <NavigationRailIcon collapsed={navigationCollapsed} />
         </button>
         <nav className={styles.breadcrumbs} aria-label="Breadcrumb">
           <span className={styles.workspaceName}>{workspaceName}</span>

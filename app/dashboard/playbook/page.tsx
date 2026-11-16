@@ -7,7 +7,24 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false, nocache: true },
 }
 
-export default async function PlaybookPage() {
+export default async function PlaybookPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>
+}) {
   const { workspace } = await getPlaybookPageContext()
-  return <PlaybookClient mode="real" workspaceId={workspace.id} workspaceName={workspace.name} />
+  const requestedView = (await searchParams).view
+  const initialView =
+    requestedView === 'review' || requestedView === 'tasks'
+      ? requestedView
+      : 'procedures'
+  return (
+    <PlaybookClient
+      key={initialView}
+      mode="real"
+      workspaceId={workspace.id}
+      workspaceName={workspace.name}
+      initialView={initialView}
+    />
+  )
 }
