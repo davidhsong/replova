@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import { authLinkErrorMessage } from '@/lib/authError'
 import { safeRedirectPath } from '@/lib/safeRedirect'
 import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
 
@@ -20,10 +21,18 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('error') === 'invalid_link') {
+    const message = authLinkErrorMessage(
+      window.location.search,
+      window.location.hash,
+    )
+    if (message) {
+      window.history.replaceState(
+        null,
+        '',
+        `${window.location.pathname}${window.location.search}`,
+      )
       const timer = window.setTimeout(() => {
-        setError('That sign-in link has expired or already been used. Request a new one.')
+        setError(message)
         setState('error')
       }, 0)
       return () => window.clearTimeout(timer)

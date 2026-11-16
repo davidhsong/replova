@@ -140,8 +140,10 @@ export function getAuthCallbackRedirects(
 
   if (!trustedAuthOrigins(environment).has(origin)) return null
 
-  const success = new URL(safeRedirectPath(nextPath), origin)
+  const next = safeRedirectPath(nextPath)
+  const success = new URL(next, origin)
   const error = new URL('/signin', origin)
   error.searchParams.set('error', 'invalid_link')
+  error.searchParams.set('next', next)
   return { success, error }
 }

@@ -80,8 +80,9 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  // The server-side client uses the implicit flow. Tokens return in the URL
-  // fragment, which is handled by the client-side /signin page.
+  // The Magic Link email template must use {{ .ConfirmationURL }}. Supabase
+  // verifies that one-time URL and returns the implicit session in a fragment
+  // on this same-origin /signin URL, where the client exchanges it for cookies.
   const { error } = await getPublicClient().auth.signInWithOtp({
     email: normalizedEmail,
     options: {

@@ -9,6 +9,7 @@ import {
   getAuthEmailRedirectTo,
   type AuthRedirectEnvironment,
 } from '../lib/authRedirect'
+import { authLinkErrorMessage } from '../lib/authError'
 import { GET as authCallback } from '../app/auth/callback/route'
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
@@ -60,6 +61,32 @@ test('Vercel Preview magic links use the current allowlisted deployment instead 
       { ...productionEnvironment, NEXT_PUBLIC_VERCEL_URL: previewHost }
     ),
     `${previewOrigin}/signin?next=%2Fdashboard%2Ffeedback-demo`
+  )
+})
+
+test('Playbook demo sign-in returns to the same Preview deployment', () => {
+  const previewHost = 'replova-527ba6m1t-davidhsongg-7397s-projects.vercel.app'
+  const previewOrigin = `https://${previewHost}`
+  const environment: AuthRedirectEnvironment = {
+    ...productionEnvironment,
+    VERCEL_URL: previewHost,
+  }
+
+  assert.equal(
+    getAuthEmailRedirectTo(
+      browserRequest(`${previewOrigin}/api/auth/magic-link`),
+      '/dashboard/playbook/demo',
+      environment
+    ),
+    `${previewOrigin}/signin?next=%2Fdashboard%2Fplaybook%2Fdemo`
+  )
+  assert.equal(
+    getAuthCallbackRedirects(
+      `${previewOrigin}/auth/callback`,
+      '/dashboard/playbook/demo',
+      environment
+    )?.success.toString(),
+    `${previewOrigin}/dashboard/playbook/demo`
   )
 })
 
@@ -148,14 +175,19 @@ test('callback redirects use only trusted origins and internal destinations', ()
   )
 
   assert.equal(redirects?.success.toString(), `${previewOrigin}/dashboard/feedback-demo`)
-  assert.equal(redirects?.error.toString(), `${previewOrigin}/signin?error=invalid_link`)
   assert.equal(
-    getAuthCallbackRedirects(
-      `${previewOrigin}/auth/callback`,
-      'https://attacker.example/steal',
-      environment
-    )?.success.toString(),
-    `${previewOrigin}/dashboard`
+    redirects?.error.toString(),
+    `${previewOrigin}/signin?error=invalid_link&next=%2Fdashboard%2Ffeedback-demo`
+  )
+  const unsafeNext = getAuthCallbackRedirects(
+    `${previewOrigin}/auth/callback`,
+    'https://attacker.example/steal',
+    environment
+  )
+  assert.equal(unsafeNext?.success.toString(), `${previewOrigin}/dashboard`)
+  assert.equal(
+    unsafeNext?.error.toString(),
+    `${previewOrigin}/signin?error=invalid_link&next=%2Fdashboard`
   )
   assert.equal(
     getAuthCallbackRedirects(
@@ -172,13 +204,19 @@ test('missing, invalid, and expired callback links return the safe sign-in error
     'https://www.replova.app/auth/callback?next=/dashboard/feedback-demo'
   ))
   assert.equal(missing.status, 307)
-  assert.equal(missing.headers.get('location'), 'https://www.replova.app/signin?error=invalid_link')
+  assert.equal(
+    missing.headers.get('location'),
+    'https://www.replova.app/signin?error=invalid_link&next=%2Fdashboard%2Ffeedback-demo'
+  )
 
   const invalidType = await authCallback(new NextRequest(
     'https://www.replova.app/auth/callback?token_hash=invalid&type=unexpected&next=/dashboard/feedback-demo'
   ))
   assert.equal(invalidType.status, 307)
-  assert.equal(invalidType.headers.get('location'), 'https://www.replova.app/signin?error=invalid_link')
+  assert.equal(
+    invalidType.headers.get('location'),
+    'https://www.replova.app/signin?error=invalid_link&next=%2Fdashboard%2Ffeedback-demo'
+  )
 
   const originalFetch = globalThis.fetch
   const originalUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -195,7 +233,10 @@ test('missing, invalid, and expired callback links return the safe sign-in error
       'https://www.replova.app/auth/callback?token_hash=expired&type=email&next=/dashboard/feedback-demo'
     ))
     assert.equal(expired.status, 307)
-    assert.equal(expired.headers.get('location'), 'https://www.replova.app/signin?error=invalid_link')
+    assert.equal(
+      expired.headers.get('location'),
+      'https://www.replova.app/signin?error=invalid_link&next=%2Fdashboard%2Ffeedback-demo'
+    )
   } finally {
     globalThis.fetch = originalFetch
     if (originalUrl === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -203,6 +244,28 @@ test('missing, invalid, and expired callback links return the safe sign-in error
     if (originalKey === undefined) delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
     else process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = originalKey
   }
+})
+
+test('sign-in surfaces provider errors safely and keeps a retry path', () => {
+  assert.equal(
+    authLinkErrorMessage(
+      '?next=%2Fdashboard%2Fplaybook%2Fdemo',
+      '#error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid',
+    ),
+    'That sign-in link has expired or already been used. Request a new one and use the newest email.'
+  )
+  assert.equal(
+    authLinkErrorMessage(
+      '?error=invalid_link&next=%2Fdashboard%2Fplaybook%2Fdemo',
+      '',
+    ),
+    'That sign-in link has expired or already been used. Request a new one and use the newest email.'
+  )
+  assert.equal(
+    authLinkErrorMessage('', '#error=access_denied&error_description=<script>'),
+    'That sign-in link is invalid. Request a new one and use the newest email.'
+  )
+  assert.equal(authLinkErrorMessage('', '#access_token=test'), null)
 })
 
 test('both OTP routes use trusted request-origin redirects and retain account safeguards', async () => {
@@ -214,6 +277,23 @@ test('both OTP routes use trusted request-origin redirects and retain account sa
     path.join(repoRoot, 'app', 'api', 'auth', 'signup', 'route.ts'),
     'utf8'
   )
+  const signInPage = await readFile(
+    path.join(repoRoot, 'app', 'signin', 'page.tsx'),
+    'utf8'
+  )
+  const authCallbackRoute = await readFile(
+    path.join(repoRoot, 'app', 'auth', 'callback', 'route.ts'),
+    'utf8'
+  )
+  const sessionRoute = await readFile(
+    path.join(repoRoot, 'app', 'api', 'auth', 'session', 'route.ts'),
+    'utf8'
+  )
+  const middlewareClient = await readFile(
+    path.join(repoRoot, 'utils', 'supabase', 'middleware.ts'),
+    'utf8'
+  )
+  const proxy = await readFile(path.join(repoRoot, 'proxy.ts'), 'utf8')
 
   for (const source of [magicLinkRoute, signupRoute]) {
     assert.match(source, /getAuthEmailRedirectTo/)
@@ -222,4 +302,17 @@ test('both OTP routes use trusted request-origin redirects and retain account sa
   }
   assert.match(magicLinkRoute, /\.from\(['"]accounts['"]\)/)
   assert.match(signupRoute, /email_confirm:\s*false/)
+  assert.match(signInPage, /authLinkErrorMessage/)
+  assert.match(signInPage, /window\.history\.replaceState/)
+  assert.match(signInPage, /access_token/)
+  assert.match(signInPage, /refresh_token/)
+  assert.match(signInPage, /fetch\('\/api\/auth\/session'/)
+  assert.match(sessionRoute, /isSameOriginRequest/)
+  assert.match(sessionRoute, /auth\.setSession/)
+  assert.match(sessionRoute, /auth\.getUser/)
+  assert.match(authCallbackRoute, /exchangeCodeForSession/)
+  assert.match(authCallbackRoute, /verifyOtp/)
+  assert.match(middlewareClient, /getAll\(\)/)
+  assert.match(middlewareClient, /setAll\(cookiesToSet\)/)
+  assert.match(proxy, /request\.nextUrl\.pathname.*request\.nextUrl\.search/)
 })
