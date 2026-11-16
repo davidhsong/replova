@@ -255,8 +255,7 @@
 }
 
 .assistantHeader span,
-.contextBlock > span,
-.suggestionBlock > div > span,
+.contextBlock span,
 .assistantFooter > span {
   color: var(--dash-text-faint);
   font: 600 9px/1.2 var(--font-mono);
@@ -266,7 +265,8 @@
 
 .assistantHeader strong {
   color: var(--dash-text);
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 640;
   line-height: 1.15;
 }
 
@@ -284,30 +284,36 @@
   padding: 18px 14px;
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: 42px;
   overflow-y: auto;
 }
 
 .contextBlock {
-  padding: 12px;
-  display: grid;
-  gap: 6px;
+  padding: 10px 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   border: 1px solid var(--dash-border);
   border-radius: 8px;
   background: var(--dash-surface-subtle);
 }
 
+.contextBlock > div { min-width: 0; display: grid; gap: 4px; }
+
 .contextBlock strong {
   color: var(--dash-text);
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 630;
 }
 
 .contextBlock p {
   margin: 0;
+  max-width: 116px;
   overflow: hidden;
   color: var(--dash-text-muted);
-  font-size: 11.5px;
+  font-size: 10px;
+  text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -318,11 +324,18 @@
 }
 
 .suggestionBlock h2 {
-  margin: 7px 0 0;
+  margin: 0;
   color: var(--dash-text);
   font-size: 20px;
   line-height: 1.15;
   letter-spacing: -.035em;
+}
+
+.suggestionBlock > div > p {
+  margin: 6px 0 0;
+  color: var(--dash-text-muted);
+  font-size: 10.5px;
+  line-height: 1.45;
 }
 
 .suggestionBlock nav {
@@ -331,12 +344,12 @@
 }
 
 .suggestionBlock a {
-  min-height: 66px;
-  padding: 11px 11px 11px 12px;
-  display: flex;
+  min-height: 56px;
+  padding: 8px 9px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 15px;
   align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 9px;
   border: 1px solid var(--dash-border);
   border-radius: 8px;
   background: var(--dash-surface-subtle);
@@ -352,7 +365,17 @@
   transform: scale(.99);
 }
 
-.suggestionBlock a > span {
+.suggestionLogo {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--dash-accent);
+  color: #ffffff;
+}
+
+.suggestionCopy {
   min-width: 0;
   display: grid;
   gap: 3px;
@@ -380,6 +403,12 @@
   stroke-width: 1.5;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.suggestionBlock a:focus-visible,
+.assistantHeader button:focus-visible {
+  outline: 2px solid var(--dash-text);
+  outline-offset: 2px;
 }
 
 .assistantFooter {
