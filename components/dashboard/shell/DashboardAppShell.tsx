@@ -15,30 +15,12 @@ type Props = {
   plan: Plan
 }
 
-export default function DashboardAppShell({
-  children,
-  sidebar,
-  workspaceName,
-  plan,
-}: Props) {
+export default function DashboardAppShell({ children, sidebar, workspaceName, plan }: Props) {
   const pathname = usePathname()
   const [navigationOpen, setNavigationOpen] = useState(false)
   const [compactNavigation, setCompactNavigation] = useState(false)
+  const [navigationCollapsed, setNavigationCollapsed] = useState(false)
   const [assistantOpen, setAssistantOpen] = useState(false)
-
-  useEffect(() => {
-    const wideScreen = window.matchMedia('(min-width: 1440px)')
-    const syncAssistant = (event: MediaQueryListEvent | MediaQueryList) => {
-      setAssistantOpen(event.matches)
-    }
-
-    const frame = window.requestAnimationFrame(() => syncAssistant(wideScreen))
-    wideScreen.addEventListener('change', syncAssistant)
-    return () => {
-      window.cancelAnimationFrame(frame)
-      wideScreen.removeEventListener('change', syncAssistant)
-    }
-  }, [])
 
   useEffect(() => {
     const compactScreen = window.matchMedia('(max-width: 899px)')
@@ -77,8 +59,7 @@ export default function DashboardAppShell({
   }, [])
 
   useEffect(() => {
-    const overlayAssistantOpen = assistantOpen
-      && window.matchMedia('(max-width: 1439px)').matches
+    const overlayAssistantOpen = assistantOpen && window.matchMedia('(max-width: 1439px)').matches
     const shouldLock = navigationOpen || overlayAssistantOpen
     if (!shouldLock) return
 
@@ -95,6 +76,7 @@ export default function DashboardAppShell({
     <div
       className={`app ${styles.shell}`}
       data-assistant-open={assistantOpen}
+      data-navigation-collapsed={navigationCollapsed}
     >
       <div
         id="dashboard-navigation"
@@ -117,15 +99,19 @@ export default function DashboardAppShell({
           plan={plan}
           pathname={pathname}
           navigationOpen={navigationOpen}
+          navigationCollapsed={navigationCollapsed}
           assistantOpen={assistantOpen}
           onNavigationToggle={() => setNavigationOpen(open => !open)}
-          onAssistantToggle={() => setAssistantOpen(open => {
-            const nextOpen = !open
-            if (nextOpen) {
-              window.dispatchEvent(new CustomEvent('replova:close-feedback-recovery'))
-            }
-            return nextOpen
-          })}
+          onNavigationCollapseToggle={() => setNavigationCollapsed(collapsed => !collapsed)}
+          onAssistantToggle={() =>
+            setAssistantOpen(open => {
+              const nextOpen = !open
+              if (nextOpen) {
+                window.dispatchEvent(new CustomEvent('replova:close-feedback-recovery'))
+              }
+              return nextOpen
+            })
+          }
         />
         <main id="main-content" className={`main ${styles.contentFrame}`}>
           {children}
@@ -139,19 +125,15 @@ export default function DashboardAppShell({
         inert={!assistantOpen ? true : undefined}
         onClickCapture={event => {
           if (
-            event.target instanceof Element
-            && event.target.closest('a')
-            && window.matchMedia('(max-width: 1439px)').matches
+            event.target instanceof Element &&
+            event.target.closest('a') &&
+            window.matchMedia('(max-width: 1439px)').matches
           ) {
             setAssistantOpen(false)
           }
         }}
       >
-        <AIAssistantPanel
-          pathname={pathname}
-          workspaceName={workspaceName}
-          onClose={() => setAssistantOpen(false)}
-        />
+        <AIAssistantPanel pathname={pathname} workspaceName={workspaceName} onClose={() => setAssistantOpen(false)} />
       </div>
 
       {overlayOpen ? (
