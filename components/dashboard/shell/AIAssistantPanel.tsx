@@ -59,7 +59,22 @@ const FEEDBACK_ACTIONS: SuggestedAction[] = [
   },
 ]
 
+const PLAYBOOK_ACTIONS: SuggestedAction[] = [
+  {
+    href: '/dashboard/playbook/demo',
+    label: 'Open the synthetic Playbook',
+    description: 'Practice the evidence, approval, version, and task workflow safely.',
+  },
+  {
+    href: '/dashboard/feedback-demo',
+    label: 'Inspect feedback evidence',
+    description: 'Review the customer records behind operational patterns.',
+  },
+]
+
 function currentLabel(pathname: string) {
+  if (pathname.startsWith('/dashboard/playbook/demo')) return 'Synthetic Playbook demo'
+  if (pathname.startsWith('/dashboard/playbook')) return 'Business Playbook'
   if (pathname.startsWith('/dashboard/feedback-demo')) return 'Feedback operations'
   if (pathname.startsWith('/dashboard/competitors')) return 'Competitor tracking'
   if (pathname.startsWith('/dashboard/review-requests')) return 'Review requests'
@@ -87,7 +102,9 @@ function CloseIcon() {
 }
 
 export default function AIAssistantPanel({ pathname, workspaceName, onClose }: Props) {
-  const actions = pathname.startsWith('/dashboard/feedback-demo') ? FEEDBACK_ACTIONS : DEFAULT_ACTIONS
+  const actions = pathname.startsWith('/dashboard/playbook')
+    ? PLAYBOOK_ACTIONS
+    : pathname.startsWith('/dashboard/feedback-demo') ? FEEDBACK_ACTIONS : DEFAULT_ACTIONS
   const suggestions = actions
     .filter(action => action.href !== pathname)
     .slice(0, 3)

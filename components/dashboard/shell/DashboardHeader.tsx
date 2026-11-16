@@ -18,6 +18,8 @@ const PLAN_LABELS: Record<Plan, string> = {
 }
 
 function pageTrail(pathname: string) {
+  if (pathname.startsWith('/dashboard/playbook/demo')) return ['Playbook', 'Synthetic demo']
+  if (pathname.startsWith('/dashboard/playbook')) return ['Playbook']
   if (pathname.startsWith('/dashboard/feedback-demo')) return ['Feedback demo']
   if (pathname.startsWith('/dashboard/competitors')) return ['Competitors']
   if (pathname.startsWith('/dashboard/review-requests')) return ['Review requests']

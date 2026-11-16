@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import {
   IconAlert,
   IconBriefcase,
+  IconBook,
   IconCard,
   IconCog,
   IconMessage,
@@ -42,6 +43,13 @@ const PLAN_LABELS: Record<Plan, string> = {
 }
 
 const OPERATIONS_ITEMS = [
+  {
+    href: '/dashboard/playbook/demo',
+    label: 'Playbook',
+    Icon: IconBook,
+    exact: false,
+    requiresLocation: false,
+  },
   {
     href: '/dashboard/feedback-demo',
     label: 'Feedback demo',

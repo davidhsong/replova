@@ -61,7 +61,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       '/dashboard/settings',
       ...(isCareersAdmin ? ['/dashboard/applicants'] : []),
     ])
-    if (!accountOnlyRoutes.has(pathname) && !pathname.startsWith('/dashboard/youtube')) redirect('/dashboard')
+    if (
+      !accountOnlyRoutes.has(pathname)
+      && !pathname.startsWith('/dashboard/youtube')
+      && !pathname.startsWith('/dashboard/playbook')
+    ) redirect('/dashboard')
 
     const trialEnd = new Date(new Date(account.created_at).getTime() + 30 * 24 * 60 * 60 * 1000)
     const trialEndDate = trialEnd.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
