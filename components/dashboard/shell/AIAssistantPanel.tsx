@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
 import styles from './DashboardShell.module.css'
 
 type Props = {
@@ -42,6 +43,11 @@ const DEFAULT_ACTIONS: SuggestedAction[] = [
 ]
 
 const FEEDBACK_ACTIONS: SuggestedAction[] = [
+  {
+    href: '/dashboard/feedback-demo#feedback-trend',
+    label: 'Review the feedback trend',
+    description: 'Inspect six weeks of timestamped feedback volume.',
+  },
   {
     href: '/dashboard/feedback-demo#feedback-priorities',
     label: 'Show improvement priorities',
@@ -96,8 +102,8 @@ export default function AIAssistantPanel({ pathname, workspaceName, onClose }: P
     <aside className={styles.assistantPanel} aria-label="Ask Replova">
       <header className={styles.assistantHeader}>
         <div>
-          <span>Contextual workspace</span>
           <strong>Ask Replova</strong>
+          <span>Guided workspace actions</span>
         </div>
         <button type="button" onClick={onClose} aria-label="Close Ask Replova">
           <CloseIcon />
@@ -106,20 +112,25 @@ export default function AIAssistantPanel({ pathname, workspaceName, onClose }: P
 
       <div className={styles.assistantBody}>
         <section className={styles.contextBlock}>
-          <span>Current context</span>
-          <strong>{currentLabel(pathname)}</strong>
+          <div>
+            <span>Current context</span>
+            <strong>{currentLabel(pathname)}</strong>
+          </div>
           <p>{workspaceName}</p>
         </section>
 
         <section className={styles.suggestionBlock} aria-labelledby="ask-replova-suggestions">
           <div>
-            <span>Suggested next steps</span>
             <h2 id="ask-replova-suggestions">How can I help?</h2>
+            <p>Choose an action grounded in the records and tools available on this page.</p>
           </div>
           <nav aria-label="Ask Replova suggestions">
             {suggestions.map(action => (
               <Link key={action.href} href={action.href}>
-                <span>
+                <span className={styles.suggestionLogo} aria-hidden="true">
+                  <ReplovaLogo variant="icon" surface="dark" height={13} decorative />
+                </span>
+                <span className={styles.suggestionCopy}>
                   <strong>{action.label}</strong>
                   <small>{action.description}</small>
                 </span>
@@ -131,9 +142,9 @@ export default function AIAssistantPanel({ pathname, workspaceName, onClose }: P
       </div>
 
       <footer className={styles.assistantFooter}>
-        <span>Evidence first</span>
+        <span>Evidence-first actions</span>
         <p>
-          Analysis and drafting stay inside their authorized workflows so supporting records remain visible.
+          Suggestions open existing authorized workflows. Replova does not publish or contact customers from this panel.
         </p>
       </footer>
     </aside>

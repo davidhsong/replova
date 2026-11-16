@@ -28,8 +28,10 @@ test('dashboard navigation contains only working authenticated destinations', ()
 test('Ask Replova foundation routes to authorized workflows without fake chat', () => {
   const panel = readFileSync('components/dashboard/shell/AIAssistantPanel.tsx', 'utf8')
 
-  assert.match(panel, /Evidence first/)
+  assert.match(panel, /Evidence-first actions/)
+  assert.match(panel, /ReplovaLogo/)
   assert.match(panel, /\/dashboard\/feedback-demo/)
+  assert.match(panel, /#feedback-trend/)
   assert.match(panel, /#feedback-priorities/)
   assert.match(panel, /#customer-recovery/)
   assert.match(panel, /#improvement-tasks/)

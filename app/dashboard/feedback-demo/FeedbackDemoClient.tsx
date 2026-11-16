@@ -17,6 +17,19 @@ import {
   type FeedbackFollowUpStatus,
   type FeedbackIssueStatus,
 } from '@/lib/feedbackDemo'
+import {
+  aggregateFeedbackByWeek,
+  calculateAverageFeedbackRating,
+  calculateSentimentRate,
+  compareLatestFeedbackPeriods,
+} from '@/lib/feedbackMetrics'
+import FeedbackTrendChart from '@/components/dashboard/metrics/FeedbackTrendChart'
+import {
+  MetricComparisonTable,
+  MetricSummaryCard,
+  MetricSummaryGrid,
+  type MetricComparisonRow,
+} from '@/components/dashboard/metrics/DashboardMetrics'
 import styles from './FeedbackDemo.module.css'
 
 interface Props {
@@ -98,6 +111,7 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
   const recoveryCloseRef = useRef<HTMLButtonElement>(null)
   const recoveryDrawerRef = useRef<HTMLElement>(null)
   const recoveryTriggerRef = useRef<HTMLButtonElement>(null)
+  const [analyticsNow] = useState(() => new Date())
 
   useEffect(() => {
     const loadTimer = window.setTimeout(() => {
@@ -177,8 +191,18 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
   )
 
   const metrics = useMemo(
-    () => state ? calculateFeedbackDemoMetrics(state) : null,
-    [state]
+    () => state ? calculateFeedbackDemoMetrics(state, analyticsNow) : null,
+    [analyticsNow, state]
+  )
+
+  const trendBuckets = useMemo(
+    () => aggregateFeedbackByWeek(state?.feedback ?? [], analyticsNow),
+    [analyticsNow, state?.feedback]
+  )
+
+  const periodComparison = useMemo(
+    () => compareLatestFeedbackPeriods(trendBuckets),
+    [trendBuckets]
   )
 
   const feedbackById = useMemo(
@@ -334,6 +358,89 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
 
   const sentimentTotal = metrics.totalFeedback || 1
   const topFindings = state.analysis?.findings.slice(0, 3) ?? []
+  const averageRating = calculateAverageFeedbackRating(state.feedback)
+  const positiveRate = calculateSentimentRate(state.feedback, 'positive')
+  const feedbackDelta = periodComparison
+    ? {
+        value: `${periodComparison.delta > 0 ? '+' : periodComparison.delta < 0 ? '−' : ''}${Math.abs(periodComparison.delta)}`,
+        label: `${Math.abs(periodComparison.delta)} ${Math.abs(periodComparison.delta) === 1 ? 'record' : 'records'} ${periodComparison.delta >= 0 ? 'more' : 'fewer'} than the preceding seven-day period`,
+        tone: 'neutral' as const,
+      }
+    : undefined
+  const comparisonRows: MetricComparisonRow[] = [
+    {
+      label: 'Feedback received',
+      value: String(periodComparison?.current ?? metrics.newFeedback),
+      detail: 'Latest seven-day period',
+      help: 'Feedback records received in the latest rolling seven-day period compared with the immediately preceding seven-day period.',
+      delta: feedbackDelta,
+      meter: periodComparison ? {
+        value: periodComparison.current,
+        reference: periodComparison.previous,
+        max: Math.max(periodComparison.current, periodComparison.previous, 1),
+        label: `${periodComparison.current} records in the latest period versus ${periodComparison.previous} in the preceding period.`,
+      } : undefined,
+    },
+    {
+      label: 'Average rating',
+      value: averageRating === null ? '–' : `${averageRating.toFixed(1)}/5`,
+      detail: `${metrics.totalFeedback} synthetic records`,
+      help: 'Arithmetic mean of the ratings attached to all synthetic feedback records.',
+      meter: averageRating === null ? undefined : {
+        value: averageRating,
+        max: 5,
+        label: `Average rating ${averageRating.toFixed(1)} out of 5.`,
+      },
+    },
+    {
+      label: 'Positive feedback',
+      value: `${positiveRate}%`,
+      detail: `${metrics.sentiment.positive} of ${metrics.totalFeedback} records`,
+      help: 'Share of feedback records classified as positive in the canonical synthetic dataset.',
+      meter: {
+        value: metrics.sentiment.positive,
+        max: metrics.totalFeedback,
+        label: `${metrics.sentiment.positive} of ${metrics.totalFeedback} feedback records are positive.`,
+        tone: 'positive',
+      },
+    },
+    {
+      label: 'Unresolved issues',
+      value: String(metrics.unresolvedIssues),
+      detail: `${metrics.issueCount} recovery cases`,
+      help: 'Recovery-required feedback that is not currently marked resolved. Lower is better.',
+      meter: {
+        value: metrics.unresolvedIssues,
+        max: metrics.issueCount,
+        label: `${metrics.unresolvedIssues} of ${metrics.issueCount} recovery cases remain unresolved.`,
+        tone: 'negative',
+      },
+    },
+    {
+      label: 'Resolution rate',
+      value: `${metrics.resolutionRate}%`,
+      detail: `${metrics.resolvedIssues} issues resolved`,
+      help: 'Resolved recovery cases divided by all feedback records requiring recovery.',
+      meter: {
+        value: metrics.resolvedIssues,
+        max: metrics.issueCount,
+        label: `${metrics.resolvedIssues} of ${metrics.issueCount} recovery cases are resolved.`,
+        tone: 'positive',
+      },
+    },
+    {
+      label: 'Tasks completed',
+      value: `${metrics.completedTasks}/${metrics.totalTasks}`,
+      detail: 'Current demo task state',
+      help: 'Improvement tasks marked complete divided by all improvement tasks in this browser-local demo state.',
+      meter: {
+        value: metrics.completedTasks,
+        max: metrics.totalTasks,
+        label: `${metrics.completedTasks} of ${metrics.totalTasks} improvement tasks are complete.`,
+        tone: 'positive',
+      },
+    },
+  ]
 
   return (
     <div className={styles.page}>
@@ -366,27 +473,56 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
         {notice && <div className={styles.success} role="status">{notice}</div>}
         {analysisError && <div className={styles.error} role="alert">{analysisError}</div>}
 
-        <section className={styles.metrics} aria-label="Feedback operations metrics">
-          <article>
-            <span>New feedback</span>
-            <strong>{metrics.newFeedback}</strong>
-            <small>received in the last 7 days</small>
-          </article>
-          <article className={metrics.unresolvedIssues > 0 ? styles.metricAttention : undefined}>
-            <span>Unresolved issues</span>
-            <strong>{metrics.unresolvedIssues}</strong>
-            <small>of {metrics.issueCount} recovery cases</small>
-          </article>
-          <article>
-            <span>Resolution rate</span>
-            <strong>{metrics.resolutionRate}%</strong>
-            <small>{metrics.resolvedIssues} customer issues resolved</small>
-          </article>
-          <article>
-            <span>Improvement tasks</span>
-            <strong>{metrics.completedTasks}/{metrics.totalTasks}</strong>
-            <small>completed in this demo</small>
-          </article>
+        <MetricSummaryGrid>
+          <MetricSummaryCard
+            label="New feedback"
+            value={String(metrics.newFeedback)}
+            description="received in the last 7 days"
+            help="Synthetic feedback records received during the rolling seven-day window."
+            delta={feedbackDelta}
+          />
+          <MetricSummaryCard
+            label="Unresolved issues"
+            value={String(metrics.unresolvedIssues)}
+            description={`of ${metrics.issueCount} recovery cases`}
+            help="Recovery-required feedback that is not marked resolved. Lower is better."
+            tone={metrics.unresolvedIssues > 0 ? 'negative' : 'positive'}
+            meter={{
+              value: metrics.unresolvedIssues,
+              max: metrics.issueCount,
+              label: `${metrics.unresolvedIssues} of ${metrics.issueCount} recovery cases remain unresolved.`,
+              tone: metrics.unresolvedIssues > 0 ? 'negative' : 'positive',
+            }}
+          />
+          <MetricSummaryCard
+            label="Resolution rate"
+            value={`${metrics.resolutionRate}%`}
+            description={`${metrics.resolvedIssues} customer issues resolved`}
+            help="Resolved recovery cases divided by all feedback records requiring recovery."
+            meter={{
+              value: metrics.resolvedIssues,
+              max: metrics.issueCount,
+              label: `${metrics.resolvedIssues} of ${metrics.issueCount} recovery cases are resolved.`,
+              tone: 'positive',
+            }}
+          />
+          <MetricSummaryCard
+            label="Improvement tasks"
+            value={`${metrics.completedTasks}/${metrics.totalTasks}`}
+            description="completed in this demo"
+            help="Tasks marked complete divided by all improvement tasks in this browser-local demo state."
+            meter={{
+              value: metrics.completedTasks,
+              max: metrics.totalTasks,
+              label: `${metrics.completedTasks} of ${metrics.totalTasks} improvement tasks are complete.`,
+              tone: 'positive',
+            }}
+          />
+        </MetricSummaryGrid>
+
+        <section className={styles.trendGrid} aria-label="Feedback trends and comparisons">
+          <FeedbackTrendChart buckets={trendBuckets} />
+          <MetricComparisonTable rows={comparisonRows} />
         </section>
 
         <section className={styles.primaryGrid}>
@@ -465,7 +601,16 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
                             {evidence.map(entry => (
                               <div key={entry.id}>
                                 <div>
-                                  <strong>{entry.customerName}</strong>
+                                  <button
+                                    type="button"
+                                    className={styles.customerNameButton}
+                                    aria-haspopup="dialog"
+                                    aria-label={`Open feedback detail for ${entry.customerName}`}
+                                    onClick={event => openRecovery(entry, event.currentTarget)}
+                                  >
+                                    {entry.customerName}
+                                    <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5" /></svg>
+                                  </button>
                                   <span>{entry.rating}/5 · {entry.service}</span>
                                 </div>
                                 <p>{entry.text}</p>
@@ -665,7 +810,16 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
                 <div className={styles.feedbackMeta}>
                   <span data-sentiment={entry.sentiment}>{entry.rating}/5</span>
                   <div>
-                    <strong>{entry.customerName}</strong>
+                    <button
+                      type="button"
+                      className={styles.customerNameButton}
+                      aria-haspopup="dialog"
+                      aria-label={`Open feedback detail for ${entry.customerName}`}
+                      onClick={event => openRecovery(entry, event.currentTarget)}
+                    >
+                      {entry.customerName}
+                      <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 11 11 5M6 5h5v5" /></svg>
+                    </button>
                     <small>{entry.service} · {entry.channel} · {dateFormatter.format(new Date(entry.receivedAt))}</small>
                   </div>
                   <em>Synthetic</em>
@@ -706,7 +860,7 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
           >
             <header className={styles.drawerHeader}>
               <div>
-                <span>Customer recovery</span>
+                <span>{selectedIssue.requiresRecovery ? 'Customer recovery' : 'Feedback detail'}</span>
                 <h2 id="recovery-drawer-title">{selectedIssue.customerName}</h2>
               </div>
               <button
@@ -732,40 +886,51 @@ export default function FeedbackDemoClient({ workspaceId, ownerWorkspaceName, st
                 <small>Synthetic demo record · {selectedIssue.id}</small>
               </section>
 
-              <div className={styles.drawerFields}>
-                <label>
-                  Issue status
-                  <select value={issueStatus} onChange={event => setIssueStatus(event.target.value as FeedbackIssueStatus)}>
-                    <option value="new">New issue</option>
-                    <option value="in_progress">In progress</option>
-                    <option value="resolved">Resolved</option>
-                  </select>
-                </label>
-                <label>
-                  Follow-up
-                  <select value={followUpStatus} onChange={event => setFollowUpStatus(event.target.value as FeedbackFollowUpStatus)}>
-                    <option value="not_started">Not started</option>
-                    <option value="contacted">Customer contacted</option>
-                    <option value="awaiting_reply">Awaiting customer</option>
-                    <option value="confirmed_resolved">Customer confirmed</option>
-                  </select>
-                </label>
-                <label>
-                  Resolution note
-                  <textarea
-                    value={resolutionNote}
-                    onChange={event => setResolutionNote(event.target.value)}
-                    maxLength={800}
-                    placeholder="Record what was offered, what changed, and the next follow-up."
-                  />
-                  <small>Private demo note. Never published externally.</small>
-                </label>
-              </div>
+              {selectedIssue.requiresRecovery ? (
+                <div className={styles.drawerFields}>
+                  <label>
+                    Issue status
+                    <select value={issueStatus} onChange={event => setIssueStatus(event.target.value as FeedbackIssueStatus)}>
+                      <option value="new">New issue</option>
+                      <option value="in_progress">In progress</option>
+                      <option value="resolved">Resolved</option>
+                    </select>
+                  </label>
+                  <label>
+                    Follow-up
+                    <select value={followUpStatus} onChange={event => setFollowUpStatus(event.target.value as FeedbackFollowUpStatus)}>
+                      <option value="not_started">Not started</option>
+                      <option value="contacted">Customer contacted</option>
+                      <option value="awaiting_reply">Awaiting customer</option>
+                      <option value="confirmed_resolved">Customer confirmed</option>
+                    </select>
+                  </label>
+                  <label>
+                    Resolution note
+                    <textarea
+                      value={resolutionNote}
+                      onChange={event => setResolutionNote(event.target.value)}
+                      maxLength={800}
+                      placeholder="Record what was offered, what changed, and the next follow-up."
+                    />
+                    <small>Private demo note. Never published externally.</small>
+                  </label>
+                </div>
+              ) : (
+                <div className={styles.noRecoveryDetail}>
+                  <strong>No recovery case is attached to this feedback.</strong>
+                  <p>The record is available for context, but its source data does not indicate that customer follow-up is required.</p>
+                </div>
+              )}
             </div>
 
             <footer className={styles.drawerFooter}>
-              <button type="button" className="btn btn-ghost" onClick={closeRecovery}>Cancel</button>
-              <button type="button" className="btn btn-primary" onClick={saveRecovery}>Save recovery update</button>
+              <button type="button" className="btn btn-ghost" onClick={closeRecovery}>
+                {selectedIssue.requiresRecovery ? 'Cancel' : 'Close'}
+              </button>
+              {selectedIssue.requiresRecovery ? (
+                <button type="button" className="btn btn-primary" onClick={saveRecovery}>Save recovery update</button>
+              ) : null}
             </footer>
           </aside>
         </div>
