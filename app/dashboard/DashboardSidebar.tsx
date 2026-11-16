@@ -156,7 +156,7 @@ export default function DashboardSidebar({
             },
             {
               href: `${playbookBase}?view=review`,
-              label: 'Needs your review',
+              label: 'Needs action',
               Icon: IconAlert,
               view: 'review',
               badge: pendingReviewCount || null,

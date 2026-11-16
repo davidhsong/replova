@@ -13,6 +13,10 @@ import {
   isPlaybookDemoState,
   PLAYBOOK_DEMO_LABEL,
 } from '../lib/playbookDemo'
+import {
+  actionablePlaybookProposals,
+  compareProcedureSteps,
+} from '../lib/playbookUX'
 
 const workspaceId = '10000000-0000-4000-8000-000000000001'
 const fixtureNow = new Date('2026-11-15T18:00:00.000Z')
@@ -138,6 +142,7 @@ test('demo proposal requires edit or explicit approval before a separately appli
   const proposal = normalizePlaybookAIProposals([validRawProposal(state)], feedback, state.procedures, state.roles, state.people, true)[0]
   state = applyPlaybookDemoAction(state, 'proposal.addMany', { proposals: [proposal], model: 'test-model' }, fixtureNow)
   let stored = state.proposals[0]
+  assert.equal(actionablePlaybookProposals(state.proposals).length, 1)
   const procedureBefore = state.procedures.find(item => item.id === stored.procedure_id)!
   assert.equal(stored.status, 'pending')
   assert.throws(() => applyPlaybookDemoAction(state, 'proposal.apply', {
@@ -155,6 +160,7 @@ test('demo proposal requires edit or explicit approval before a separately appli
   }, fixtureNow)
   stored = state.proposals[0]
   assert.equal(stored.status, 'approved')
+  assert.equal(actionablePlaybookProposals(state.proposals).length, 1)
   assert.equal(state.procedures.find(item => item.id === stored.procedure_id)!.current_version, 1)
 
   state = applyPlaybookDemoAction(state, 'proposal.apply', {
@@ -164,9 +170,59 @@ test('demo proposal requires edit or explicit approval before a separately appli
   }, new Date('2026-11-15T20:00:00Z'))
   stored = state.proposals[0]
   assert.equal(stored.status, 'applied')
+  assert.equal(actionablePlaybookProposals(state.proposals).length, 0)
+  assert.equal(state.proposals.some(item => item.id === stored.id), true)
   assert.equal(state.procedures.find(item => item.id === stored.procedure_id)!.current_version, 2)
   assert.equal(state.versions.at(-1)?.source, 'ai_proposal')
   assert.equal(state.versions.at(-1)?.source_proposal_id, stored.id)
+})
+
+test('procedure comparison handles identical, added, removed, changed, and reordered steps conservatively', () => {
+  const original = [
+    'Greet the customer by name.',
+    'Confirm the requested service and estimated completion time.',
+    'Call the customer when the work is ready.',
+    'Record verbal approval in the work order.',
+  ]
+  const identical = compareProcedureSteps(original, original)
+  assert.equal(identical.identical, true)
+  assert.equal(identical.unchangedCount, original.length)
+  assert.deepEqual(identical.changes, [])
+
+  const revised = [
+    'Confirm the requested service and revised completion time.',
+    'Greet the customer by name.',
+    'Call the customer when the work is ready.',
+    'Send a written summary after the visit.',
+  ]
+  const comparison = compareProcedureSteps(original, revised)
+  const changed = comparison.changes.find(change => change.kind === 'changed')
+  const added = comparison.changes.find(change => change.kind === 'added')
+  const removed = comparison.changes.find(change => change.kind === 'removed')
+
+  assert.ok(changed && changed.kind === 'changed')
+  assert.equal(changed.before, original[1])
+  assert.equal(changed.after, revised[0])
+  assert.ok(changed.beforeSegments.some(segment => segment.changed))
+  assert.ok(changed.afterSegments.some(segment => segment.changed))
+  assert.ok(added && added.kind === 'added')
+  assert.equal(added.after, revised[3])
+  assert.ok(removed && removed.kind === 'removed')
+  assert.equal(removed.before, original[3])
+
+  const reordered = compareProcedureSteps(
+    ['First', 'Second', 'Third'],
+    ['Second', 'First', 'Third'],
+  )
+  assert.ok(reordered.changes.some(change => change.kind === 'moved'))
+
+  const ambiguous = compareProcedureSteps(
+    ['Call customer today', 'Call vendor today'],
+    ['Call partner today'],
+  )
+  assert.equal(ambiguous.changes.some(change => change.kind === 'changed'), false)
+  assert.equal(ambiguous.changes.filter(change => change.kind === 'removed').length, 2)
+  assert.equal(ambiguous.changes.filter(change => change.kind === 'added').length, 1)
 })
 
 test('demo tasks link to procedures and update status without touching feedback-demo or real records', () => {
@@ -254,9 +310,21 @@ test('UI exposes only working Playbook actions, labels demo data, and includes r
   assert.match(sidebar, /href: '\/dashboard\/playbook\/demo'/)
   assert.match(sidebar, /replova:playbook-review-count/)
   assert.match(client, /replova:playbook-review-count/)
+  assert.match(sidebar, /Needs action/)
+  assert.match(client, /Needs action/)
+  assert.match(client, /No changes between these versions\./)
   assert.match(client, /More procedure actions/)
+  assert.match(client, /document\.body\.dataset\.playbookDrawerOpen = 'true'/)
+  assert.match(client, /delete document\.body\.dataset\.playbookDrawerOpen/)
+  assert.match(client, /drawerCloseRef\.current\?\.focus\(\)/)
   assert.doesNotMatch(client, />Real workspace</)
   assert.match(layout, /pathname\.startsWith\('\/dashboard\/playbook'\)/)
+  assert.match(
+    css,
+    /body\[data-playbook-drawer-open='true'\] \.chatbot-launcher/,
+  )
+  assert.match(css, /position: sticky/)
+  assert.match(css, /min-height: 44px/)
   assert.match(css, /@media \(max-width: 1100px\)/)
   assert.match(css, /@media \(max-width: 760px\)/)
   assert.match(css, /@media \(max-width: 500px\)/)

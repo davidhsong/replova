@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   createDemoFeedbackEntries,
   FEEDBACK_DEMO_DATASET_VERSION,
@@ -27,6 +27,13 @@ import {
   type PlaybookDemoState,
 } from '@/lib/playbookDemo'
 import type { PlaybookAIProposal } from '@/lib/playbookAIContract'
+import {
+  actionablePlaybookProposals,
+  compareProcedureSteps,
+  type DiffSegment,
+  type ProcedureStepChange,
+  type ProcedureStepComparison,
+} from '@/lib/playbookUX'
 import styles from './Playbook.module.css'
 
 type Mode = 'real' | 'demo'
@@ -112,11 +119,114 @@ function snapshotFromDraft(draft: ProcedureDraft): PlaybookProcedureSnapshot {
   }
 }
 
-function compareSteps(from: string[], to: string[]) {
-  return {
-    additions: to.filter((step) => !from.includes(step)),
-    removals: from.filter((step) => !to.includes(step)),
+function procedureDetailsEqual(
+  before: PlaybookProcedureSnapshot,
+  after: PlaybookProcedureSnapshot,
+) {
+  return (
+    before.title === after.title &&
+    before.category === after.category &&
+    before.description === after.description &&
+    before.objective === after.objective &&
+    before.responsible_role_id === after.responsible_role_id &&
+    before.assigned_person_id === after.assigned_person_id &&
+    before.status === after.status
+  )
+}
+
+function feedbackExcerpt(value: string, limit = 112) {
+  const normalized = value.replace(/\s+/g, ' ').trim()
+  if (normalized.length <= limit) return normalized
+  const candidate = normalized.slice(0, limit + 1)
+  const wordBoundary = candidate.lastIndexOf(' ')
+  return `${candidate.slice(0, wordBoundary > limit * 0.65 ? wordBoundary : limit).trim()}…`
+}
+
+function DiffText({
+  segments,
+  tone,
+}: {
+  segments: DiffSegment[]
+  tone: 'before' | 'after'
+}) {
+  return segments.map((segment, index) =>
+    segment.changed ? (
+      tone === 'before' ? (
+        <del key={index}>{segment.text}</del>
+      ) : (
+        <ins key={index}>{segment.text}</ins>
+      )
+    ) : (
+      <span key={index}>{segment.text}</span>
+    ),
+  )
+}
+
+function stepLocation(change: ProcedureStepChange) {
+  if (change.kind === 'added') return `Step ${change.afterIndex + 1}`
+  if (change.kind === 'removed') return `Step ${change.beforeIndex + 1}`
+  if (change.beforeIndex === change.afterIndex)
+    return `Step ${change.beforeIndex + 1}`
+  return `Step ${change.beforeIndex + 1} → ${change.afterIndex + 1}`
+}
+
+function StepComparisonView({
+  comparison,
+  emptyMessage,
+}: {
+  comparison: ProcedureStepComparison
+  emptyMessage: string
+}) {
+  if (comparison.identical) {
+    return <p className={styles.diffMessage}>{emptyMessage}</p>
   }
+
+  return (
+    <div className={styles.stepDiff}>
+      {comparison.unchangedCount > 0 ? (
+        <p className={styles.diffSummary}>
+          {comparison.unchangedCount} unchanged step
+          {comparison.unchangedCount === 1 ? '' : 's'} not repeated
+        </p>
+      ) : null}
+      {comparison.changes.map((change) => (
+        <article
+          key={`${change.kind}-${'beforeIndex' in change ? change.beforeIndex : 'new'}-${'afterIndex' in change ? change.afterIndex : 'removed'}`}
+          className={styles.stepChange}
+          data-change={change.kind}
+        >
+          <header>
+            <b>{humanStatus(change.kind)}</b>
+            <span>{stepLocation(change)}</span>
+          </header>
+          {change.kind === 'changed' ? (
+            <div className={styles.wordDiff}>
+              <p>
+                <small>Before</small>
+                <span>
+                  <DiffText segments={change.beforeSegments} tone="before" />
+                </span>
+              </p>
+              <p>
+                <small>After</small>
+                <span>
+                  <DiffText segments={change.afterSegments} tone="after" />
+                </span>
+              </p>
+            </div>
+          ) : (
+            <p className={styles.stepChangeText}>
+              {change.kind === 'added'
+                ? change.after
+                : change.kind === 'removed'
+                  ? change.before
+                  : change.text}
+            </p>
+          )}
+        </article>
+      ))}
+    </div>
+  )
 }
 
 function CloseIcon() {
@@ -388,6 +498,7 @@ export default function PlaybookClient({
   )
   const [historyFromId, setHistoryFromId] = useState('')
   const [historyToId, setHistoryToId] = useState('')
+  const drawerCloseRef = useRef<HTMLButtonElement>(null)
 
   const loadRealState = useCallback(async () => {
     const response = await fetch(
@@ -449,6 +560,26 @@ export default function PlaybookClient({
     window.addEventListener('keydown', onEscape)
     return () => window.removeEventListener('keydown', onEscape)
   }, [])
+
+  useEffect(() => {
+    if (!drawer) return
+    document.body.dataset.playbookDrawerOpen = 'true'
+    window.dispatchEvent(
+      new CustomEvent('replova:playbook-drawer-state', {
+        detail: { open: true },
+      }),
+    )
+    const frame = window.requestAnimationFrame(() => drawerCloseRef.current?.focus())
+    return () => {
+      window.cancelAnimationFrame(frame)
+      delete document.body.dataset.playbookDrawerOpen
+      window.dispatchEvent(
+        new CustomEvent('replova:playbook-drawer-state', {
+          detail: { open: false },
+        }),
+      )
+    }
+  }, [drawer])
 
   useEffect(() => {
     const compactScreen = window.matchMedia('(max-width: 760px)')
@@ -542,10 +673,7 @@ export default function PlaybookClient({
     ? (procedureById.get(effectiveSelectedProcedureId) ?? null)
     : null
   const reviewQueue = useMemo(
-    () =>
-      (state?.proposals ?? []).filter(
-        (item) => item.status === 'pending' || item.status === 'approved',
-      ),
+    () => actionablePlaybookProposals(state?.proposals ?? []),
     [state],
   )
   useEffect(() => {
@@ -974,7 +1102,7 @@ export default function PlaybookClient({
           <span className={styles.kicker}>{workspaceName}</span>
           <h1>
             {view === 'review'
-              ? 'Needs your review'
+              ? 'Needs action'
               : view === 'tasks'
                 ? 'Tasks'
                 : 'Business Playbook'}
@@ -1361,7 +1489,7 @@ export default function PlaybookClient({
             })}
             {reviewQueue.length === 0 ? (
               <div className={styles.emptyState}>
-                <h2>Nothing needs your review</h2>
+                <h2>Nothing needs action</h2>
                 <p>
                   Run an improvement review when you want Replova to look for
                   recurring operational problems in authorized feedback.
@@ -1449,13 +1577,19 @@ export default function PlaybookClient({
             aria-label="Close panel"
             onClick={() => setDrawer(null)}
           />
-          <aside className={styles.drawer} aria-label={drawerTitle}>
+          <aside
+            className={styles.drawer}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="playbook-drawer-title"
+          >
             <header>
               <div>
                 <span>Business Playbook</span>
-                <h2>{drawerTitle}</h2>
+                <h2 id="playbook-drawer-title">{drawerTitle}</h2>
               </div>
               <button
+                ref={drawerCloseRef}
                 type="button"
                 onClick={() => setDrawer(null)}
                 aria-label={`Close ${drawerTitle}`}
@@ -1482,7 +1616,7 @@ export default function PlaybookClient({
                     const existing = activeProposal.procedure_id
                       ? procedureById.get(activeProposal.procedure_id)
                       : null
-                    const diff = compareSteps(
+                    const diff = compareProcedureSteps(
                       existing?.steps ?? [],
                       activeProposal.proposed_snapshot.steps,
                     )
@@ -1712,25 +1846,10 @@ export default function PlaybookClient({
                         </div>
                         <section className={styles.changeList}>
                           <span>What changes</span>
-                          {diff.additions.map((step, index) => (
-                            <p key={`add-${index}`} data-change="add">
-                              <b>Added</b>
-                              {step}
-                            </p>
-                          ))}
-                          {diff.removals.map((step, index) => (
-                            <p key={`remove-${index}`} data-change="remove">
-                              <b>Removed</b>
-                              {step}
-                            </p>
-                          ))}
-                          {diff.additions.length === 0 &&
-                          diff.removals.length === 0 ? (
-                            <p>
-                              No step-level changes; review the title, summary,
-                              purpose, or ownership above.
-                            </p>
-                          ) : null}
+                          <StepComparisonView
+                            comparison={diff}
+                            emptyMessage="No step changes. Review the title, summary, purpose, or ownership above."
+                          />
                         </section>
                         <section>
                           <span>Expected result</span>
@@ -1742,28 +1861,35 @@ export default function PlaybookClient({
                           </summary>
                           <div>
                             {evidence.map((item) => (
-                              <article key={item.review_id}>
-                                <div>
+                              <details
+                                key={item.review_id}
+                                className={styles.evidenceItem}
+                              >
+                                <summary>
                                   <strong>
                                     {item.rating > 0
                                       ? `${item.rating}/5`
                                       : 'Feedback'}
                                   </strong>
-                                  <code>{item.review_id}</code>
-                                </div>
-                                <p>{item.text}</p>
-                                <small>
-                                  {mode === 'demo'
-                                    ? 'Synthetic sample feedback'
-                                    : 'Authorized workspace feedback'}{' '}
-                                  ·{' '}
-                                  {item.received_at
-                                    ? dateFormatter.format(
+                                  <span>{feedbackExcerpt(item.text)}</span>
+                                  {item.received_at ? (
+                                    <time dateTime={item.received_at}>
+                                      {dateFormatter.format(
                                         new Date(item.received_at),
-                                      )
-                                    : 'Date unavailable'}
-                                </small>
-                              </article>
+                                      )}
+                                    </time>
+                                  ) : null}
+                                </summary>
+                                <div>
+                                  <p>{item.text}</p>
+                                  <small>
+                                    {mode === 'demo'
+                                      ? 'Synthetic sample feedback'
+                                      : 'Authorized workspace feedback'}
+                                  </small>
+                                  <code>Evidence ID: {item.review_id}</code>
+                                </div>
+                              </details>
                             ))}
                           </div>
                         </details>
@@ -1880,30 +2006,30 @@ export default function PlaybookClient({
                   ) : null}
                   {historyVersions.length > 1 && historyFrom && historyTo
                     ? (() => {
-                        const diff = compareSteps(
+                        const diff = compareProcedureSteps(
                           historyFrom.snapshot.steps,
                           historyTo.snapshot.steps,
+                        )
+                        const detailsMatch = procedureDetailsEqual(
+                          historyFrom.snapshot,
+                          historyTo.snapshot,
                         )
                         return (
                           <section className={styles.versionDiff}>
                             <span>Comparison</span>
-                            {diff.additions.map((step, index) => (
-                              <p key={`h-add-${index}`} data-change="add">
-                                <b>Added</b>
-                                {step}
-                              </p>
-                            ))}
-                            {diff.removals.map((step, index) => (
-                              <p key={`h-remove-${index}`} data-change="remove">
-                                <b>Removed</b>
-                                {step}
-                              </p>
-                            ))}
-                            {diff.additions.length === 0 &&
-                            diff.removals.length === 0 ? (
-                              <p>
-                                No step-level differences between these
-                                versions.
+                            <StepComparisonView
+                              comparison={diff}
+                              emptyMessage={
+                                detailsMatch
+                                  ? 'No changes between these versions.'
+                                  : 'No step changes between these versions.'
+                              }
+                            />
+                            {!detailsMatch ? (
+                              <p className={styles.versionDetailNotice}>
+                                Other procedure details changed. Expand both
+                                versions below to compare the exact title,
+                                summary, purpose, ownership, and status.
                               </p>
                             ) : null}
                           </section>
@@ -1912,7 +2038,24 @@ export default function PlaybookClient({
                     : null}
                   <div className={styles.versionList}>
                     {historyVersions.map((version) => (
-                      <VersionRecord key={version.id} version={version} />
+                      <VersionRecord
+                        key={version.id}
+                        version={version}
+                        roleName={
+                          version.snapshot.responsible_role_id
+                            ? (roleById.get(
+                                version.snapshot.responsible_role_id,
+                              )?.name ?? 'Unknown role')
+                            : 'Unassigned'
+                        }
+                        personName={
+                          version.snapshot.assigned_person_id
+                            ? (personById.get(
+                                version.snapshot.assigned_person_id,
+                              )?.display_name ?? 'Unknown person')
+                            : 'Role only'
+                        }
+                      />
                     ))}
                   </div>
                   {(state.proposals ?? []).filter(
@@ -2395,7 +2538,16 @@ export default function PlaybookClient({
   )
 }
 
-function VersionRecord({ version }: { version: PlaybookVersion }) {
+function VersionRecord({
+  version,
+  roleName,
+  personName,
+}: {
+  version: PlaybookVersion
+  roleName: string
+  personName: string
+}) {
+  const { snapshot } = version
   return (
     <details>
       <summary>
@@ -2410,8 +2562,34 @@ function VersionRecord({ version }: { version: PlaybookVersion }) {
             ? 'From approved suggestion'
             : 'Manual change'}
         </p>
+        <section className={styles.versionSnapshot}>
+          <h3>{snapshot.title}</h3>
+          <dl>
+            <div>
+              <dt>Category</dt>
+              <dd>{snapshot.category}</dd>
+            </div>
+            <div>
+              <dt>Status</dt>
+              <dd>{humanStatus(snapshot.status)}</dd>
+            </div>
+            <div>
+              <dt>Responsible role</dt>
+              <dd>{roleName}</dd>
+            </div>
+            <div>
+              <dt>Person</dt>
+              <dd>{personName}</dd>
+            </div>
+          </dl>
+          <h4>Summary</h4>
+          <p>{snapshot.description || 'No summary provided.'}</p>
+          <h4>Purpose</h4>
+          <p>{snapshot.objective || 'No purpose provided.'}</p>
+          <h4>Steps</h4>
+        </section>
         <ol>
-          {version.snapshot.steps.map((step, index) => (
+          {snapshot.steps.map((step, index) => (
             <li key={index}>{step}</li>
           ))}
         </ol>
