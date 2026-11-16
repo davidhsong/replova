@@ -36,21 +36,17 @@
   stroke-width: 2.1;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-dasharray: 1000 1000;
-  stroke-dashoffset: 1000;
 }
 
-.chart[data-animation='running'] .trendLine { animation: draw-line 1100ms cubic-bezier(.2, .72, .2, 1) forwards; }
-.chart[data-animation='complete'] .trendLine {
-  animation: none;
-  stroke-dasharray: none;
-  stroke-dashoffset: 0;
-}
-.travelingMarker { fill: #15181d; stroke: #ffffff; stroke-width: 2; }
+.travelingMarker { fill: #15181d; stroke: #ffffff; stroke-width: 2; opacity: 0; }
+.chart[data-animation='running'] .travelingMarker { opacity: 1; }
 .dataPoint { fill: #ffffff; stroke: #15181d; stroke-width: 2; cursor: crosshair; transition: r 130ms ease, fill 130ms ease; }
 .dataPoint:hover, .dataPoint:focus-visible { r: 6px; fill: #15181d; outline: none; }
+.dataPoint[data-paused='true'] { r: 5.5px; fill: #15181d; }
 .endpoint circle:first-child { fill: none; stroke: rgba(21, 24, 29, .18); stroke-width: 4; }
 .endpoint circle:last-child { fill: #15181d; stroke: #ffffff; stroke-width: 2; }
+.pauseValue rect { fill: #15181d; stroke: #ffffff; stroke-width: 1; }
+.pauseValue text { fill: #ffffff; font: 650 9px var(--font-mono); font-variant-numeric: tabular-nums; }
 .tooltip rect { fill: #1d2229; stroke: #343b45; stroke-width: 1; }
 .tooltip text { fill: #ffffff; font: 9px var(--font-sans); }
 .tooltip text:first-of-type { font-weight: 650; }
@@ -71,8 +67,6 @@
   border: 0;
 }
 
-@keyframes draw-line { to { stroke-dashoffset: 0; } }
-
 @media (max-width: 640px) {
   .card > header { align-items: flex-start; flex-direction: column; gap: 8px; }
   .legend { width: 100%; justify-content: space-between; }
@@ -83,6 +77,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .trendLine { animation: none !important; stroke-dasharray: none; stroke-dashoffset: 0; }
   .dataPoint { transition-duration: .01ms; }
 }

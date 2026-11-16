@@ -2,6 +2,10 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { FeedbackTrendBucket } from '@/lib/feedbackMetrics'
+import {
+  createFeedbackTrendTimeline,
+  sampleFeedbackTrendTimeline,
+} from '@/lib/feedbackTrendAnimation'
 import styles from './FeedbackTrendChart.module.css'
 
 type AnimationPhase = 'waiting' | 'running' | 'complete'
@@ -18,12 +22,18 @@ function rangeLabel(bucket: FeedbackTrendBucket) {
 
 export default function FeedbackTrendChart({ buckets }: { buckets: readonly FeedbackTrendBucket[] }) {
   const svgRef = useRef<SVGSVGElement>(null)
+  const pathRef = useRef<SVGPathElement>(null)
+  const markerRef = useRef<SVGCircleElement>(null)
+  const revealRectRef = useRef<SVGRectElement>(null)
   const hasAnimatedRef = useRef(false)
-  const completionTimerRef = useRef<number | null>(null)
+  const animationFrameRef = useRef<number | null>(null)
+  const pausedVertexRef = useRef<number | null>(null)
   const [animationPhase, setAnimationPhase] = useState<AnimationPhase>('waiting')
+  const [pausedVertexIndex, setPausedVertexIndex] = useState<number | null>(null)
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const titleId = useId().replaceAll(':', '')
   const descriptionId = useId().replaceAll(':', '')
+  const revealId = `${titleId}-line-reveal`
 
   const chart = useMemo(() => {
     const width = 620
@@ -47,12 +57,43 @@ export default function FeedbackTrendChart({ buckets }: { buckets: readonly Feed
     return { width, height, margin, plotWidth, plotHeight, maxValue, points, path, average, averageY }
   }, [buckets])
 
+  const animationTimeline = useMemo(
+    () => chart.points.length >= 2 ? createFeedbackTrendTimeline(chart.points) : null,
+    [chart.points],
+  )
+
   useEffect(() => {
-    if (hasAnimatedRef.current || !svgRef.current) return
+    if (
+      hasAnimatedRef.current
+      || !svgRef.current
+      || !pathRef.current
+      || !markerRef.current
+      || !revealRectRef.current
+      || !animationTimeline
+    ) return
+
+    const pathElement = pathRef.current
+    const markerElement = markerRef.current
+    const revealRectElement = revealRectRef.current
+    const svgPathLength = pathElement.getTotalLength()
+    const lengthScale = animationTimeline.totalLength === 0
+      ? 1
+      : svgPathLength / animationTimeline.totalLength
+
+    const showCompletedChart = () => {
+      revealRectElement.setAttribute('width', String(chart.plotWidth))
+      const endpoint = pathElement.getPointAtLength(svgPathLength)
+      markerElement.setAttribute('cx', String(endpoint.x))
+      markerElement.setAttribute('cy', String(endpoint.y))
+      pausedVertexRef.current = null
+      setPausedVertexIndex(null)
+      setAnimationPhase('complete')
+    }
+
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     if (reducedMotion || typeof IntersectionObserver === 'undefined') {
       hasAnimatedRef.current = true
-      const frame = window.requestAnimationFrame(() => setAnimationPhase('complete'))
+      const frame = window.requestAnimationFrame(showCompletedChart)
       return () => window.cancelAnimationFrame(frame)
     }
 
@@ -60,11 +101,48 @@ export default function FeedbackTrendChart({ buckets }: { buckets: readonly Feed
     const beginAnimation = () => {
       if (hasAnimatedRef.current) return
       hasAnimatedRef.current = true
+
+      revealRectElement.setAttribute('width', '0')
+      const startPoint = pathElement.getPointAtLength(0)
+      markerElement.setAttribute('cx', String(startPoint.x))
+      markerElement.setAttribute('cy', String(startPoint.y))
+      pausedVertexRef.current = 0
+      setPausedVertexIndex(0)
       setAnimationPhase('running')
-      completionTimerRef.current = window.setTimeout(() => {
-        setAnimationPhase('complete')
-        completionTimerRef.current = null
-      }, 1160)
+
+      let startTime: number | null = null
+      const animate = (timestamp: number) => {
+        if (startTime === null) startTime = timestamp
+        const frame = sampleFeedbackTrendTimeline(
+          chart.points,
+          animationTimeline,
+          timestamp - startTime,
+        )
+        const visibleLength = frame.length * lengthScale
+        const markerPoint = pathElement.getPointAtLength(visibleLength)
+
+        revealRectElement.setAttribute(
+          'width',
+          String(Math.max(0, markerPoint.x - chart.margin.left)),
+        )
+        markerElement.setAttribute('cx', String(markerPoint.x))
+        markerElement.setAttribute('cy', String(markerPoint.y))
+
+        if (pausedVertexRef.current !== frame.pausedVertexIndex) {
+          pausedVertexRef.current = frame.pausedVertexIndex
+          setPausedVertexIndex(frame.pausedVertexIndex)
+        }
+
+        if (frame.complete) {
+          animationFrameRef.current = null
+          showCompletedChart()
+          return
+        }
+
+        animationFrameRef.current = window.requestAnimationFrame(animate)
+      }
+
+      animationFrameRef.current = window.requestAnimationFrame(animate)
       observer?.disconnect()
     }
 
@@ -81,16 +159,17 @@ export default function FeedbackTrendChart({ buckets }: { buckets: readonly Feed
     return () => {
       observer?.disconnect()
       window.clearTimeout(visibilityCheck)
-      if (completionTimerRef.current !== null) {
-        window.clearTimeout(completionTimerRef.current)
-        completionTimerRef.current = null
+      if (animationFrameRef.current !== null) {
+        window.cancelAnimationFrame(animationFrameRef.current)
+        animationFrameRef.current = null
       }
     }
-  }, [])
+  }, [animationTimeline, chart.margin.left, chart.plotWidth, chart.points])
 
   const totalRecords = buckets.reduce((sum, bucket) => sum + bucket.total, 0)
   const endpoint = chart.points.at(-1)
   const activePoint = activeIndex === null ? null : chart.points[activeIndex]
+  const pausedPoint = pausedVertexIndex === null ? null : chart.points[pausedVertexIndex]
 
   return (
     <section className={styles.card} id="feedback-trend" aria-labelledby={`${titleId}-heading`}>
@@ -122,6 +201,17 @@ export default function FeedbackTrendChart({ buckets }: { buckets: readonly Feed
           >
             <title id={titleId}>Customer feedback received in six chronological seven-day periods</title>
             <desc id={descriptionId}>Each point shows the total feedback received, with keyboard-accessible sentiment and average-rating details.</desc>
+            <defs>
+              <clipPath id={revealId} clipPathUnits="userSpaceOnUse">
+                <rect
+                  ref={revealRectRef}
+                  x={chart.margin.left}
+                  y={0}
+                  width={0}
+                  height={chart.height}
+                />
+              </clipPath>
+            </defs>
 
             {[0, 0.5, 1].map(position => {
               const y = chart.margin.top + chart.plotHeight * position
@@ -147,19 +237,23 @@ export default function FeedbackTrendChart({ buckets }: { buckets: readonly Feed
             </g>
 
             <path
+              ref={pathRef}
               className={styles.trendLine}
               d={chart.path}
-              pathLength="1000"
+              clipPath={`url(#${revealId})`}
               vectorEffect="non-scaling-stroke"
             />
 
-            {animationPhase === 'running' && chart.path ? (
-              <circle className={styles.travelingMarker} r="4">
-                <animateMotion dur="1100ms" path={chart.path} fill="freeze" calcMode="linear" />
-              </circle>
-            ) : null}
+            <circle
+              ref={markerRef}
+              className={styles.travelingMarker}
+              cx={chart.points[0]?.x ?? 0}
+              cy={chart.points[0]?.y ?? 0}
+              r="4.5"
+              aria-hidden="true"
+            />
 
-            {animationPhase === 'complete' ? chart.points.map((point, index) => {
+            {chart.points.map((point, index) => {
               const label = `${rangeLabel(point.bucket)}: ${point.bucket.total} feedback records; ${point.bucket.positive} positive, ${point.bucket.neutral} neutral, ${point.bucket.negative} negative; average rating ${point.bucket.averageRating ?? 'not available'}.`
               return (
                 <circle
@@ -170,6 +264,7 @@ export default function FeedbackTrendChart({ buckets }: { buckets: readonly Feed
                   r="4"
                   tabIndex={0}
                   focusable="true"
+                  data-paused={pausedVertexIndex === index ? 'true' : undefined}
                   aria-label={label}
                   onMouseEnter={() => setActiveIndex(index)}
                   onMouseLeave={() => setActiveIndex(null)}
@@ -179,7 +274,18 @@ export default function FeedbackTrendChart({ buckets }: { buckets: readonly Feed
                   <title>{label}</title>
                 </circle>
               )
-            }) : null}
+            })}
+
+            {animationPhase === 'running' && pausedPoint ? (
+              <g
+                className={styles.pauseValue}
+                transform={`translate(${pausedPoint.x} ${pausedPoint.y < 58 ? pausedPoint.y + 22 : pausedPoint.y - 18})`}
+                aria-hidden="true"
+              >
+                <rect x="-14" y="-10" width="28" height="18" rx="5" />
+                <text y="3" textAnchor="middle">{pausedPoint.bucket.total}</text>
+              </g>
+            ) : null}
 
             {animationPhase === 'complete' && endpoint ? (
               <g className={styles.endpoint} transform={`translate(${endpoint.x} ${endpoint.y})`} aria-hidden="true">
