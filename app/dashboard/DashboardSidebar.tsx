@@ -56,7 +56,7 @@ const FEATURES: Array<{
   {
     id: 'playbook',
     label: 'Business Playbook',
-    href: '/dashboard/playbook/demo',
+    href: '/dashboard/playbook',
     description: 'Procedures and tasks',
   },
   {

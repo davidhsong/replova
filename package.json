@@ -12,6 +12,7 @@
     "lint": "eslint",
     "test": "tsx --test tests/**/*.test.ts",
     "test:staging:playbook": "tsx tests/staging/playbook.integration.ts",
+    "test:staging:playbook:browser": "tsx tests/staging/playbook.browser.e2e.ts",
     "typecheck": "tsc --noEmit",
     "schema:audit": "tsx scripts/schema-audit.ts",
     "schema:audit:check": "tsx scripts/schema-audit.ts --check",
@@ -40,6 +41,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "^16.4.6",
+    "playwright-core": "^1.65.1",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
     "typescript": "^5"

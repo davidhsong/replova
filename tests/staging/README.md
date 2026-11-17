@@ -25,3 +25,22 @@ OpenAI request is made.
 Fixtures use reserved `example.invalid` addresses and are removed in a final
 cleanup pass. The runner also removes stale fixtures with the same explicit
 prefix before starting.
+
+## Browser E2E
+
+`npm run test:staging:playbook:browser` runs the same fail-closed staging gates,
+builds the application with the explicit staging environment, and drives an
+installed Chrome or Edge browser through the persistent `/dashboard/playbook`
+UI with `playwright-core`.
+
+The browser runner covers dashboard navigation, roles, people, procedures,
+proposal evidence and approval, separately applied changes, tasks, history,
+stale writes, anonymous access, two-workspace isolation, restart persistence,
+sign-out and renewed sessions, and desktop and iPhone-size layouts. It also
+audits browser requests, console errors, loaded scripts, and external hosts.
+OpenAI and every external side effect remain disabled; proposal generation is
+the same deterministic normalized fixture used by the route-level runner.
+
+Synthetic hosted fixtures are always removed in `finally`. Screenshots are
+retained under the gitignored `tmp/staging-playbook-browser/` directory for
+local review and contain synthetic data only.
