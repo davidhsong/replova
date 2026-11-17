@@ -1922,8 +1922,33 @@ textarea.field { padding: 10px 12px; height: auto; min-height: 80px; resize: ver
 .simple-message.is-success { border-left-color: var(--pos); color: var(--pos); background: var(--pos-sub); }
 .simple-message.is-error { border-left-color: var(--neg); color: var(--neg); background: var(--neg-sub); }
 .simple-message a { font-weight: 650; text-decoration: underline; }
+.google-availability-panel,
+.google-capability-note { padding: 16px 18px; border: 1px solid var(--line-md); border-radius: 10px; background: var(--surface-2); }
+.google-availability-panel { border-left: 3px solid var(--warn); }
+.google-availability-panel strong,
+.google-capability-note strong { display: block; color: var(--t1); font-size: 12px; }
+.google-availability-panel p { margin: 7px 0 4px; color: var(--t2); font-size: 12px; line-height: 1.55; }
+.google-availability-panel span,
+.google-capability-note span { color: var(--t3); font-size: 11px; line-height: 1.55; }
+.google-capability-note { margin-top: 14px; display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 20px; }
+.google-capability-note strong { color: var(--warn); }
+.simple-empty-row > div { display: grid; gap: 6px; }
+.google-legacy-note { max-width: 500px; color: var(--warn); font-size: 11px; line-height: 1.5; }
 .google-connection-actions { display: flex; align-items: center; flex-direction: row !important; gap: 16px !important; }
 .google-connection-actions button { padding: 0; border: 0; background: transparent; }
+.google-location-controls { margin-top: 20px; display: flex; align-items: center; justify-content: space-between; gap: 18px; }
+.google-location-controls > span { color: var(--t4); font: 500 9px var(--font-mono); }
+.google-location-list { margin-top: 14px; border-top: 1px solid var(--line); }
+.google-location-list > label { min-height: 76px; padding: 14px 2px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.google-location-list > label.is-selected { cursor: default; }
+.google-location-list input { width: 17px; height: 17px; accent-color: var(--accent); }
+.google-location-list label > span { min-width: 0; display: grid; gap: 4px; }
+.google-location-list strong { color: var(--t1); font-size: 13px; }
+.google-location-list small { color: var(--t3); font-size: 11px; }
+.google-location-list code { overflow: hidden; color: var(--t4); font: 500 9px var(--font-mono); text-overflow: ellipsis; white-space: nowrap; }
+.google-location-list em { padding: 4px 7px; border-radius: 99px; background: var(--pos-sub); color: var(--pos); font: 650 9px var(--font-mono); font-style: normal; text-transform: uppercase; }
+.google-location-save { padding-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.google-location-save > span { color: var(--t3); font-size: 11px; }
 .location-picker > p { margin: 0 0 14px; color: var(--t3); font-size: 12px; }
 .location-list { border-top: 1px solid var(--line); }
 .location-list button { width: 100%; padding: 14px 0; display: flex; align-items: center; justify-content: space-between; gap: 16px; border: 0; border-bottom: 1px solid var(--line); background: transparent; text-align: left; cursor: pointer; }
@@ -2927,6 +2952,14 @@ textarea { touch-action: manipulation; }
   .simple-setting-row > div:first-child { max-width: none; }
   .simple-settings-actions { align-items: stretch; flex-direction: column; }
   .simple-settings-actions .btn { width: 100%; }
+  .google-capability-note { grid-template-columns: 1fr; gap: 6px; }
+  .google-connection-actions { align-items: flex-end; }
+  .google-location-controls,
+  .google-location-save { align-items: stretch; flex-direction: column; }
+  .google-location-controls .btn,
+  .google-location-save .btn { width: 100%; }
+  .google-location-list > label { grid-template-columns: auto minmax(0, 1fr); }
+  .google-location-list > label > em { grid-column: 2; justify-self: start; }
   .settings-delete-confirm > div { display: grid; grid-template-columns: 1fr 1fr; }
   .youtube-comments-controls { align-items: stretch !important; flex-direction: column; }
   .youtube-comments-controls > * { width: 100%; }

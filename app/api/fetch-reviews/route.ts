@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { syncRestaurantReviews } from '@/lib/syncReviews'
 import { isAuthorizedCron } from '@/lib/cronAuth'
+import { isGoogleBusinessReviewSyncEnabled } from '@/lib/googleBusinessFeature'
 
 export async function POST(req: NextRequest) {
   if (!isAuthorizedCron(req)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  if (!isGoogleBusinessReviewSyncEnabled()) {
+    return NextResponse.json(
+      {
+        error: 'Google review sync is disabled until API access and permitted usage are confirmed.',
+        code: 'GOOGLE_REVIEW_SYNC_DISABLED',
+      },
+      { status: 503 }
+    )
   }
 
   const body = await req.json().catch(() => ({}))
