@@ -5,7 +5,7 @@ import { PGlite } from '@electric-sql/pglite'
 
 export const targetMigrationVersions = [
   '017', '018', '019', '020', '021', '022', '023', '024',
-  '025', '027', '028', '029', '030', '031',
+  '025', '027', '028', '029', '030', '031', '032',
 ] as const
 
 export const intentionallyExcludedVersions = ['026'] as const
@@ -302,11 +302,9 @@ function normalizeValue(value: unknown): unknown {
 function comparisonRow(section: CatalogSection, row: CatalogRow): CatalogRow {
   const normalized = normalizeValue(row) as CatalogRow
   if (section === 'functions') {
-    const {
-      definition_hash: _formatDependentHash,
-      source_hash_crlf: _lineEndingVariant,
-      ...stable
-    } = normalized
+    const stable = { ...normalized }
+    delete stable.definition_hash
+    delete stable.source_hash_crlf
     return stable
   }
   return normalized
@@ -821,7 +819,7 @@ export function compareSchemaSnapshots(
     limitations: [
       'The expected schema is materialized in PGlite; pgcrypto extension creation is skipped because PGlite does not ship that extension. Extension installation and extension-owned objects are not compared.',
       'Supabase-managed auth and storage internals are represented only by minimal local stubs. Their managed schema, policies, hooks, and grants are out of scope.',
-      'Object comments, owners, default privileges, event triggers, and column-level grants are not compared.',
+      'Object comments, default privileges, event triggers, and column-level grants are not compared. Function owners are compared; ownership for other object classes is not yet included.',
       'Function source is compared by a one-way hash of pg_proc.prosrc; source code, tokens, and function arguments are not emitted in the report.',
       'pg_get_constraintdef, pg_get_indexdef, policy expressions, and trigger definitions can differ cosmetically between PostgreSQL versions. Such differences are reported as conflicts and require review; they are never assumed equivalent.',
       'Migration status is structural evidence plus the Supabase ledger. A structurally matching but unrecorded migration is reported as applied_unrecorded, not silently treated as ledger-applied.',

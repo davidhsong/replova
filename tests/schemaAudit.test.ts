@@ -61,13 +61,21 @@ test('catalog inspection is one read-only metadata query', () => {
   )
 })
 
-test('expected catalog materializes migrations 017-031 while keeping 026 absent', () => {
+test('expected catalog materializes migrations 017-032 while keeping 026 absent', () => {
   assert.deepEqual(
     model.steps.map(step => step.version),
-    ['017', '018', '019', '020', '021', '022', '023', '024', '025', '027', '028', '029', '030', '031'],
+    ['017', '018', '019', '020', '021', '022', '023', '024', '025', '027', '028', '029', '030', '031', '032'],
   )
   assert.ok(model.steps.find(step => step.version === '029')?.changedKeys.length)
   assert.ok(model.steps.find(step => step.version === '031')?.changedKeys.length)
+  const hardeningStep = model.steps.find(step => step.version === '032')
+  assert.ok(hardeningStep?.changedKeys.length)
+  assert.equal(
+    hardeningStep?.changedKeys.every(key =>
+      key.startsWith('functions:') || key.startsWith('function_grants:'),
+    ),
+    true,
+  )
   assert.equal(model.repositoryMigrations.some(item => item.version === '026'), false)
   assert.equal(
     model.expected.tables.some(row => row.table_name === 'google_business_connections'),
@@ -75,6 +83,10 @@ test('expected catalog materializes migrations 017-031 while keeping 026 absent'
   )
   assert.equal(
     model.expected.tables.some(row => row.table_name === 'playbook_procedures'),
+    true,
+  )
+  assert.equal(
+    model.expected.functions.every(row => typeof row.owner_name === 'string'),
     true,
   )
 })
@@ -106,10 +118,24 @@ test('comparison distinguishes applied-unrecorded 029, excluded 026, and pending
     expected_schema_target: 'in-memory-pglite-only',
     connected_database_mutated: false,
   })
-  assert.ok(report.security_findings.some(finding =>
-    finding.code === 'security_definer_untrusted_execute'
-    && finding.function.startsWith('public.claim_youtube_automation_connections('),
-  ))
+  assert.equal(
+    report.security_findings.some(finding =>
+      finding.code === 'security_definer_untrusted_execute'
+      || finding.code === 'security_definer_mutable_search_path',
+    ),
+    false,
+  )
+  assert.deepEqual(
+    report.security_findings
+      .filter(finding => finding.code === 'security_definer_authenticated_execute')
+      .map(finding => finding.function.slice(0, finding.function.indexOf('(')))
+      .sort(),
+    [
+      'public.current_user_owns_replova_account',
+      'public.current_user_owns_replova_workspace',
+      'public.owns_youtube_connection',
+    ],
+  )
 })
 
 test('function source differences are detected without exposing function source', () => {

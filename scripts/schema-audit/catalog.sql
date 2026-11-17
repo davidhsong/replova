@@ -129,6 +129,7 @@ catalog_functions AS (
     procedure.proname AS function_name,
     pg_catalog.pg_get_function_identity_arguments(procedure.oid) AS identity_arguments,
     pg_catalog.pg_get_function_result(procedure.oid) AS result_type,
+    pg_catalog.pg_get_userbyid(procedure.proowner) AS owner_name,
     language.lanname AS language_name,
     procedure.prosecdef AS security_definer,
     procedure.provolatile AS volatility,

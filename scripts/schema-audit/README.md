@@ -1,6 +1,6 @@
 # Read-only schema audit
 
-This tool compares migrations 017–031 (with the intentionally absent 026)
+This tool compares migrations 017-032 (with the intentionally absent 026)
 against a sanitized PostgreSQL catalog snapshot. It never connects to Supabase.
 
 1. Run `npm run schema:audit:check` to validate the catalog query and materialize
@@ -18,15 +18,19 @@ OAuth credentials, access tokens, function source, or secrets.
 
 The comparison covers tables, columns, data types, defaults, keys and other
 constraints, indexes, RLS, policies, effective grants for `PUBLIC`, `anon`,
-`authenticated`, and `service_role`, functions, function authorization and
-search-path configuration, triggers, and the Supabase migration ledger.
-It also reports `SECURITY DEFINER` functions that are executable by `PUBLIC`,
-`anon`, or `authenticated`, and functions whose configured search path does not
-start with `pg_catalog`. These authorization findings are reported even when the
-live catalog exactly matches the repository SQL.
+`authenticated`, and `service_role`, functions, function authorization,
+function ownership and search-path configuration, triggers, and the Supabase
+migration ledger. It also reports `SECURITY DEFINER` functions that are
+executable by `PUBLIC`, `anon`, or `authenticated`, and functions whose
+configured search path does not start with `pg_catalog`. These authorization
+findings are reported even when the live catalog exactly matches the repository
+SQL.
 
 Known limitations are included in every generated report. In particular,
-Supabase-managed `auth`/`storage` internals, object comments and owners, default
-privileges, event triggers, and column-level grants are not compared. Catalog
-rendering differences between PostgreSQL versions are reported for review and
-are never assumed to match.
+Supabase-managed `auth`/`storage` internals, object comments, non-function
+owners, default privileges, event triggers, and column-level grants are not
+compared. Catalog rendering differences between PostgreSQL versions are
+reported for review and are never assumed to match.
+
+The audited role decisions behind migration 032 are recorded in
+`security-function-audit-032.md`.
