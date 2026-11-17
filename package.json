@@ -12,6 +12,8 @@
     "lint": "eslint",
     "test": "tsx --test tests/**/*.test.ts",
     "typecheck": "tsc --noEmit",
+    "schema:audit": "tsx scripts/schema-audit.ts",
+    "schema:audit:check": "tsx scripts/schema-audit.ts --check",
     "verify": "npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
