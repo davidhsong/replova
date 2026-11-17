@@ -43,7 +43,7 @@ test('homepage mobile layout centers the hero action and avoids clipped showcase
   assert.match(globalCss, /\.hero-actions-centered \{ width: 100%; align-items: center; justify-content: center; \}/)
   assert.match(showcaseCss, /@media \(max-width: 620px\)[\s\S]*\.tabList \{ min-width: 0; grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/)
   assert.match(showcaseCss, /\.activeIndicator\[data-index='3'\] \{ transform: translate3d\(calc\(100% \+ 8px\), 52px, 0\); \}/)
-  assert.match(globalCss, /\.trusted-business-logos \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/)
+  assert.doesNotMatch(globalCss, /\.trusted-business/)
   assert.match(globalCss, /\.industry-card \{ min-height: 188px/)
   assert.match(globalCss, /\.lp-footer-grid \{ padding: 52px 22px 24px; grid-template-columns: 1fr 1fr/)
 })

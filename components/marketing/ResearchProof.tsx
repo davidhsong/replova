@@ -89,7 +89,7 @@ export function ResearchProof() {
   return (
     <section className="research-proof" aria-labelledby="research-proof-title">
       <div className="research-proof-inner">
-        <h2 className="research-proof-heading" id="research-proof-title">Trusted by customer-focused businesses</h2>
+        <h2 className="research-proof-heading" id="research-proof-title">Published research on customer reviews</h2>
 
         <div className="research-proof-grid">
           {studies.map(study => (
@@ -120,30 +120,6 @@ export function ResearchProof() {
           ))}
         </div>
 
-        <div className="trusted-businesses" aria-label="Trusted businesses">
-          <div className="trusted-business-logos">
-            <span className="trusted-business-logo trusted-business-logo-sunright">
-              <Image src="/brand/partner-logos/sunright-tea-studio.svg" alt="Sunright Tea Studio" width={222} height={50} unoptimized />
-            </span>
-            <span className="trusted-business-logo trusted-business-logo-happy-lemon">
-              <Image src="/brand/partner-logos/happy-lemon.webp" alt="Happy Lemon" width={800} height={275} />
-            </span>
-            <span className="trusted-business-logo trusted-business-logo-sentral">
-              <Image src="/brand/partner-logos/sentral.png" alt="Sentral" width={287} height={48} />
-            </span>
-            <span className="trusted-business-logo trusted-business-logo-whatcoffee">
-              <Image src="/brand/partner-logos/whatcoffee-logo-mark.png" alt="WhatCoffee & Bakery" width={115} height={91} />
-              <small>WhatCoffee &amp; Bakery</small>
-            </span>
-            <span className="trusted-business-logo trusted-business-logo-clara">
-              <Image src="/brand/partner-logos/clara-medical-spa.png" alt="Clara Medical Spa" width={1140} height={676} />
-            </span>
-            <span className="trusted-business-logo trusted-business-logo-text" aria-label="K & S Complete Auto Repair">
-              <strong>K &amp; S</strong>
-              <small>Complete Auto Repair</small>
-            </span>
-          </div>
-        </div>
       </div>
     </section>
   )

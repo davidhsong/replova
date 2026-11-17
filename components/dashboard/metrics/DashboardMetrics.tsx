@@ -1,4 +1,7 @@
-import type { ReactNode } from 'react'
+'use client'
+
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import styles from './DashboardMetrics.module.css'
 
 export type MetricTone = 'neutral' | 'positive' | 'warning' | 'negative'
@@ -42,10 +45,85 @@ function clampPercentage(value: number, max: number) {
 }
 
 function MetricHelp({ label, children }: { label: string; children: ReactNode }) {
+  const anchorRef = useRef<HTMLSpanElement>(null)
+  const tooltipRef = useRef<HTMLSpanElement>(null)
+  const tooltipId = useId()
+  const [open, setOpen] = useState(false)
+  const [position, setPosition] = useState<{ left: number; top: number; width: number } | null>(null)
+
+  const updatePosition = useCallback(() => {
+    const anchor = anchorRef.current
+    if (!anchor) return
+
+    const viewportMargin = 12
+    const gap = 8
+    const anchorRect = anchor.getBoundingClientRect()
+    const width = Math.min(220, window.innerWidth - viewportMargin * 2)
+    const height = tooltipRef.current?.offsetHeight ?? 64
+    const left = Math.min(
+      window.innerWidth - viewportMargin - width,
+      Math.max(viewportMargin, anchorRect.right - width),
+    )
+    const spaceAbove = anchorRect.top - viewportMargin
+    const spaceBelow = window.innerHeight - anchorRect.bottom - viewportMargin
+    const showBelow = spaceAbove < height + gap && spaceBelow > spaceAbove
+    const preferredTop = showBelow
+      ? anchorRect.bottom + gap
+      : anchorRect.top - gap - height
+    const top = Math.min(
+      window.innerHeight - viewportMargin - height,
+      Math.max(viewportMargin, preferredTop),
+    )
+
+    setPosition({ left, top, width })
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    updatePosition()
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    return () => {
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [open, updatePosition])
+
+  function showTooltip() {
+    setOpen(true)
+    updatePosition()
+  }
+
   return (
-    <span className={styles.help} tabIndex={0} aria-label={`${label}: ${String(children)}`}>
+    <span
+      ref={anchorRef}
+      className={styles.help}
+      tabIndex={0}
+      aria-label={`${label}: ${String(children)}`}
+      aria-describedby={open ? tooltipId : undefined}
+      onMouseEnter={showTooltip}
+      onMouseLeave={() => setOpen(false)}
+      onFocus={showTooltip}
+      onBlur={() => setOpen(false)}
+      onKeyDown={event => {
+        if (event.key === 'Escape') setOpen(false)
+      }}
+    >
       <span aria-hidden="true">?</span>
-      <span role="tooltip">{children}</span>
+      {open && position
+        ? createPortal(
+            <span
+              ref={tooltipRef}
+              id={tooltipId}
+              role="tooltip"
+              className={styles.tooltipPortal}
+              style={position}
+            >
+              {children}
+            </span>,
+            document.body,
+          )
+        : null}
     </span>
   )
 }

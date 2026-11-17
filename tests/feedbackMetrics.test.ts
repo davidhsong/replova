@@ -184,6 +184,18 @@ test('chart animation is visibility-gated, finite, reduced-motion safe, and clea
   assert.doesNotMatch(css, /@keyframes draw-line|infinite/)
 })
 
+test('metric help renders above scroll containers without clipping', () => {
+  const metrics = readFileSync('components/dashboard/metrics/DashboardMetrics.tsx', 'utf8')
+  const css = readFileSync('components/dashboard/metrics/DashboardMetrics.module.css', 'utf8')
+
+  assert.match(metrics, /createPortal/)
+  assert.match(metrics, /document\.body/)
+  assert.match(metrics, /window\.addEventListener\('scroll', updatePosition, true\)/)
+  assert.match(metrics, /aria-describedby=\{open \? tooltipId : undefined\}/)
+  assert.match(css, /\.tooltipPortal\s*\{[\s\S]*position: fixed;/)
+  assert.match(css, /\.tooltipPortal\s*\{[\s\S]*z-index: 120;/)
+})
+
 test('customer names open the existing authorized feedback detail flow', () => {
   const client = readFileSync('app/dashboard/feedback-demo/FeedbackDemoClient.tsx', 'utf8')
   const css = readFileSync('app/dashboard/feedback-demo/FeedbackDemo.module.css', 'utf8')

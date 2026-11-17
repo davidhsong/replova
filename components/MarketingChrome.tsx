@@ -104,7 +104,7 @@ export function MarketingHeader() {
     <header className="lp-header">
       <div className="lp-nav-inner">
         <MobileMarketingNav />
-        <Link href="/" aria-label="Replova home" className="lp-home-link"><BrandLogo height={24} eager /></Link>
+        <Link href="/" aria-label="Replova home" className="lp-home-link"><BrandLogo height={28} eager /></Link>
         <nav className="lp-menu" aria-label="Main navigation">
           <NavDropdown
             label="Platform"
