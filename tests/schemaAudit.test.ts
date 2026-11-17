@@ -61,10 +61,10 @@ test('catalog inspection is one read-only metadata query', () => {
   )
 })
 
-test('expected catalog materializes migrations 017-032 while keeping 026 absent', () => {
+test('expected catalog materializes migrations 017-033 while keeping 026 absent', () => {
   assert.deepEqual(
     model.steps.map(step => step.version),
-    ['017', '018', '019', '020', '021', '022', '023', '024', '025', '027', '028', '029', '030', '031', '032'],
+    ['017', '018', '019', '020', '021', '022', '023', '024', '025', '027', '028', '029', '030', '031', '032', '033'],
   )
   assert.ok(model.steps.find(step => step.version === '029')?.changedKeys.length)
   assert.ok(model.steps.find(step => step.version === '031')?.changedKeys.length)
@@ -76,6 +76,14 @@ test('expected catalog materializes migrations 017-032 while keeping 026 absent'
     ),
     true,
   )
+  const legacyHardeningStep = model.steps.find(step => step.version === '033')
+  assert.ok(legacyHardeningStep?.changedKeys.length)
+  assert.ok(legacyHardeningStep?.changedKeys.some(key =>
+    key.startsWith('tables:') && key.includes('api_budget_state'),
+  ))
+  assert.ok(legacyHardeningStep?.changedKeys.some(key =>
+    key.startsWith('columns:') && key.includes('review_requests'),
+  ))
   assert.equal(model.repositoryMigrations.some(item => item.version === '026'), false)
   assert.equal(
     model.expected.tables.some(row => row.table_name === 'google_business_connections'),
@@ -133,6 +141,7 @@ test('comparison distinguishes applied-unrecorded 029, excluded 026, and pending
     [
       'public.current_user_owns_replova_account',
       'public.current_user_owns_replova_workspace',
+      'public.owns_restaurant',
       'public.owns_youtube_connection',
     ],
   )

@@ -1,6 +1,6 @@
 # Read-only schema audit
 
-This tool compares migrations 017-032 (with the intentionally absent 026)
+This tool compares migrations 017-033 (with the intentionally absent 026)
 against a sanitized PostgreSQL catalog snapshot. It never connects to Supabase.
 
 1. Run `npm run schema:audit:check` to validate the catalog query and materialize
@@ -33,4 +33,6 @@ compared. Catalog rendering differences between PostgreSQL versions are
 reported for review and are never assumed to match.
 
 The audited role decisions behind migration 032 are recorded in
-`security-function-audit-032.md`.
+`security-function-audit-032.md`. Migration 033 closes the documented legacy
+follow-up and is covered by executable role, RLS, and regression tests in
+`tests/legacySecurityHardening.test.ts`.

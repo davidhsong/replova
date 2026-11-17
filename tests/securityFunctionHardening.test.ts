@@ -109,7 +109,7 @@ async function applyMigration(database: PGlite, name: string): Promise<void> {
   await database.exec(pgliteCompatibleSql(sql))
 }
 
-async function createDatabase(through = 32): Promise<PGlite> {
+async function createDatabase(through = 33): Promise<PGlite> {
   const database = new PGlite()
   await database.exec(prelude)
   for (const name of await migrationFiles(through)) await applyMigration(database, name)

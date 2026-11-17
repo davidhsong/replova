@@ -351,7 +351,7 @@ export interface ReviewRequest {
   id: string
   restaurant_id: string
   customer_name: string | null
-  customer_email: string | null
+  customer_email: string
   customer_phone: string | null
   channel: 'email' | 'sms'
   status: 'pending' | 'sent' | 'opened' | 'clicked'

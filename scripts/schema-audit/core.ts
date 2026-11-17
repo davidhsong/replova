@@ -5,7 +5,7 @@ import { PGlite } from '@electric-sql/pglite'
 
 export const targetMigrationVersions = [
   '017', '018', '019', '020', '021', '022', '023', '024',
-  '025', '027', '028', '029', '030', '031', '032',
+  '025', '027', '028', '029', '030', '031', '032', '033',
 ] as const
 
 export const intentionallyExcludedVersions = ['026'] as const

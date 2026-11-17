@@ -89,8 +89,9 @@ not claim that refactor is complete.
 - No billing/Stripe functions are in the affected set.
 - `claim_due_replies(integer)` is an older, pre-017 definer function with a
   public-first path. It was outside Step 20's 017-031 audit scope and is not
-  silently changed by 032. It needs a dedicated follow-up review because it is
-  an active reply-queue worker RPC.
+  silently changed by 032. Migration 033 completes that dedicated review,
+  restricts execution to `service_role`, and pins its search path.
 - Default function privileges are project-wide configuration and are not
-  changed by 032. A staging review should decide whether future migrations
-  should opt into restrictive defaults before any Production change.
+  changed by 032 or 033. Migration 033 instead applies explicit least-privilege
+  ACLs to the reviewed legacy objects so it does not risk breaking unrelated
+  or future migration behavior.
