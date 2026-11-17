@@ -26,6 +26,56 @@ export interface BusinessWorkspace {
   updated_at: string
 }
 
+export interface GoogleBusinessConnection {
+  id: string
+  workspace_id: string
+  connected_by_auth_user_id: string | null
+  google_subject: string | null
+  google_email: string | null
+  access_token_encrypted: string | null
+  refresh_token_encrypted: string | null
+  token_expires_at: number | null
+  granted_scopes: string[]
+  status: 'active' | 'reauthorization_required' | 'disconnected' | 'error'
+  last_error_code: string | null
+  last_error_at: string | null
+  connected_at: string
+  refreshed_at: string | null
+  disconnected_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface GoogleBusinessLocationLink {
+  id: string
+  workspace_id: string
+  connection_id: string
+  restaurant_id: string | null
+  account_resource_name: string
+  account_id: string
+  location_resource_name: string
+  location_id: string
+  review_parent_resource_name: string
+  title: string
+  place_id: string | null
+  selected_by_auth_user_id: string | null
+  selected_at: string
+  last_verified_at: string
+  is_active: boolean
+  disconnected_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface GoogleBusinessOAuthState {
+  state_hash: string
+  workspace_id: string
+  auth_user_id: string
+  expires_at: string
+  consumed_at: string | null
+  created_at: string
+}
+
 // ─────────────────────────────────────────────────────────────
 // Existing tables
 // ─────────────────────────────────────────────────────────────
@@ -43,6 +93,7 @@ export interface Restaurant {
   google_refresh_token: string | null
   google_token_expires_at: number | null  // Unix ms
   google_location_name: string | null     // e.g. "accounts/123/locations/456"
+  google_business_location_id: string | null
   created_at: string
 }
 
@@ -402,9 +453,24 @@ export type Database = {
         Insert: Pick<BusinessWorkspace, 'account_id' | 'name'> & Partial<Omit<BusinessWorkspace, 'id' | 'account_id' | 'name' | 'created_at' | 'updated_at'>>
         Update: Partial<Omit<BusinessWorkspace, 'id' | 'account_id' | 'created_at' | 'updated_at'>>
       }
+      google_business_connections: {
+        Row: GoogleBusinessConnection
+        Insert: Pick<GoogleBusinessConnection, 'workspace_id'> & Partial<Omit<GoogleBusinessConnection, 'id' | 'workspace_id' | 'created_at' | 'updated_at'>>
+        Update: Partial<Omit<GoogleBusinessConnection, 'id' | 'workspace_id' | 'created_at' | 'updated_at'>>
+      }
+      google_business_locations: {
+        Row: GoogleBusinessLocationLink
+        Insert: Pick<GoogleBusinessLocationLink, 'workspace_id' | 'connection_id' | 'account_resource_name' | 'account_id' | 'location_resource_name' | 'location_id' | 'review_parent_resource_name' | 'title'> & Partial<Omit<GoogleBusinessLocationLink, 'id' | 'workspace_id' | 'connection_id' | 'account_resource_name' | 'account_id' | 'location_resource_name' | 'location_id' | 'review_parent_resource_name' | 'title' | 'created_at' | 'updated_at'>>
+        Update: Partial<Omit<GoogleBusinessLocationLink, 'id' | 'workspace_id' | 'created_at' | 'updated_at'>>
+      }
+      google_business_oauth_states: {
+        Row: GoogleBusinessOAuthState
+        Insert: Pick<GoogleBusinessOAuthState, 'state_hash' | 'workspace_id' | 'auth_user_id' | 'expires_at'> & Partial<Pick<GoogleBusinessOAuthState, 'consumed_at' | 'created_at'>>
+        Update: Partial<Pick<GoogleBusinessOAuthState, 'consumed_at'>>
+      }
       restaurants: {
         Row: Restaurant
-        Insert: Omit<Restaurant, 'id' | 'created_at' | 'workspace_id'> & Partial<Pick<Restaurant, 'workspace_id'>>
+        Insert: Omit<Restaurant, 'id' | 'created_at' | 'workspace_id' | 'google_business_location_id'> & Partial<Pick<Restaurant, 'workspace_id' | 'google_business_location_id'>>
         Update: Partial<Omit<Restaurant, 'id' | 'created_at'>>
       }
       youtube_connections: {

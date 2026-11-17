@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import {
   IconMessage, IconUsers, IconBriefcase, IconCard, IconCog,
-  IconChevDown, IconSignOut, IconSend, IconUpload,
+  IconChevDown, IconSignOut, IconSend, IconUpload, IconAlert,
 } from '@/components/icons'
 import { getSupabaseBrowser } from '@/lib/supabase'
 import LocationSwitcherClient from '@/components/dashboard/LocationSwitcherClient'
@@ -35,6 +35,7 @@ const PLAN_LABELS: Record<Plan, string> = {
 }
 
 const TOP_ITEMS = [
+  { href: '/dashboard/feedback-demo', label: 'Feedback demo', Icon: IconAlert, exact: false, showsBadge: false },
   { href: '/dashboard', label: 'Reviews', Icon: IconMessage, exact: true, showsBadge: true },
   { href: '/dashboard/youtube', label: 'YouTube Studio', Icon: IconSend, exact: false, showsBadge: false },
   { href: '/dashboard/competitors', label: 'Competitors', Icon: IconUsers, exact: false, showsBadge: false },
@@ -47,6 +48,7 @@ const BOTTOM_ITEMS = [
 ]
 
 const MOBILE_PRIMARY_ITEMS = [
+  { href: '/dashboard/feedback-demo', label: 'Feedback', Icon: IconAlert, exact: false },
   { href: '/dashboard', label: 'Reviews', Icon: IconMessage, exact: true },
   { href: '/dashboard/youtube', label: 'YouTube', Icon: IconSend, exact: false },
   { href: '/dashboard/competitors', label: 'Compare', Icon: IconUsers, exact: false },
@@ -72,13 +74,13 @@ export default function DashboardSidebar({
   const hasLocations = locations.length > 0
   const topItems = hasLocations
     ? TOP_ITEMS
-    : TOP_ITEMS.filter(item => item.href === '/dashboard' || item.href === '/dashboard/youtube')
+    : TOP_ITEMS.filter(item => item.href === '/dashboard' || item.href === '/dashboard/feedback-demo' || item.href === '/dashboard/youtube')
   const bottomItems = hasLocations
     ? BOTTOM_ITEMS
     : BOTTOM_ITEMS.filter(item => item.href === '/dashboard/billing' || item.href === '/dashboard/settings')
   const mobilePrimaryItems = hasLocations
     ? MOBILE_PRIMARY_ITEMS
-    : MOBILE_PRIMARY_ITEMS.filter(item => item.href === '/dashboard' || item.href === '/dashboard/youtube')
+    : MOBILE_PRIMARY_ITEMS.filter(item => item.href === '/dashboard' || item.href === '/dashboard/feedback-demo' || item.href === '/dashboard/youtube')
 
   useEffect(() => {
     if (!mobileMoreOpen) return

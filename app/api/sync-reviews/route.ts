@@ -4,6 +4,7 @@ import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { syncRestaurantReviews } from '@/lib/syncReviews'
 import { ACTIVE_LOCATION_COOKIE } from '@/lib/activeLocation'
+import { isGoogleBusinessReviewSyncEnabled } from '@/lib/googleBusinessFeature'
 
 export async function POST() {
   const cookieStore = await cookies()
@@ -11,6 +12,15 @@ export async function POST() {
 
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  if (!isGoogleBusinessReviewSyncEnabled()) {
+    return NextResponse.json(
+      {
+        error: 'Google review sync is disabled until API access and permitted usage are confirmed.',
+        code: 'GOOGLE_REVIEW_SYNC_DISABLED',
+      },
+      { status: 503 }
+    )
+  }
 
   const admin = getSupabaseAdmin()
   const activeId = cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value

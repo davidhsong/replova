@@ -3,30 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { getAccountForAuthUser } from '@/lib/accountAccess'
+import { accountCanActivateNewLocations } from '@/lib/accountEntitlements'
 import { isSameOriginRequest } from '@/lib/accountOnboarding'
 import { getPlanLimits } from '@/lib/planLimits'
-import { getStripe, subscriptionGrantsAccess } from '@/lib/stripe'
 import { ACTIVE_LOCATION_COOKIE } from '@/lib/activeLocation'
-
-async function accountOnlyAccessIsActive(account: {
-  stripe_customer_id: string | null
-  created_at: string
-}) {
-  if (!account.stripe_customer_id) {
-    return Date.now() < new Date(account.created_at).getTime() + 30 * 24 * 60 * 60 * 1000
-  }
-
-  try {
-    const subscriptions = await getStripe().subscriptions.list({
-      customer: account.stripe_customer_id,
-      status: 'all',
-      limit: 10,
-    })
-    return subscriptions.data.some(subscription => subscriptionGrantsAccess(subscription.status))
-  } catch {
-    return false
-  }
-}
 
 export async function POST(request: NextRequest) {
   if (!isSameOriginRequest(request)) {
@@ -109,7 +89,7 @@ export async function POST(request: NextRequest) {
 
     const existingAccess = (existingRestaurants ?? []).some(restaurant => restaurant.active)
     const firstLocationAccess = existingRestaurants?.length === 0
-      ? await accountOnlyAccessIsActive(account)
+      ? await accountCanActivateNewLocations(account)
       : false
 
     const { data: restaurant, error: restaurantError } = await admin

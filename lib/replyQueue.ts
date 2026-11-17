@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { getValidGoogleToken } from '@/lib/googleAuth'
 import { generateSingleReply } from '@/lib/generateSingleReply'
+import { isGoogleBusinessReviewPublishingEnabled } from '@/lib/googleBusinessFeature'
 
 type RestaurantRow = {
   id: string
@@ -19,6 +20,10 @@ export async function postReplyToGmb(
   replyText: string,
   accessToken: string
 ): Promise<void> {
+  if (!isGoogleBusinessReviewPublishingEnabled()) {
+    throw new Error('Google review publishing is disabled')
+  }
+
   const res = await fetch(`https://mybusiness.googleapis.com/v4/${googleReviewName}/reply`, {
     method: 'PUT',
     headers: {
@@ -94,7 +99,11 @@ export async function queueReplyForReview(reviewId: string): Promise<{ queueId: 
   // approval, regardless of the auto_reply_enabled toggle.
   const isPositiveRating = review.rating != null && review.rating >= 4
   let scheduledSendAt: string | null = null
-  if (settings?.auto_reply_enabled && isPositiveRating) {
+  if (
+    isGoogleBusinessReviewPublishingEnabled()
+    && settings?.auto_reply_enabled
+    && isPositiveRating
+  ) {
     const delayHours = settings.auto_reply_delay_hours ?? 2
     const sendAt = new Date(Date.now() + delayHours * 60 * 60 * 1000)
     scheduledSendAt = sendAt.toISOString()
@@ -122,6 +131,10 @@ export async function queueReplyForReview(reviewId: string): Promise<{ queueId: 
 // ─── Process due queue entries ─────────────────────────────────────────────
 
 export async function processReplyQueue(): Promise<{ sent: number; errors: string[] }> {
+  if (!isGoogleBusinessReviewPublishingEnabled()) {
+    return { sent: 0, errors: [] }
+  }
+
   const admin = getSupabaseAdmin()
   const errors: string[] = []
   let sent = 0

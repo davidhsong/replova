@@ -3,6 +3,7 @@ import { cookies } from 'next/headers'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { getValidGoogleToken } from '@/lib/googleAuth'
+import { isGoogleBusinessReviewPublishingEnabled } from '@/lib/googleBusinessFeature'
 
 type Restaurant = {
   id: string
@@ -73,6 +74,16 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (!isGoogleBusinessReviewPublishingEnabled()) {
+    return NextResponse.json(
+      {
+        error: 'Google review publishing is disabled until API access and permitted usage are confirmed.',
+        code: 'GOOGLE_PUBLISHING_DISABLED',
+      },
+      { status: 503 }
+    )
   }
 
   let body: { reviewId?: string; replyText?: string }

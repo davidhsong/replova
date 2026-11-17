@@ -68,7 +68,7 @@ Copy `.env.example` to `.env.local`. Never commit real secrets.
 | --- | --- |
 | Supabase | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` |
 | App URLs | `NEXT_PUBLIC_BASE_URL`, `NEXT_PUBLIC_APP_URL` |
-| Google | `GOOGLE_PLACES_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` |
+| Google | `GOOGLE_PLACES_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_BUSINESS_TOKEN_ENCRYPTION_KEY` |
 | OpenAI | `OPENAI_API_KEY`; `OPENAI_MODEL` defaults to `gpt-6-luna` |
 | Resend | `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `CAREERS_EMAIL` |
 | Stripe | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and the three `STRIPE_PRICE_ID_*` values |
@@ -97,6 +97,8 @@ Optional values include Google Analytics, API-budget alert email, and custom Ope
 2. Create an OAuth web client.
 3. Add `https://YOUR_DOMAIN/api/auth/google/callback` and the local equivalent as authorized redirect URIs.
 4. Complete any Google verification required before external users connect Business Profiles.
+5. Apply migration `029` only after `027` and `028`. It is independent of the parked YouTube migration `026` and performs no credential or location backfill.
+6. Set `GOOGLE_BUSINESS_WORKSPACE_INTEGRATION_ENABLED=true` and `GOOGLE_BUSINESS_API_ACCESS_CONFIRMED=true` only after API approval, non-zero quota, and Replova's permitted third-party usage are confirmed. Keep review sync and publishing gates false for Phase 6C1.
 
 Google OAuth connects a Business Profile; it is not used to authenticate Replova users.
 

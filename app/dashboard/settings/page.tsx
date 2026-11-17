@@ -1,15 +1,14 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { IconRefresh, IconSignOut } from '@/components/icons'
 import YouTubeKnowledgeBase from '@/components/YouTubeKnowledgeBase'
 import YouTubeAutoPublishingSettings from '@/components/YouTubeAutoPublishingSettings'
+import GoogleBusinessWorkspaceSettings from '@/components/settings/GoogleBusinessWorkspaceSettings'
 import { getSupabaseBrowser } from '@/lib/supabase'
 
-type GoogleStatus = 'loading' | 'not_connected' | 'token_only' | 'connected'
 type YouTubeStatus = 'loading' | 'not_connected' | 'connected'
-type GmbLocation = { name: string; title: string; placeId: string | null }
 type YouTubeComment = {
   id: string
   threadId: string
@@ -47,8 +46,6 @@ export default function SettingsPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [hasRestaurant, setHasRestaurant] = useState<boolean | null>(null)
-  const [googleStatus, setGoogleStatus] = useState<GoogleStatus>('loading')
-  const [googleNotice, setGoogleNotice] = useState<{ ok: boolean; message: string } | null>(null)
   const [youtubeStatus, setYoutubeStatus] = useState<YouTubeStatus>('loading')
   const [youtubeChannelTitle, setYoutubeChannelTitle] = useState<string | null>(null)
   const [youtubeNotice, setYoutubeNotice] = useState<{ ok: boolean; message: string } | null>(null)
@@ -74,11 +71,6 @@ export default function SettingsPage() {
   const [youtubePublishErrors, setYoutubePublishErrors] = useState<Record<string, string>>({})
   const [youtubePublished, setYoutubePublished] = useState<Record<string, { replyUrl: string | null }>>({})
   const [youtubePublishBlocked, setYoutubePublishBlocked] = useState<Record<string, string>>({})
-  const [locations, setLocations] = useState<GmbLocation[] | null>(null)
-  const [locationsLoading, setLocationsLoading] = useState(false)
-  const [savingLocation, setSavingLocation] = useState(false)
-  const [syncing, setSyncing] = useState(false)
-  const [syncResult, setSyncResult] = useState<{ ok: boolean; message: string } | null>(null)
   const [settingsLoaded, setSettingsLoaded] = useState(false)
   const [savingSettings, setSavingSettings] = useState(false)
   const [settingsResult, setSettingsResult] = useState<{ ok: boolean; message: string } | null>(null)
@@ -86,19 +78,6 @@ export default function SettingsPage() {
     auto_reply_enabled: false,
     auto_reply_delay_hours: 2,
   })
-
-  const loadLocations = useCallback(async () => {
-    setLocationsLoading(true)
-    try {
-      const response = await fetch('/api/auth/google/locations')
-      const data = await response.json()
-      setLocations(data.locations ?? [])
-    } catch {
-      setLocations([])
-    } finally {
-      setLocationsLoading(false)
-    }
-  }, [])
 
   useEffect(() => {
     if (youtubeStatus !== 'connected') return
@@ -124,11 +103,6 @@ export default function SettingsPage() {
   }, [])
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const success = params.get('google_success')
-    const warning = params.get('google_warning')
-    const oauthError = params.get('google_error')
-
     fetch('/api/restaurant')
       .then(async response => {
         if (response.status === 404) {
@@ -156,46 +130,11 @@ export default function SettingsPage() {
         }
         return data
       })
-      .then(data => {
-        if (!data) return
-        if (success && warning === 'location_not_found') {
-          setGoogleStatus('token_only')
-          void loadLocations()
-          return
-        }
-
-        if (success) {
-          setGoogleNotice({ ok: true, message: 'Google Business connected.' })
-          setGoogleStatus('connected')
-          return
-        }
-
-        if (oauthError) {
-          const messages: Record<string, string> = {
-            access_denied: 'Google connection was cancelled.',
-            token_exchange_failed: 'Google connection failed. Try again.',
-            missing_tokens: 'Google did not return the required permissions.',
-            state_mismatch: 'The security check failed. Try connecting again.',
-            restaurant_not_found: 'We could not find this business.',
-            invalid_callback: 'Google returned an invalid callback.',
-            not_configured: 'Google Business is not configured yet.',
-            save_failed: 'Google connected, but Replova could not save the connection.',
-          }
-          setGoogleNotice({ ok: false, message: messages[oauthError] ?? 'Google connection failed.' })
-        }
-
-        if (data.googleConnected) setGoogleStatus('connected')
-        else if (data.googleTokenOnly) {
-          setGoogleStatus('token_only')
-          void loadLocations()
-        } else setGoogleStatus('not_connected')
-      })
       .catch(() => {
         setHasRestaurant(true)
         setSettingsLoaded(true)
-        setGoogleStatus('not_connected')
       })
-  }, [loadLocations])
+  }, [])
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -232,47 +171,6 @@ export default function SettingsPage() {
       })
       .catch(() => setYoutubeStatus('not_connected'))
   }, [])
-
-  async function selectLocation(locationName: string) {
-    setSavingLocation(true)
-    setGoogleNotice(null)
-    try {
-      const response = await fetch('/api/auth/google/set-location', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ locationName }),
-      })
-      const data = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(data.error ?? 'Could not save this location.')
-      setGoogleStatus('connected')
-      setLocations(null)
-      setGoogleNotice({ ok: true, message: 'Google Business location connected.' })
-      router.refresh()
-    } catch (error) {
-      setGoogleNotice({ ok: false, message: error instanceof Error ? error.message : 'Could not save this location.' })
-    } finally {
-      setSavingLocation(false)
-    }
-  }
-
-  async function syncReviews() {
-    setSyncing(true)
-    setSyncResult(null)
-    try {
-      const response = await fetch('/api/sync-reviews', { method: 'POST' })
-      const data = await response.json()
-      if (!response.ok) throw new Error(data.error ?? 'Sync failed.')
-      setSyncResult({
-        ok: true,
-        message: `${data.newlyStored} new review${data.newlyStored === 1 ? '' : 's'} · ${data.repliesGenerated} draft${data.repliesGenerated === 1 ? '' : 's'} generated`,
-      })
-      router.refresh()
-    } catch (error) {
-      setSyncResult({ ok: false, message: error instanceof Error ? error.message : 'Sync failed.' })
-    } finally {
-      setSyncing(false)
-    }
-  }
 
   async function disconnectYoutube() {
     if (!window.confirm('Disconnect YouTube? This removes the saved YouTube Reply Queue and Knowledge Base for this connection. Published replies on YouTube are not deleted.')) return
@@ -557,76 +455,16 @@ export default function SettingsPage() {
       <header className="page-header product-page-header">
         <div className="t-eyebrow">Workspace / Settings</div>
         <h1>Settings</h1>
-        <p>{hasRestaurant === false ? 'Manage your integrations and account.' : 'Connect Google and choose how replies move through Replova.'}</p>
+        <p>Connect your primary Google Business Profile integration and manage optional channels.</p>
       </header>
 
       <div className="page-body simple-settings">
-        {hasRestaurant === true && <section className="simple-settings-section">
-          <div className="simple-section-heading">
-            <div>
-              <span>01</span>
-              <h2>Google Business</h2>
-              <p>Required to import reviews and publish replies.</p>
-            </div>
-            {googleStatus === 'connected' && (
-              <button type="button" className="btn btn-quiet btn-sm" onClick={syncReviews} disabled={syncing}>
-                <span className={syncing ? 'spin' : undefined}><IconRefresh s={12} /></span>
-                {syncing ? 'Syncing…' : 'Sync now'}
-              </button>
-            )}
-          </div>
-
-          {googleNotice && (
-            <p className={`simple-message ${googleNotice.ok ? 'is-success' : 'is-error'}`}>{googleNotice.message}</p>
-          )}
-          {syncResult && (
-            <p className={`simple-message ${syncResult.ok ? 'is-success' : 'is-error'}`}>{syncResult.message}</p>
-          )}
-
-          {googleStatus === 'loading' && <div className="settings-loading-line skeleton" />}
-
-          {googleStatus === 'connected' && (
-            <div className="simple-connection-row">
-              <div>
-                <strong><i className="connection-dot" /> Connected</strong>
-                <span>Reviews sync automatically every six hours.</span>
-              </div>
-              <a href="/api/auth/google" className="text-link">Reconnect</a>
-            </div>
-          )}
-
-          {googleStatus === 'not_connected' && (
-            <div className="simple-empty-row">
-              <p>Connect the Google account that manages this Business Profile.</p>
-              <a href="/api/auth/google" className="btn btn-primary">Connect Google Business</a>
-            </div>
-          )}
-
-          {googleStatus === 'token_only' && (
-            <div className="location-picker">
-              <p>Select the location you want Replova to manage.</p>
-              {locationsLoading && <div className="settings-loading-line skeleton" />}
-              {!locationsLoading && locations?.length === 0 && (
-                <p className="simple-message is-error">No Google Business locations were found. <a href="/api/auth/google">Reconnect</a></p>
-              )}
-              {!locationsLoading && locations && locations.length > 0 && (
-                <div className="location-list">
-                  {locations.map(location => (
-                    <button key={location.name} type="button" onClick={() => selectLocation(location.name)} disabled={savingLocation}>
-                      <strong>{location.title}</strong>
-                      <span>{location.placeId ?? 'Google Business location'}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </section>}
+        <GoogleBusinessWorkspaceSettings />
 
         <section className="simple-settings-section" id="youtube">
           <div className="simple-section-heading">
             <div>
-              <span>{hasRestaurant === false ? '01' : '02'}</span>
+              <span>02</span>
               <h2>YouTube</h2>
               <p>Secondary integration for developer testing and optional channel comment management.</p>
             </div>
@@ -860,7 +698,7 @@ export default function SettingsPage() {
         <section className="simple-settings-section simple-account-section">
           <div className="simple-section-heading">
             <div>
-              <span>{hasRestaurant === false ? '02' : '04'}</span>
+              <span>{hasRestaurant === false ? '03' : '04'}</span>
               <h2>Account</h2>
               <p>{email || 'Signed-in account'}</p>
             </div>

@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
   const admin = getSupabaseAdmin()
   const applicationId = randomUUID()
   const resumeFilename = resume ? safeFilename(resume.name) : null
-  const resumePath = resume && resumeFilename ? `${applicationId}/${resumeFilename}` : null
+  let resumePath = resume && resumeFilename ? `${applicationId}/${resumeFilename}` : null
 
   if (resume && resumePath) {
     const { error: uploadError } = await admin.storage
@@ -133,10 +133,14 @@ export async function POST(request: NextRequest) {
       })
     if (uploadError) {
       console.error('[careers/apply] resume upload failed:', uploadError.message)
-      return NextResponse.json({ error: 'We could not securely store the resume. Please try again.' }, { status: 503 })
+      // Keep the direct website application available while a legacy
+      // deployment is being moved to the applicant-tracking schema. The
+      // resume remains attached to the notification email below.
+      resumePath = null
     }
   }
 
+  let applicationStored = false
   const { error: insertError } = await admin.from('career_applications').insert({
     id: applicationId,
     role_key: roleKey,
@@ -163,7 +167,8 @@ export async function POST(request: NextRequest) {
   if (insertError) {
     if (resumePath) await admin.storage.from('career-resumes').remove([resumePath])
     console.error('[careers/apply] database insert failed:', insertError.code)
-    return NextResponse.json({ error: 'We could not save the application. Please try again.' }, { status: 503 })
+  } else {
+    applicationStored = true
   }
 
   const destination = process.env.CAREERS_EMAIL
@@ -213,11 +218,15 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('[careers/apply] email delivery failed:', error.name)
-      await admin.from('career_applications').update({
-        email_notification_error: error.name,
-        updated_at: new Date().toISOString(),
-      }).eq('id', applicationId)
-    } else {
+      if (applicationStored) {
+        await admin.from('career_applications').update({
+          email_notification_error: error.name,
+          updated_at: new Date().toISOString(),
+        }).eq('id', applicationId)
+      } else {
+        return NextResponse.json({ error: 'We could not save or deliver the application. Please try again.' }, { status: 502 })
+      }
+    } else if (applicationStored) {
       await admin.from('career_applications').update({
         email_notification_sent: true,
         email_notification_error: null,
@@ -226,5 +235,13 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ success: true, applicationId })
+  if (!applicationStored && (!destination || !apiKey)) {
+    return NextResponse.json({ error: 'Applications are temporarily unavailable. Please email careers@replova.app.' }, { status: 503 })
+  }
+
+  return NextResponse.json({
+    success: true,
+    applicationId: applicationStored ? applicationId : undefined,
+    trackingStored: applicationStored,
+  })
 }

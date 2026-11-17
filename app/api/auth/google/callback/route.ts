@@ -1,203 +1,206 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { BASE_URL } from '@/lib/baseUrl'
+import { getGoogleBusinessAvailability } from '@/lib/googleBusinessFeature'
+import {
+  GOOGLE_BUSINESS_OAUTH_STATE_COOKIE,
+  getGoogleBusinessRedirectUri,
+  getGoogleBusinessWorkspaceForUser,
+  googleOAuthStatesMatch,
+  hashGoogleOAuthState,
+} from '@/lib/googleBusinessWorkspace'
+import {
+  decryptGoogleBusinessToken,
+  encryptGoogleBusinessToken,
+} from '@/lib/googleBusinessTokens'
 
-export async function GET(req: NextRequest) {
+const BUSINESS_MANAGE_SCOPE = 'https://www.googleapis.com/auth/business.manage'
+
+function redirectWithClearedState(path: string) {
+  const response = NextResponse.redirect(new URL(path, BASE_URL))
+  response.cookies.set(GOOGLE_BUSINESS_OAUTH_STATE_COOKIE, '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 0,
+    path: '/api/auth/google/callback',
+  })
+  response.cookies.set('google_oauth_state', '', { maxAge: 0, path: '/' })
+  response.cookies.set('google_oauth_restaurant', '', { maxAge: 0, path: '/' })
+  return response
+}
+
+export async function GET(request: NextRequest) {
+  const availability = getGoogleBusinessAvailability()
+  if (!availability.enabled) {
+    return redirectWithClearedState(`/dashboard/settings?google_error=${availability.code}`)
+  }
+
   const cookieStore = await cookies()
   const supabase = createClient(cookieStore)
-  const { searchParams } = new URL(req.url)
-
-  const code = searchParams.get('code')
-  const state = searchParams.get('state')
-  const error = searchParams.get('error')
-
-  // User denied access
-  if (error) {
-    return NextResponse.redirect(
-      `${BASE_URL}/dashboard/settings?google_error=access_denied`
-    )
+  const { data: { user }, error: userError } = await supabase.auth.getUser()
+  if (userError || !user?.email || !user.email_confirmed_at) {
+    return redirectWithClearedState('/signin?next=%2Fdashboard%2Fsettings')
   }
 
-  if (!code || !state) {
-    return NextResponse.redirect(
-      `${BASE_URL}/dashboard/settings?google_error=invalid_callback`
-    )
-  }
-
-  // Verify CSRF state
-  const savedState = cookieStore.get('google_oauth_state')?.value
-  const restaurantId = cookieStore.get('google_oauth_restaurant')?.value
-  if (!savedState || savedState !== state || !restaurantId) {
-    return NextResponse.redirect(
-      `${BASE_URL}/dashboard/settings?google_error=state_mismatch`
-    )
-  }
-
-  // Verify the user is still authenticated
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) {
-    return NextResponse.redirect(`${BASE_URL}/signin`)
+  const receivedState = request.nextUrl.searchParams.get('state')
+  const savedState = cookieStore.get(GOOGLE_BUSINESS_OAUTH_STATE_COOKIE)?.value
+  if (
+    !receivedState
+    || !savedState
+    || receivedState.length > 256
+    || !googleOAuthStatesMatch(receivedState, savedState)
+  ) {
+    return redirectWithClearedState('/dashboard/settings?google_error=state_mismatch')
   }
 
   const admin = getSupabaseAdmin()
-
-  // Verify the restaurant stored alongside the random OAuth state belongs to
-  // the authenticated user.
-  const { data: restaurant } = await admin
-    .from('restaurants')
-    .select('id, place_id, google_refresh_token')
-    .eq('id', restaurantId)
-    .eq('owner_email', user.email)
-    .eq('active', true)
-    .single()
-
-  if (!restaurant) {
-    return NextResponse.redirect(
-      `${BASE_URL}/dashboard/settings?google_error=restaurant_not_found`
-    )
+  const { data: consumedRows, error: consumeError } = await admin.rpc(
+    'consume_google_business_oauth_state',
+    {
+      p_state_hash: hashGoogleOAuthState(receivedState),
+      p_auth_user_id: user.id,
+    }
+  )
+  const consumed = Array.isArray(consumedRows) ? consumedRows[0] : consumedRows
+  if (consumeError || !consumed?.workspace_id) {
+    return redirectWithClearedState('/dashboard/settings?google_error=state_replayed')
   }
 
-  // Exchange code for tokens
-  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+  const context = await getGoogleBusinessWorkspaceForUser(admin, user)
+  if (!context || context.workspace.id !== consumed.workspace_id) {
+    return redirectWithClearedState('/dashboard/settings?google_error=workspace_mismatch')
+  }
+
+  const oauthError = request.nextUrl.searchParams.get('error')
+  if (oauthError) {
+    return redirectWithClearedState('/dashboard/settings?google_error=access_denied')
+  }
+
+  const code = request.nextUrl.searchParams.get('code')
+  if (!code || code.length > 4096) {
+    return redirectWithClearedState('/dashboard/settings?google_error=invalid_callback')
+  }
+
+  let redirectUri: string
+  try {
+    redirectUri = getGoogleBusinessRedirectUri()
+  } catch (error) {
+    console.error('[Google Business OAuth] Invalid redirect configuration:', error)
+    return redirectWithClearedState('/dashboard/settings?google_error=invalid_redirect')
+  }
+
+  const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       code,
       client_id: process.env.GOOGLE_CLIENT_ID!,
       client_secret: process.env.GOOGLE_CLIENT_SECRET!,
-      redirect_uri: `${BASE_URL}/api/auth/google/callback`,
+      redirect_uri: redirectUri,
       grant_type: 'authorization_code',
-    }).toString(),
+    }),
+    cache: 'no-store',
   })
-
-  if (!tokenRes.ok) {
-    console.error('Google token exchange failed with status', tokenRes.status)
-    return NextResponse.redirect(
-      `${BASE_URL}/dashboard/settings?google_error=token_exchange_failed`
-    )
+  if (!tokenResponse.ok) {
+    console.error('[Google Business OAuth] Token exchange failed with status', tokenResponse.status)
+    return redirectWithClearedState('/dashboard/settings?google_error=token_exchange_failed')
   }
 
-  const tokenData = await tokenRes.json()
-  const {
-    access_token,
-    refresh_token,
-    expires_in,
-  } = tokenData as {
-    access_token: string
+  const tokenData = await tokenResponse.json() as {
+    access_token?: string
     refresh_token?: string
-    expires_in: number
+    expires_in?: number
+    scope?: string
+  }
+  const scopes = tokenData.scope?.split(/\s+/).filter(Boolean) ?? []
+  if (
+    !tokenData.access_token
+    || typeof tokenData.expires_in !== 'number'
+    || !Number.isFinite(tokenData.expires_in)
+    || tokenData.expires_in <= 0
+    || !scopes.includes(BUSINESS_MANAGE_SCOPE)
+  ) {
+    return redirectWithClearedState('/dashboard/settings?google_error=missing_permissions')
   }
 
-  const effectiveRefreshToken = refresh_token ?? restaurant.google_refresh_token
-  if (!access_token || !effectiveRefreshToken) {
-    console.error('Google token exchange did not return usable offline credentials')
-    return NextResponse.redirect(
-      `${BASE_URL}/dashboard/settings?google_error=missing_tokens`
-    )
-  }
-
-  const expiresAt = Date.now() + expires_in * 1000
-
-  // Find the Google Business location matching this restaurant's place_id
-  const locationName = await findLocationByPlaceId(
-    access_token,
-    restaurant.place_id
-  )
-
-  // Store tokens (and location if found)
-  const { error: saveError } = await admin
-    .from('restaurants')
-    .update({
-      google_access_token: access_token,
-      google_refresh_token: effectiveRefreshToken,
-      google_token_expires_at: expiresAt,
-      ...(locationName ? { google_location_name: locationName } : {}),
-    })
-    .eq('id', restaurant.id)
-
-  if (saveError) {
-    console.error('Failed to save Google Business credentials:', saveError.message)
-    return NextResponse.redirect(
-      `${BASE_URL}/dashboard/settings?google_error=save_failed`
-    )
-  }
-
-  // Clear the state cookie
-  const response = NextResponse.redirect(
-    locationName
-      ? `${BASE_URL}/dashboard/settings?google_success=true`
-      : `${BASE_URL}/dashboard/settings?google_success=true&google_warning=location_not_found`
-  )
-  response.cookies.delete('google_oauth_state')
-  response.cookies.delete('google_oauth_restaurant')
-  return response
-}
-
-/**
- * Uses the Google Business Profile APIs (v1) to find the location
- * whose placeId matches the restaurant's Google Place ID.
- * Falls back to the single location if only one exists across all accounts.
- */
-async function findLocationByPlaceId(
-  accessToken: string,
-  placeId: string
-): Promise<string | null> {
+  let googleSubject: string | null = null
+  let googleEmail: string | null = null
   try {
-    const accountsRes = await fetch(
-      'https://mybusinessaccountmanagement.googleapis.com/v1/accounts',
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    )
-    const accountsBody = await accountsRes.text()
-    if (!accountsRes.ok) {
-      console.error('[GMB callback] Failed to list accounts:', accountsRes.status)
-      return null
+    const userInfoResponse = await fetch('https://openidconnect.googleapis.com/v1/userinfo', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      cache: 'no-store',
+    })
+    if (userInfoResponse.ok) {
+      const userInfo = await userInfoResponse.json() as { sub?: string; email?: string }
+      googleSubject = userInfo.sub ?? null
+      googleEmail = userInfo.email?.toLowerCase() ?? null
     }
-
-    const { accounts } = JSON.parse(accountsBody) as { accounts?: { name: string }[] }
-    if (!accounts?.length) return null
-
-    const allLocations: { name: string; metadata?: { placeId?: string } }[] = []
-
-    for (const account of accounts) {
-      let pageToken: string | undefined
-
-      do {
-        const params = new URLSearchParams({
-          readMask: 'name,title,metadata',
-          pageSize: '100',
-        })
-        if (pageToken) params.set('pageToken', pageToken)
-
-        const locUrl = `https://mybusinessbusinessinformation.googleapis.com/v1/${account.name}/locations?${params.toString()}`
-        const locRes = await fetch(locUrl, { headers: { Authorization: `Bearer ${accessToken}` } })
-        const locBody = await locRes.text()
-        if (!locRes.ok) {
-          console.error('[GMB callback] Locations fetch failed:', locRes.status)
-          break
-        }
-
-        const locData = JSON.parse(locBody) as {
-          locations?: { name: string; metadata?: { placeId?: string } }[]
-          nextPageToken?: string
-        }
-
-        allLocations.push(...(locData.locations ?? []))
-        pageToken = locData.nextPageToken
-      } while (pageToken)
-    }
-
-    // First: exact placeId match
-    const exact = allLocations.find(loc => loc.metadata?.placeId === placeId)
-    if (exact) return exact.name
-
-    // Fallback: if the account has exactly one location, use it automatically
-    if (allLocations.length === 1) return allLocations[0].name
-
-    return null
-  } catch (err) {
-    console.error('[GMB callback] Error finding Google Business location:', err)
-    return null
+  } catch {
+    // Fail closed below if Google identity verification is unavailable.
   }
+  if (!googleSubject) {
+    return redirectWithClearedState('/dashboard/settings?google_error=identity_lookup_failed')
+  }
+
+  const { data: existing } = await admin
+    .from('google_business_connections')
+    .select('google_subject, refresh_token_encrypted')
+    .eq('workspace_id', context.workspace.id)
+    .maybeSingle<{ google_subject: string | null; refresh_token_encrypted: string | null }>()
+
+  let refreshToken = tokenData.refresh_token
+  if (
+    !refreshToken
+    && googleSubject
+    && existing?.google_subject === googleSubject
+    && existing.refresh_token_encrypted
+  ) {
+    try {
+      refreshToken = decryptGoogleBusinessToken(existing.refresh_token_encrypted, 'refresh').plaintext
+    } catch (error) {
+      console.error('[Google Business OAuth] Existing refresh token could not be decrypted:', error)
+    }
+  }
+  if (!refreshToken) {
+    return redirectWithClearedState('/dashboard/settings?google_error=missing_refresh_token')
+  }
+
+  const now = new Date().toISOString()
+  const { error: saveError } = await admin
+    .from('google_business_connections')
+    .upsert({
+      workspace_id: context.workspace.id,
+      connected_by_auth_user_id: user.id,
+      google_subject: googleSubject,
+      google_email: googleEmail,
+      access_token_encrypted: encryptGoogleBusinessToken(tokenData.access_token, 'access'),
+      refresh_token_encrypted: encryptGoogleBusinessToken(refreshToken, 'refresh'),
+      token_expires_at: Date.now() + tokenData.expires_in * 1000,
+      granted_scopes: scopes,
+      status: 'active',
+      last_error_code: null,
+      last_error_at: null,
+      connected_at: now,
+      disconnected_at: null,
+    }, { onConflict: 'workspace_id' })
+  if (saveError) {
+    console.error('[Google Business OAuth] Failed to save encrypted connection:', saveError.message)
+    return redirectWithClearedState('/dashboard/settings?google_error=save_failed')
+  }
+
+  if (existing && existing.google_subject !== googleSubject) {
+    const { error: unlinkError } = await admin
+      .from('google_business_locations')
+      .update({ is_active: false, disconnected_at: now })
+      .eq('workspace_id', context.workspace.id)
+    if (unlinkError) {
+      console.error('[Google Business OAuth] Could not deactivate locations from the previous Google account:', unlinkError.message)
+      return redirectWithClearedState('/dashboard/settings?google_error=save_failed')
+    }
+  }
+
+  return redirectWithClearedState('/dashboard/settings?google_success=true')
 }
