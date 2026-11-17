@@ -187,8 +187,11 @@ export default function Home() {
           <div className="industry-grid">
             {industries.map(industry => (
               <Link href={industry.href} key={industry.name} className="industry-card">
-                <div><NavItemIcon name={industry.icon} /><ArrowIcon diagonal /></div>
-                <h3>{industry.name}</h3><p>{industry.note}</p>
+                <div className="industry-card-heading">
+                  <span><NavItemIcon name={industry.icon} /><h3>{industry.name}</h3></span>
+                  <ArrowIcon diagonal />
+                </div>
+                <p>{industry.note}</p>
               </Link>
             ))}
           </div>
