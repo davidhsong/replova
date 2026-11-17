@@ -17,6 +17,7 @@ import {
   actionablePlaybookProposals,
   compareProcedureSteps,
 } from '../lib/playbookUX'
+import { classifyPlaybookDatabaseError } from '../lib/playbookDatabaseError'
 
 const workspaceId = '10000000-0000-4000-8000-000000000001'
 const fixtureNow = new Date('2026-11-15T18:00:00.000Z')
@@ -263,6 +264,8 @@ test('routes enforce verified workspace ownership, same-origin mutations, eviden
   assert.match(access, /\.eq\('status', 'active'\)/)
   assert.match(api, /workspace_id/)
   assert.match(api, /p_actor_id: user\.id/g)
+  assert.match(api, /assertExpectedLockVersion/)
+  assert.match(api, /classifyPlaybookDatabaseError/)
   assert.match(suggest, /p_actor_id: user\.id/)
   assert.doesNotMatch(api, /p_actor_id:\s*(?:body|payload)\./)
   assert.doesNotMatch(suggest, /p_actor_id:\s*body\./)
@@ -275,6 +278,23 @@ test('routes enforce verified workspace ownership, same-origin mutations, eviden
   assert.match(rate, /\.from\('api_usage_log'\)/)
   assert.match(rate, /rate-limit-reservation/)
   assert.doesNotMatch(demoSuggest, /\.from\('playbook_/)
+})
+
+test('Playbook database failures classify Supabase error objects without losing their messages', () => {
+  assert.deepEqual(
+    classifyPlaybookDatabaseError({ code: 'P0001', message: 'playbook_proposal_not_approved' }),
+    {
+      status: 409,
+      userMessage: 'This proposal is not in a valid state for that action.',
+      logMessage: 'playbook_proposal_not_approved',
+    },
+  )
+  assert.equal(
+    classifyPlaybookDatabaseError({ code: '40001', message: 'playbook_procedure_conflict' }).status,
+    409,
+  )
+  assert.equal(classifyPlaybookDatabaseError(new Error('Invalid procedure update.')).status, 400)
+  assert.equal(classifyPlaybookDatabaseError({ code: 'XX000', message: 'unexpected failure' }).status, 500)
 })
 
 test('authenticated dashboard identity comes from the session and workspace, never QA fixtures', () => {

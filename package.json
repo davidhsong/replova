@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "tsx --test tests/**/*.test.ts",
+    "test:staging:playbook": "tsx tests/staging/playbook.integration.ts",
     "typecheck": "tsc --noEmit",
     "schema:audit": "tsx scripts/schema-audit.ts",
     "schema:audit:check": "tsx scripts/schema-audit.ts --check",

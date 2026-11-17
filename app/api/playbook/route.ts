@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizePlaybookRequest } from '@/lib/playbookAccess'
+import { classifyPlaybookDatabaseError } from '@/lib/playbookDatabaseError'
 import { loadPlaybookState } from '@/lib/playbookData'
 import {
   cleanPlaybookText,
@@ -30,19 +31,29 @@ async function existsInWorkspace(
   return Boolean(data)
 }
 
+async function assertExpectedLockVersion(
+  admin: ReturnType<typeof import('@/lib/supabase').getSupabaseAdmin>,
+  table: 'playbook_procedures' | 'playbook_change_proposals',
+  workspaceId: string,
+  id: string,
+  expectedLockVersion: number,
+  label: 'Procedure' | 'Proposal',
+) {
+  const { data, error } = await admin
+    .from(table)
+    .select('lock_version')
+    .eq('workspace_id', workspaceId)
+    .eq('id', id)
+    .maybeSingle<{ lock_version: number }>()
+  if (error) throw error
+  if (!data) throw new Error(`${label} not found.`)
+  if (data.lock_version !== expectedLockVersion) throw new Error(`${label} conflict.`)
+}
+
 function databaseError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error)
-  if (message.includes('conflict') || message.includes('40001')) {
-    return NextResponse.json({ error: 'This record changed in another request. Reload and try again.' }, { status: 409 })
-  }
-  if (message.includes('duplicate') || message.includes('23505')) {
-    return NextResponse.json({ error: 'That record already exists.' }, { status: 409 })
-  }
-  if (message.includes('invalid_') || message.includes('not_found') || message.includes('not found') || message.includes('required')) {
-    return NextResponse.json({ error: message.replace(/^.*playbook_/, '').replaceAll('_', ' ') }, { status: 400 })
-  }
-  console.error('[Playbook] Mutation failed:', message)
-  return NextResponse.json({ error: 'Unable to save this Playbook change.' }, { status: 500 })
+  const result = classifyPlaybookDatabaseError(error)
+  if (result.status === 500) console.error('[Playbook] Mutation failed:', result.logMessage)
+  return NextResponse.json({ error: result.userMessage }, { status: result.status })
 }
 
 export async function GET(request: NextRequest) {
@@ -134,6 +145,14 @@ export async function POST(request: NextRequest) {
       if (error) throw error
     } else if (body.action === 'procedure.update') {
       if (!isUuid(payload.id) || !Number.isInteger(payload.expected_lock_version)) throw new Error('Invalid procedure update.')
+      await assertExpectedLockVersion(
+        admin,
+        'playbook_procedures',
+        workspace.id,
+        payload.id,
+        payload.expected_lock_version as number,
+        'Procedure',
+      )
       const snapshot = parseProcedureSnapshot(payload.snapshot)
       const { error } = await admin.rpc('playbook_update_procedure', {
         p_workspace_id: workspace.id, p_procedure_id: payload.id,
@@ -143,6 +162,14 @@ export async function POST(request: NextRequest) {
       if (error) throw error
     } else if (body.action === 'proposal.review') {
       if (!isUuid(payload.id) || !Number.isInteger(payload.expected_lock_version)) throw new Error('Invalid proposal update.')
+      await assertExpectedLockVersion(
+        admin,
+        'playbook_change_proposals',
+        workspace.id,
+        payload.id,
+        payload.expected_lock_version as number,
+        'Proposal',
+      )
       const reviewAction = payload.review_action
       if (!['edit', 'approve', 'reject'].includes(String(reviewAction))) throw new Error('Invalid proposal action.')
       let edits: Record<string, unknown> | null = null
@@ -167,6 +194,14 @@ export async function POST(request: NextRequest) {
       if (error) throw error
     } else if (body.action === 'proposal.apply') {
       if (!isUuid(payload.id) || !Number.isInteger(payload.expected_lock_version)) throw new Error('Invalid proposal update.')
+      await assertExpectedLockVersion(
+        admin,
+        'playbook_change_proposals',
+        workspace.id,
+        payload.id,
+        payload.expected_lock_version as number,
+        'Proposal',
+      )
       const { error } = await admin.rpc('playbook_apply_proposal', {
         p_workspace_id: workspace.id, p_proposal_id: payload.id,
         p_expected_proposal_lock_version: payload.expected_lock_version,
