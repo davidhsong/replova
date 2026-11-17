@@ -1,0 +1,540 @@
+.shell {
+  min-height: 100dvh;
+  overflow: hidden;
+  background: #fafafa;
+  color: #16181d;
+  font-size: 14px;
+}
+
+.shell button { font: inherit; }
+
+.monthStage {
+  position: relative;
+  min-height: 100dvh;
+  padding: 80px 28px;
+  display: grid;
+  place-items: center;
+}
+
+.floatingControls { position: absolute; top: 16px; right: 16px; }
+.controlCluster { display: flex; align-items: center; gap: 12px; }
+
+.viewToggle,
+.clockToggle {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  border: 1px solid #e3e5e8;
+  border-radius: 11px;
+  background: #f1f1f1;
+}
+
+.viewToggle button,
+.clockToggle button {
+  border: 0;
+  background: transparent;
+  color: #4e535b;
+  cursor: pointer;
+  transition: background-color 160ms ease, box-shadow 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.viewToggle button {
+  width: 29px;
+  height: 29px;
+  padding: 6px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+}
+
+.viewToggle svg { width: 17px; height: 17px; }
+
+.clockToggle {
+  gap: 1px;
+  padding: 2px;
+  border-radius: 9px;
+  background: #f7f7f7;
+}
+
+.clockToggle button {
+  min-width: 33px;
+  height: 27px;
+  padding: 0 5px;
+  border-radius: 7px;
+  font-size: 13px;
+}
+
+.viewToggle button:hover,
+.clockToggle button:hover,
+.viewToggle button:focus-visible,
+.clockToggle button:focus-visible,
+.viewToggle .active,
+.clockToggle .active {
+  background: #fff;
+  color: #17191d;
+  box-shadow: 0 1px 4px rgb(20 24 32 / 13%);
+}
+
+.viewToggle button:active,
+.clockToggle button:active,
+.monthDays button:active,
+.miniDays button:active,
+.timeButtons button:active { transform: scale(.97); }
+
+.monthCard {
+  width: min(100%, 1040px);
+  min-height: 490px;
+  display: grid;
+  grid-template-columns: 280px minmax(460px, 1fr) 280px;
+  overflow: hidden;
+  border: 1px solid #d9dde3;
+  border-radius: 9px;
+  background: #fff;
+  animation: view-in 240ms ease both;
+}
+
+.monthIntro,
+.monthCalendar,
+.monthTimes { padding: 24px; }
+
+.monthIntro,
+.monthCalendar { border-right: 1px solid #d9dde3; }
+
+.eventDetails :global(.replova-logo) { margin-bottom: 10px; }
+
+.eventDetails > span {
+  display: block;
+  color: #6f7580;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.eventDetails h1 {
+  margin: 8px 0 10px;
+  color: #30343c;
+  font-size: 21px;
+  font-weight: 650;
+  line-height: 1.2;
+  letter-spacing: -.018em;
+}
+
+.eventDetails p {
+  margin: 15px 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #343841;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.eventDetails p > svg { width: 17px; height: 17px; flex: 0 0 auto; }
+
+.eventDetails .chevron {
+  width: 16px;
+  height: 16px;
+  margin-left: -4px;
+  display: inline-flex;
+}
+
+.monthCalendarHead,
+.miniCalendarHead,
+.monthTimesHead,
+.weekToolbar,
+.weekRange { display: flex; align-items: center; }
+
+.monthCalendarHead,
+.miniCalendarHead,
+.monthTimesHead,
+.weekToolbar { justify-content: space-between; }
+
+.monthCalendarHead strong,
+.miniCalendarHead strong { font-size: 16px; font-weight: 650; }
+
+.monthCalendarHead strong span,
+.miniCalendarHead strong span { color: #6c7482; font-weight: 500; }
+
+.monthCalendarHead > div,
+.miniCalendarHead > div { display: flex; gap: 8px; }
+
+.monthCalendarHead button,
+.miniCalendarHead button,
+.weekRange button {
+  width: 29px;
+  height: 29px;
+  padding: 6px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #a3a9b1;
+  cursor: pointer;
+}
+
+.monthCalendarHead button:hover,
+.miniCalendarHead button:hover,
+.weekRange button:hover { background: #f3f4f5; color: #22262d; }
+
+.monthCalendarHead svg,
+.miniCalendarHead svg,
+.weekRange svg { width: 16px; height: 16px; }
+
+.monthWeekdays,
+.monthDays,
+.miniWeekdays,
+.miniDays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+
+.monthWeekdays { margin-top: 19px; }
+
+.monthWeekdays span {
+  height: 44px;
+  display: grid;
+  place-items: center;
+  color: #15171c;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: .03em;
+}
+
+.monthDays { gap: 4px; }
+
+.monthDays button {
+  position: relative;
+  min-width: 0;
+  height: 60px;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #5d6470;
+  cursor: pointer;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  transition: background-color 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.monthDays button.available { background: #e5e7ea; color: #111318; font-weight: 600; }
+.monthDays button:hover { background: #dadde2; color: #111318; }
+
+.monthDays button.selected,
+.miniDays button.selected { background: #1a1917; color: #fff; }
+
+.monthDays button i,
+.miniDays button i {
+  position: absolute;
+  bottom: 9px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.monthDays button small {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  color: #626a77;
+  font-size: 8px;
+  font-weight: 650;
+}
+
+.monthTimes { display: flex; flex-direction: column; }
+.monthTimesHead strong { font-size: 15px; font-weight: 650; }
+.monthTimesHead .clockToggle { margin: -2px -2px 0 0; }
+.timeButtons { display: grid; gap: 8px; }
+.monthTimes .timeButtons { margin-top: 12px; }
+
+.timeButtons button {
+  min-width: 0;
+  height: 36px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border: 1px solid #cdd2da;
+  border-radius: 8px;
+  background: #fff;
+  color: #20242b;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
+  cursor: pointer;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  transition: border-color 150ms ease, background-color 150ms ease, color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+}
+
+.timeButtons button:hover,
+.timeButtons button:focus-visible { border-color: #858c97; box-shadow: 0 2px 7px rgb(15 23 42 / 11%); }
+
+.timeButtons button i {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #10c995;
+}
+
+.timeButtons button.selectedTime { border-color: #1c1d21; background: #1c1d21; color: #fff; }
+
+.weekLayout {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 424px minmax(0, 1fr);
+  background: #fff;
+  animation: view-in 220ms ease both;
+}
+
+.sidebar {
+  height: 100dvh;
+  padding: 24px 20px;
+  position: sticky;
+  top: 0;
+  overflow-y: auto;
+  border-right: 1px solid #cfd4dc;
+  background: #fff;
+}
+
+.sidebar .eventDetails { padding: 0 4px; }
+.miniCalendar { margin-top: 42px; }
+.miniCalendarHead { min-height: 34px; }
+.miniWeekdays { margin-top: 15px; }
+
+.miniWeekdays span {
+  height: 38px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: .06em;
+}
+
+.miniDays { gap: 5px; }
+.miniDays > span,
+.miniDays button { height: 51px; }
+
+.miniDays button {
+  position: relative;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #5f646d;
+  cursor: pointer;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.miniDays button.available { background: #e4e6e9; color: #101216; font-weight: 600; }
+.miniDays button:hover { background: #dadde2; color: #101216; }
+.miniDays button.selected { background: #1a1917; color: #fff; }
+
+.weekMain { min-width: 0; min-height: 100dvh; overflow: hidden; background: #fff; }
+
+.weekToolbar {
+  height: 69px;
+  padding: 0 17px 0 20px;
+  border-bottom: 1px solid #cfd4dc;
+  background: #fff;
+}
+
+.weekRange { gap: 22px; }
+.weekRange strong { min-width: 155px; font-size: 16px; font-weight: 650; }
+
+.weekGridHead {
+  min-width: 945px;
+  height: 42px;
+  display: grid;
+  grid-template-columns: 63px repeat(7, minmax(125px, 1fr));
+  border-bottom: 1px solid #cfd4dc;
+}
+
+.weekDayHeading {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #667080;
+  font-size: 12px;
+}
+
+.weekDayHeading span,
+.weekDayHeading strong { font-size: 12px; font-weight: 500; }
+.weekDayHeading.current { color: #15171b; }
+
+.weekDayHeading.current strong {
+  padding: 2px 5px;
+  border-radius: 7px;
+  background: #1b1a18;
+  color: #fff;
+  font-weight: 650;
+}
+
+.weekGridView { overflow-x: auto; }
+.weekGridScroller { min-width: 945px; height: calc(100dvh - 111px); overflow-x: hidden; overflow-y: auto; }
+.weekGridBody { position: relative; min-width: 945px; }
+
+.hourRow {
+  height: 58px;
+  display: grid;
+  grid-template-columns: 63px repeat(7, minmax(125px, 1fr));
+}
+
+.hourRow time {
+  padding: 19px 7px 0 0;
+  border-right: 1px solid #cfd4dc;
+  border-top: 1px solid #cfd4dc;
+  color: #9ba2b1;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.currentHourRow time { color: transparent; }
+
+.hourRow > span { border-top: 1px solid #cfd4dc; border-right: 1px solid #cfd4dc; }
+
+.closedHour {
+  background-color: #fafafa;
+  background-image: repeating-linear-gradient(135deg, transparent 0 3px, #e8eaed 3px 5px);
+}
+
+.openHour { background: #fff; }
+
+.currentTimeLine {
+  position: absolute;
+  top: 319px;
+  right: 0;
+  left: 0;
+  height: 1px;
+  display: grid;
+  grid-template-columns: 63px 1fr;
+  pointer-events: none;
+}
+
+.currentTimeLine strong {
+  padding-right: 8px;
+  color: #434850;
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1px;
+  text-align: right;
+}
+
+.currentTimeLine span { border-top: 2px solid #1f2024; }
+
+.weekColumns {
+  width: 100%;
+  min-width: 0;
+  min-height: calc(100dvh - 69px);
+  padding: 0 13px 40px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(180px, 1fr));
+  gap: 16px;
+  overflow-x: auto;
+  align-items: start;
+}
+
+.weekColumns > section { min-width: 0; }
+.weekColumns .weekDayHeading { height: 43px; }
+.weekColumns .timeButtons { gap: 8px; }
+.weekColumns .timeButtons button { width: 100%; }
+
+.notice {
+  position: fixed;
+  z-index: 20;
+  right: 20px;
+  bottom: 20px;
+  width: min(420px, calc(100vw - 40px));
+  padding: 13px 15px;
+  border: 1px solid #d5d8de;
+  border-radius: 9px;
+  background: #fff;
+  color: #555b65;
+  box-shadow: 0 12px 35px rgb(22 26 34 / 13%);
+  font-size: 12px;
+  line-height: 1.55;
+  animation: notice-in 220ms ease both;
+}
+
+@keyframes view-in {
+  from { opacity: 0; transform: translate3d(0, 5px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@keyframes notice-in {
+  from { opacity: 0; transform: translate3d(0, 8px, 0); }
+  to { opacity: 1; transform: translate3d(0, 0, 0); }
+}
+
+@media (max-width: 1180px) {
+  .monthCard { grid-template-columns: 240px minmax(390px, 1fr) 240px; }
+  .monthIntro,
+  .monthCalendar,
+  .monthTimes { padding: 20px; }
+  .weekLayout { grid-template-columns: 340px minmax(0, 1fr); }
+  .miniDays > span,
+  .miniDays button { height: 44px; }
+}
+
+@media (max-width: 900px) {
+  .shell { overflow: auto; }
+  .monthStage { padding: 70px 18px 28px; place-items: start center; }
+  .monthCard { grid-template-columns: 1fr 1fr; }
+  .monthIntro { border-bottom: 1px solid #d9dde3; }
+  .monthCalendar { border-right: 0; border-bottom: 1px solid #d9dde3; }
+  .monthTimes { grid-column: 1 / -1; }
+  .monthTimes .timeButtons { grid-template-columns: repeat(4, 1fr); }
+  .weekLayout { display: block; }
+  .sidebar {
+    height: auto;
+    position: static;
+    display: grid;
+    grid-template-columns: minmax(250px, .8fr) minmax(360px, 1.2fr);
+    gap: 30px;
+    border-right: 0;
+    border-bottom: 1px solid #cfd4dc;
+  }
+  .miniCalendar { margin-top: 0; }
+}
+
+@media (max-width: 640px) {
+  .monthStage { padding: 66px 12px 20px; }
+  .floatingControls { top: 12px; right: 12px; }
+  .monthCard { display: block; }
+  .monthIntro,
+  .monthCalendar { border-right: 0; border-bottom: 1px solid #d9dde3; }
+  .monthDays button { height: 46px; }
+  .monthTimes .timeButtons { grid-template-columns: 1fr 1fr; }
+  .sidebar { padding: 20px 14px; display: block; }
+  .miniCalendar { margin-top: 34px; }
+  .weekToolbar {
+    height: auto;
+    min-height: 108px;
+    padding: 12px 14px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .weekToolbar .controlCluster { align-self: flex-end; }
+  .weekGridScroller { height: 720px; }
+  .weekColumns { min-height: 720px; }
+  .notice { right: 12px; bottom: 12px; width: calc(100vw - 24px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monthCard,
+  .weekLayout,
+  .notice,
+  .viewToggle button,
+  .clockToggle button,
+  .monthDays button,
+  .miniDays button,
+  .timeButtons button {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

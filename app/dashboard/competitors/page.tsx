@@ -253,10 +253,10 @@ export default function CompetitorsPage() {
                   <tr key={entry.id} className={entry.isYou ? 'is-you' : undefined}>
                     <td>#{entry.rank}</td>
                     <td><strong>{entry.name}</strong>{entry.isYou && <span>You</span>}</td>
-                    <td>{entry.avgRating !== null ? `${entry.avgRating.toFixed(1)}★` : '—'}</td>
-                    <td>{entry.totalReviews !== null ? entry.totalReviews.toLocaleString() : '—'}</td>
+                    <td>{entry.avgRating !== null ? `${entry.avgRating.toFixed(1)}★` : 'N/A'}</td>
+                    <td>{entry.totalReviews !== null ? entry.totalReviews.toLocaleString() : 'N/A'}</td>
                     <td className={entry.ratingDelta !== null && entry.ratingDelta > 0 ? 'is-behind' : entry.ratingDelta !== null && entry.ratingDelta < 0 ? 'is-ahead' : undefined}>
-                      {entry.isYou || entry.ratingDelta === null ? '—' : `${entry.ratingDelta > 0 ? '+' : ''}${entry.ratingDelta.toFixed(2)}`}
+                      {entry.isYou || entry.ratingDelta === null ? 'N/A' : `${entry.ratingDelta > 0 ? '+' : ''}${entry.ratingDelta.toFixed(2)}`}
                     </td>
                     <td>
                       {!entry.isYou && (

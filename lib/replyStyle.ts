@@ -2,7 +2,7 @@ import 'server-only'
 
 export const NATURAL_REPLY_STYLE = `
 Writing style for every reply:
-- Never use an em dash (—). Use a comma, period, colon, or semicolon instead.
+- Never use Unicode em dash punctuation. Use a comma, period, colon, or semicolon instead.
 - Write like a real person responding naturally, not a customer-service script or marketing team.
 - Match the customer's tone and the amount of context they provided.
 - Prefer short, conversational, specific wording and use contractions when they sound natural.
@@ -28,7 +28,7 @@ const BOILERPLATE_PATTERNS = [
 export function validateReplyOutput(value: string, maxLength = 1000): string {
   const normalized = value
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
-    .replace(/\s*—\s*/g, ', ')
+    .replace(/\s*\u2014\s*/g, ', ')
     .replace(/(^|\s)#[\p{L}\p{N}_]+/gu, '$1')
     .replace(/\p{Extended_Pictographic}/gu, '')
     .replace(/!{2,}/g, '!')
@@ -38,7 +38,7 @@ export function validateReplyOutput(value: string, maxLength = 1000): string {
     .slice(0, maxLength)
 
   if (!normalized) throw new Error('OpenAI returned an empty reply')
-  if (normalized.includes('—')) throw new Error('Generated reply contained prohibited punctuation')
+  if (normalized.includes('\u2014')) throw new Error('Generated reply contained prohibited punctuation')
   if (BOILERPLATE_PATTERNS.some(pattern => pattern.test(normalized))) {
     throw new Error('Generated reply contained prohibited boilerplate')
   }

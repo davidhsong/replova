@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
+import { MobileMarketingNav } from '@/components/marketing/MobileMarketingNav'
 
 export function BrandLogo({ height = 27, eager = false }: { height?: number; eager?: boolean }) {
   return (
@@ -38,9 +39,9 @@ type NavDropdownProps = {
   links: ReadonlyArray<readonly [label: string, description: string, href: string, icon: NavIconName]>
 }
 
-type NavIconName = 'reply' | 'insights' | 'benchmark' | 'healthcare' | 'home' | 'automotive' | 'professional' | 'retail' | 'local'
+export type NavIconName = 'reply' | 'insights' | 'benchmark' | 'healthcare' | 'home' | 'automotive' | 'professional' | 'retail' | 'local'
 
-function NavItemIcon({ name }: { name: NavIconName }) {
+export function NavItemIcon({ name }: { name: NavIconName }) {
   const paths: Record<NavIconName, React.ReactNode> = {
     reply: <><path d="M4 5.5h16v10H9l-5 4v-14Z" /><path d="M8 9h8M8 12h5" /></>,
     insights: <><path d="M4 19V9M10 19V5M16 19v-7M22 19V3" /><path d="M2 19h22" /></>,
@@ -102,7 +103,8 @@ export function MarketingHeader() {
   return (
     <header className="lp-header">
       <div className="lp-nav-inner">
-        <Link href="/" aria-label="Replova home"><BrandLogo height={31} eager /></Link>
+        <MobileMarketingNav />
+        <Link href="/" aria-label="Replova home" className="lp-home-link"><BrandLogo height={24} eager /></Link>
         <nav className="lp-menu" aria-label="Main navigation">
           <NavDropdown
             label="Platform"
@@ -115,16 +117,14 @@ export function MarketingHeader() {
             links={industryLinks}
           />
           <Link href="/resources">Resources</Link>
-          <Link href="/careers">Careers</Link>
         </nav>
         <nav className="lp-account" aria-label="Account">
           <Link href="/signin" target="_blank" rel="noopener noreferrer" className="btn btn-quiet lp-signin">Sign in</Link>
           <Link href="/demo" className="btn btn-primary lp-demo-cta">
             <span className="lp-demo-label">
-              <span>Schedule a demo</span>
-              <span aria-hidden="true">Schedule a demo</span>
+              <span>Request a demo</span>
+              <span aria-hidden="true">Request a demo</span>
             </span>
-            <ArrowIcon />
           </Link>
         </nav>
       </div>
@@ -138,7 +138,6 @@ const footerGroups = [
     links: [
       ['Review response workflow', '/#platform'],
       ['Reputation intelligence', '/#intelligence'],
-      ['Pricing', '/#pricing'],
     ],
   },
   {
@@ -164,6 +163,7 @@ const footerGroups = [
     title: 'Resources',
     links: [
       ['Resource center', '/resources'],
+      ['Customer review research', '/resources/customer-review-research'],
       ['Replying to reviews', '/resources#replying'],
       ['Customer insights', '/resources#insights'],
       ['Ethical review requests', '/resources#requests'],

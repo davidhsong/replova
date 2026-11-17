@@ -1,8 +1,14 @@
 import type { Metadata } from 'next'
+import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowIcon, MarketingFooter, MarketingHeader } from '@/components/MarketingChrome'
+import { ArrowIcon, MarketingFooter, MarketingHeader, NavItemIcon } from '@/components/MarketingChrome'
+import { AnimatedStoryBarChart } from '@/components/marketing/AnimatedStoryBarChart'
+import InteractiveDashboardPreview from '@/components/marketing/InteractiveDashboardPreview'
 import { HomeFaq } from '@/components/marketing/HomeFaq'
-import { HomePricing } from '@/components/marketing/HomePricing'
+import { ProductShowcase } from '@/components/marketing/ProductShowcase'
+import { PromiseWorkflowVisual } from '@/components/marketing/PromiseWorkflowVisual'
+import { ResearchProof } from '@/components/marketing/ResearchProof'
+import finalCtaPreview from '@/public/product-showcase/review-intelligence.png'
 import { createPageMetadata, SITE_DESCRIPTION, SITE_TITLE, SITE_URL } from '@/lib/seo'
 
 export const metadata: Metadata = createPageMetadata({
@@ -41,59 +47,52 @@ const structuredData = {
 }
 
 const industries = [
-  { name: 'Healthcare & wellness', note: 'Surface patient experience themes while keeping every public reply thoughtful.', href: '/industries/healthcare-wellness', icon: '✦' },
-  { name: 'Home services', note: 'Track communication, punctuality, craftsmanship, and recurring service gaps.', href: '/industries/home-services', icon: '⌂' },
-  { name: 'Automotive', note: 'Understand trust, estimates, wait times, repair quality, and advisor shoutouts.', href: '/industries/automotive', icon: '◇' },
-  { name: 'Professional services', note: 'Turn client feedback into specific improvements across every office.', href: '/industries/professional-services', icon: '□' },
-  { name: 'Retail & hospitality', note: 'Spot location-level trends in service, products, atmosphere, and value.', href: '/industries/retail-hospitality', icon: '○' },
-  { name: 'Any local business', note: 'If customers review you on Google, Replova can support the feedback loop.', href: '/industries/local-businesses', icon: '↗' },
+  { name: 'Healthcare & wellness', note: 'Surface patient experience themes while keeping every public reply thoughtful.', href: '/industries/healthcare-wellness', icon: 'healthcare' },
+  { name: 'Home services', note: 'Track communication, punctuality, craftsmanship, and recurring service gaps.', href: '/industries/home-services', icon: 'home' },
+  { name: 'Automotive', note: 'Understand trust, estimates, wait times, repair quality, and advisor shoutouts.', href: '/industries/automotive', icon: 'automotive' },
+  { name: 'Professional services', note: 'Turn client feedback into specific improvements across every office.', href: '/industries/professional-services', icon: 'professional' },
+  { name: 'Retail & hospitality', note: 'Spot location-level trends in service, products, atmosphere, and value.', href: '/industries/retail-hospitality', icon: 'retail' },
+  { name: 'Any local business', note: 'If customers review you on Google, Replova can support the feedback loop.', href: '/industries/local-businesses', icon: 'local' },
 ] as const
 
 function ProductPreview() {
+  return <InteractiveDashboardPreview defaultAssistantOpen />
+}
+
+function SessionAccessIcon() {
   return (
-    <div className="product-preview" aria-label="Preview of the Replova review dashboard">
-      <div className="preview-topbar">
-        <div><span className="preview-kicker">Review center</span><strong>Northstar Auto Care</strong></div>
-        <span className="preview-status"><i /> Monitoring</span>
-      </div>
-      <div className="preview-stats">
-        <div><span>Replova score</span><strong>86</strong><small>+4.2 this week</small></div>
-        <div><span>Google rating</span><strong>4.7</strong><small>Last 90 days</small></div>
-        <div><span>Awaiting reply</span><strong className="preview-alert">3</strong><small>Needs attention</small></div>
-      </div>
-      <div className="preview-workspace">
-        <div className="preview-inbox">
-          <div className="preview-tabs"><strong>Awaiting reply</strong><span>Replied</span><span>All</span></div>
-          <article className="preview-review preview-review-active">
-            <div className="preview-review-head">
-              <div><strong>Marcus T.</strong><span>2.0 / 5</span></div>
-              <span className="pill pill-neg">Urgent</span>
-            </div>
-            <p>The repair was done well, but I waited almost forty minutes past the pickup time and no one called with an update.</p>
-            <div className="preview-draft">
-              <div><strong>Professional</strong><span>Warm</span><span>Brief</span></div>
-              <p>Hi Marcus, I&apos;m glad the repair went well, but I&apos;m sorry we missed your pickup time and did not keep you updated.</p>
-              <button type="button" tabIndex={-1}>Post reply</button>
-            </div>
-          </article>
-          <article className="preview-review">
-            <div className="preview-review-head"><div><strong>Elena V.</strong><span>5.0 / 5</span></div><small>2h ago</small></div>
-            <p>Maya explained every option clearly and never pressured me into extra work.</p>
-          </article>
-        </div>
-        <aside className="preview-intel">
-          <span>Reputation intelligence</span>
-          <div className="preview-score"><strong>86</strong><small>/ 100</small></div>
-          <div className="preview-meter"><i /></div>
-          <dl>
-            <div><dt>Response rate</dt><dd>94%</dd></div>
-            <div><dt>Sentiment</dt><dd className="positive">Positive</dd></div>
-          </dl>
-          <span className="preview-label">Top themes</span>
-          <div className="preview-themes"><i>service</i><i>communication</i><i>wait time</i></div>
-        </aside>
-      </div>
-    </div>
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="30" height="30" fill="none">
+      <path d="M12 2.75 19 5.8v5.45c0 4.48-2.78 8.13-7 9.95-4.22-1.82-7-5.47-7-9.95V5.8l7-3.05Z" />
+      <circle cx="12" cy="10.15" r="1.6" />
+      <path d="M12 11.75v3.1" />
+    </svg>
+  )
+}
+
+function GoogleIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="28" height="28">
+      <path d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48Z" />
+    </svg>
+  )
+}
+
+function OpenAIIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="28" height="28">
+      <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729Zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944Zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464ZM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872Zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667Zm2.0107-3.0231-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66ZM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813Zm1.0976-2.3654 2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z" />
+    </svg>
+  )
+}
+
+function DataControlIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="30" height="30" fill="none">
+      <ellipse cx="11.5" cy="5.5" rx="7.25" ry="2.75" />
+      <path d="M4.25 5.5v5c0 1.52 3.25 2.75 7.25 2.75s7.25-1.23 7.25-2.75v-5" />
+      <path d="M4.25 10.5v5c0 1.52 3.25 2.75 7.25 2.75 1.08 0 2.1-.09 3-.27" />
+      <path d="m15.6 17.15 1.55 1.55 3.15-3.65" />
+    </svg>
   )
 }
 
@@ -113,11 +112,7 @@ function ReplyStoryCard() {
 function InsightStoryCard() {
   return (
     <article className="story-card story-card-blue">
-      <div className="story-visual story-chart">
-        <div><span>Sentiment trend</span><strong>+12%</strong></div>
-        <div className="story-bars"><i /><i /><i /><i /><i /><i /></div>
-        <small>Communication improved after the new handoff process.</small>
-      </div>
+      <AnimatedStoryBarChart />
       <h3>Find the pattern behind the rating</h3>
       <p>See recurring topics, sentiment movement, staff shoutouts, and nearby competitors in one clear view.</p>
     </article>
@@ -136,15 +131,16 @@ export default function Home() {
       <MarketingHeader />
       <main id="main-content">
         <section className="lp-hero-centered">
-          <Link href="/industries" className="hero-announcement">Now built for every local business <ArrowIcon /></Link>
-          <h1>Turn every review into your next advantage.</h1>
-          <p>Replova answers Google reviews in your voice, keeps the response workflow moving, and shows what paying customers are really telling you.</p>
+          <Link href="/industries" className="hero-announcement">Customer feedback intelligence for local businesses</Link>
+          <h1><span>Turn every review into</span><span>your next advantage</span></h1>
+          <p>Replova turns customer feedback into clearer priorities, thoughtful replies, and practical Playbooks your team can act on.</p>
           <div className="hero-actions hero-actions-centered">
-            <Link href="/demo" className="btn btn-primary btn-lg">Request a demo <ArrowIcon /></Link>
+            <Link href="/demo" className="btn btn-primary btn-lg">Request a demo</Link>
           </div>
-          <div className="hero-note hero-note-centered"><span>45-minute product walkthrough</span><span>See the complete workflow</span></div>
           <div className="hero-product hero-product-wide fade-up"><ProductPreview /></div>
         </section>
+
+        <ResearchProof />
 
         <section className="proof-section" aria-label="Platform capabilities">
           <div className="lp-inner">
@@ -169,43 +165,17 @@ export default function Home() {
           <div className="story-grid"><ReplyStoryCard /><InsightStoryCard /></div>
         </section>
 
-        <section id="intelligence" className="platform-explore">
-          <div className="lp-inner">
-            <div className="section-intro section-intro-split">
-              <div><div className="t-eyebrow">Explore the platform</div><h2>Put customer feedback to work.</h2></div>
-              <p>A single operating view for the public conversation around your business—what needs a reply, what needs attention, and what is changing.</p>
-            </div>
-            <div className="platform-stage">
-              <div className="platform-copy">
-                <span className="platform-tab">Reputation intelligence</span>
-                <h3>Ask better questions of your reviews.</h3>
-                <p>See where response rate is slipping, which themes repeat, and which team members customers remember for the right reasons.</p>
-                <Link href="/demo" className="btn btn-primary">Request a demo <ArrowIcon /></Link>
-              </div>
-              <div className="insight-sheet">
-                <div className="insight-head"><span>Weekly intelligence</span><small>Oct 26 - Nov 1</small></div>
-                <div className="insight-score"><span>Reputation score</span><strong>86.4</strong><em>+4.2</em></div>
-                <div className="insight-row"><span>What customers loved</span><p>Maya&apos;s explanations, transparent pricing, repair quality</p></div>
-                <div className="insight-row"><span>Needs attention</span><p>Friday wait times and pickup communication</p></div>
-                <div className="insight-row"><span>Recommended action</span><p>Send a status update when a promised pickup time changes by 15 minutes.</p></div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <ProductShowcase />
 
         <section className="promise-section">
           <div className="lp-inner promise-card">
             <div>
               <div className="t-eyebrow">Our promise</div>
               <h2>Automation that still sounds like you.</h2>
-              <p>Replova handles the repetitive work while keeping judgment where it belongs—with the people responsible for the customer relationship.</p>
+              <p>Replova handles the repetitive work while keeping judgment where it belongs: with the people responsible for the customer relationship.</p>
               <span>Human-controlled by default</span>
             </div>
-            <div className="promise-visual" aria-hidden="true">
-              <div><small>Customer review</small><p>“They explained the options clearly and finished ahead of schedule.”</p></div>
-              <i />
-              <div><small>Replova draft</small><p>“Thank you for trusting our team. We&apos;re glad the options felt clear and the early finish made your day easier.”</p></div>
-            </div>
+            <PromiseWorkflowVisual />
           </div>
         </section>
 
@@ -217,7 +187,7 @@ export default function Home() {
           <div className="industry-grid">
             {industries.map(industry => (
               <Link href={industry.href} key={industry.name} className="industry-card">
-                <div><span>{industry.icon}</span><ArrowIcon diagonal /></div>
+                <div><NavItemIcon name={industry.icon} /><ArrowIcon diagonal /></div>
                 <h3>{industry.name}</h3><p>{industry.note}</p>
               </Link>
             ))}
@@ -228,24 +198,34 @@ export default function Home() {
           <div className="lp-inner security-card">
             <div className="section-intro"><div className="t-eyebrow">Security by design</div><h2>Your customer feedback stays protected.</h2><p>Security choices are built into the workflow instead of added as an afterthought.</p></div>
             <div className="security-grid">
-              <article><strong>Session-based access</strong><p>Passwordless sign-in and server-side authorization checks.</p></article>
-              <article><strong>Scoped Google connection</strong><p>OAuth is used for Business Profile access, never as Replova login.</p></article>
-              <article><strong>Non-persistent AI requests</strong><p>Replova asks OpenAI not to store generated response payloads.</p></article>
-              <article><strong>Data control</strong><p>Disconnect Google or delete account data from Settings.</p></article>
+              <article><span className="security-icon security-icon-stroke"><SessionAccessIcon /></span><strong>Session-based access</strong><p>Passwordless sign-in and server-side authorization checks.</p></article>
+              <article><span className="security-icon security-icon-brand"><GoogleIcon /></span><strong>Scoped Google connection</strong><p>OAuth is used for Business Profile access, never as Replova login.</p></article>
+              <article><span className="security-icon security-icon-brand"><OpenAIIcon /></span><strong>Non-persistent AI requests</strong><p>Replova asks OpenAI not to store generated response payloads.</p></article>
+              <article><span className="security-icon security-icon-stroke"><DataControlIcon /></span><strong>Data control</strong><p>Disconnect Google or delete account data from Settings.</p></article>
             </div>
           </div>
         </section>
 
         <HomeFaq />
 
-        <HomePricing />
-
         <section className="final-cta">
           <div className="final-cta-inner">
-            <div className="t-eyebrow">Your reviews are already telling you what to fix.</div>
-            <h2>See Replova in action.</h2>
-            <p>Find your business, connect Google, and make the next review easier to act on.</p>
-            <Link href="/demo" className="btn btn-primary btn-lg">Request a demo <ArrowIcon /></Link>
+            <div className="final-cta-copy">
+              <h2>See Replova in action.</h2>
+              <p>Discover where customer feedback can improve your business with a demo focused on your review workflow.</p>
+              <Link href="/demo" className="btn btn-primary btn-lg">Request a demo</Link>
+            </div>
+            <div className="final-cta-visual" aria-hidden="true">
+              <div className="final-cta-preview">
+                <Image
+                  src={finalCtaPreview}
+                  alt=""
+                  fill
+                  sizes="(max-width: 900px) calc(100vw - 56px), 660px"
+                  quality={92}
+                />
+              </div>
+            </div>
           </div>
         </section>
       </main>

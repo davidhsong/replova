@@ -27,7 +27,7 @@ export const HOME_FAQS = [
 ] as const
 
 export function HomeFaq() {
-  const [openIndex, setOpenIndex] = useState<number | null>(0)
+  const [openIndex, setOpenIndex] = useState<number | null>(null)
   const componentId = useId().replaceAll(':', '')
 
   return (

@@ -314,7 +314,7 @@ function ProcedureForm({
             }
           >
             <option value="draft">Draft</option>
-            <option value="active">Active — owner approved</option>
+            <option value="active">Active (owner approved)</option>
             <option value="archived">Archived</option>
           </select>
         </label>
@@ -390,7 +390,7 @@ function ProcedureForm({
         </label>
       </div>
       <label>
-        Steps — one per line
+        Steps (one per line)
         <textarea
           required
           className={styles.stepsInput}
@@ -1767,7 +1767,7 @@ export default function PlaybookClient({
                           />
                         </label>
                         <label>
-                          Suggested steps — one per line
+                          Suggested steps (one per line)
                           <textarea
                             className={styles.stepsInput}
                             value={proposalDraft.proposed_snapshot.steps.join(

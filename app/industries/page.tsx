@@ -52,7 +52,7 @@ export default function SolutionsPage() {
           <div className="final-cta-inner">
             <div className="t-eyebrow">Your category is not a constraint.</div>
             <h2>Start with your Google listing.</h2>
-            <p>Replova uses your actual business context—not a generic script pretending every customer is the same.</p>
+            <p>Replova uses your actual business context, not a generic script pretending every customer is the same.</p>
             <Link href="/demo" className="btn btn-primary btn-lg">Request a demo <ArrowIcon /></Link>
           </div>
         </section>

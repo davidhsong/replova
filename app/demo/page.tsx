@@ -3,8 +3,8 @@ import DemoScheduler from './DemoScheduler'
 import { createPageMetadata } from '@/lib/seo'
 
 export const metadata: Metadata = createPageMetadata({
-  title: 'Request a Demo',
-  description: 'Choose a time to see how Replova turns Google reviews into thoughtful replies and practical business intelligence.',
+  title: 'Schedule a Demo',
+  description: 'Choose a time to see how Replova turns customer feedback into practical business intelligence and owner-approved improvements.',
   path: '/demo',
 })
 

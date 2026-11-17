@@ -65,7 +65,7 @@ type Props = {
 }
 
 function formatNumber(value: number | null): string {
-  if (value === null) return '—'
+  if (value === null) return 'N/A'
   return new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 }).format(value)
 }
 

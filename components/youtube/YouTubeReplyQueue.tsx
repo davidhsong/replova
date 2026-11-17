@@ -208,7 +208,7 @@ export default function YouTubeReplyQueue({ videoId }: { videoId?: string }) {
             </div>
             <div>
               <strong>{video.title}</strong>
-              <span>{video.viewCount ?? '—'} views · {video.commentCount ?? '—'} YouTube comments{video.privacyStatus ? ` · ${video.privacyStatus}` : ''}</span>
+              <span>{video.viewCount ?? 'N/A'} views · {video.commentCount ?? 'N/A'} YouTube comments{video.privacyStatus ? ` · ${video.privacyStatus}` : ''}</span>
               <a href={`https://www.youtube.com/watch?v=${encodeURIComponent(video.videoId)}`} target="_blank" rel="noreferrer">
                 Open video <IconExternal s={11} />
               </a>

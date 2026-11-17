@@ -111,7 +111,7 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
         <section className="solution-section solution-signal-layout">
           <div>
             <div className="t-eyebrow c-accent">Common signals</div>
-            <h2>Know what is helping trust—and what is quietly eroding it.</h2>
+            <h2>Know what is helping trust and what is quietly eroding it.</h2>
           </div>
           <ul>
             {solution.signals.map((signal, index) => (

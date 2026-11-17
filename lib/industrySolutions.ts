@@ -48,7 +48,7 @@ export const industrySolutions: readonly IndustrySolution[] = [
     navName: 'Home services',
     eyebrow: 'For teams working in the home',
     headline: 'Turn service-call feedback into a more dependable operation.',
-    lede: 'Track what homeowners say about arrival windows, estimates, workmanship, cleanup, and follow-through—then give every review a clear response.',
+    lede: 'Track what homeowners say about arrival windows, estimates, workmanship, cleanup, and follow-through. Then give every review a clear response.',
     businesses: ['HVAC and plumbing', 'Electrical services', 'Roofing and restoration', 'Cleaning and landscaping'],
     moments: [
       { title: 'Booking', detail: 'Speed to answer, scheduling clarity, and arrival expectations.' },

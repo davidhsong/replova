@@ -141,18 +141,18 @@ test('public plan claims match implemented controls and do not promise unattende
   assert.doesNotMatch(copy, /auto-publish|unlimited|SMS|multi-client/i)
 })
 
-test('homepage pricing and checkout share the same server-side Stripe price resolver', async () => {
-  const [page, pricingComponent, stripeSource, checkoutSource, changePlanSource, envExample] = await Promise.all([
+test('homepage omits public pricing while checkout keeps its server-side Stripe price resolver', async () => {
+  const [page, marketingChrome, stripeSource, checkoutSource, changePlanSource, envExample] = await Promise.all([
     readFile(path.join(repoRoot, 'app', 'page.tsx'), 'utf8'),
-    readFile(path.join(repoRoot, 'components', 'marketing', 'HomePricing.tsx'), 'utf8'),
+    readFile(path.join(repoRoot, 'components', 'MarketingChrome.tsx'), 'utf8'),
     readFile(path.join(repoRoot, 'lib', 'stripe.ts'), 'utf8'),
     readFile(path.join(repoRoot, 'app', 'api', 'create-checkout', 'route.ts'), 'utf8'),
     readFile(path.join(repoRoot, 'app', 'api', 'change-plan', 'route.ts'), 'utf8'),
     readFile(path.join(repoRoot, '.env.example'), 'utf8'),
   ])
 
-  assert.match(page, /<HomePricing\s*\/>/)
-  assert.match(pricingComponent, /getPublicPricingPlans/)
+  assert.doesNotMatch(page, /HomePricing|id="pricing"|pricing-title/)
+  assert.doesNotMatch(marketingChrome, /\/#pricing/)
   assert.match(stripeSource, /getActiveStripePriceId/)
   assert.match(stripeSource, /identifyPlanFromStripePrice/)
   assert.match(checkoutSource, /getStripePriceId\(plan\)/)
@@ -164,7 +164,7 @@ test('homepage pricing and checkout share the same server-side Stripe price reso
   assert.match(envExample, /STRIPE_PRICE_ID_AGENCY_INTRO=/)
 })
 
-test('FAQ is a single-expanded accessible accordion with reduced-motion support', async () => {
+test('FAQ starts collapsed and remains a single-expanded accessible accordion with reduced-motion support', async () => {
   const [page, component, stylesheet] = await Promise.all([
     readFile(path.join(repoRoot, 'app', 'page.tsx'), 'utf8'),
     readFile(path.join(repoRoot, 'components', 'marketing', 'HomeFaq.tsx'), 'utf8'),
@@ -172,7 +172,7 @@ test('FAQ is a single-expanded accessible accordion with reduced-motion support'
   ])
 
   assert.match(page, /<HomeFaq\s*\/>/)
-  assert.match(component, /useState<number \| null>\(0\)/)
+  assert.match(component, /useState<number \| null>\(null\)/)
   assert.match(component, /aria-expanded=\{isOpen\}/)
   assert.match(component, /aria-controls=\{panelId\}/)
   assert.match(component, /role="region"/)
@@ -184,18 +184,30 @@ test('FAQ is a single-expanded accessible accordion with reduced-motion support'
   assert.match(stylesheet, /grid-template-rows:\s*0fr/)
   assert.match(stylesheet, /grid-template-rows:\s*1fr/)
   assert.match(stylesheet, /420ms cubic-bezier/)
+  assert.match(stylesheet, /\.section\s*\{[^}]*background:\s*transparent/)
   assert.match(stylesheet, /prefers-reduced-motion:\s*reduce/)
   assert.match(stylesheet, /@media \(max-width: 560px\)/)
 })
 
 test('homepage replacement leaves its established non-pricing sections in place', async () => {
-  const page = await readFile(path.join(repoRoot, 'app', 'page.tsx'), 'utf8')
+  const [page, marketingChrome] = await Promise.all([
+    readFile(path.join(repoRoot, 'app', 'page.tsx'), 'utf8'),
+    readFile(path.join(repoRoot, 'components', 'MarketingChrome.tsx'), 'utf8'),
+  ])
   assert.match(page, /<MarketingHeader\s*\/>/)
   assert.match(page, /<ProductPreview\s*\/>/)
   assert.match(page, /<ReplyStoryCard\s*\/>/)
   assert.match(page, /<InsightStoryCard\s*\/>/)
   assert.match(page, /className="promise-section"/)
   assert.match(page, /className="security-section"/)
+  assert.equal(page.match(/className="security-icon /g)?.length, 4)
+  assert.match(page, /function GoogleIcon\(\)/)
+  assert.match(page, /function OpenAIIcon\(\)/)
+  assert.match(page, /<NavItemIcon name=\{industry\.icon\} \/>/)
+  assert.match(marketingChrome, /export function NavItemIcon/)
+  for (const icon of ['healthcare', 'home', 'automotive', 'professional', 'retail', 'local']) {
+    assert.match(page, new RegExp(`icon: '${icon}'`))
+  }
   assert.match(page, /<MarketingFooter\s*\/>/)
   assert.doesNotMatch(page, /const plans =/)
   assert.doesNotMatch(page, /const faqs =/)
