@@ -1,12 +1,14 @@
 'use client'
 
-import type { ReactNode } from 'react'
-import { useMemo, useState } from 'react'
+import Link from 'next/link'
+import type { FormEvent, ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
 import styles from './DemoScheduler.module.css'
 
 type CalendarView = 'month' | 'week-grid' | 'week-columns'
 type ClockMode = '12h' | '24h'
+type BookingStatus = 'idle' | 'submitting' | 'success' | 'error'
 
 type SchedulerProps = {
   initialYear: number
@@ -62,7 +64,11 @@ function ordinal(day: number) {
 }
 
 function dateKey(date: Date) {
-  return `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-')
 }
 
 function formatTime(time: string, clock: ClockMode) {
@@ -173,7 +179,7 @@ function EventDetails() {
       <span>Replova</span>
       <h1>Replova Introduction</h1>
       <p><ClockIcon /> 45m</p>
-      <p><LinkIcon /> Organizer&apos;s default app</p>
+      <p><LinkIcon /> Calendar invite by email</p>
       <p><GlobeIcon /> America/Los Angeles <span className={styles.chevron}><ChevronIcon /></span></p>
     </div>
   )
@@ -403,12 +409,56 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
   const [visibleMonth, setVisibleMonth] = useState({ year: initialYear, month: initialMonth })
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [bookingOpen, setBookingOpen] = useState(false)
+  const [bookingStatus, setBookingStatus] = useState<BookingStatus>('idle')
+  const [bookingError, setBookingError] = useState<string | null>(null)
+  const [bookingForm, setBookingForm] = useState({ name: '', email: '', company: '', website: '' })
+  const firstFieldRef = useRef<HTMLInputElement>(null)
+
+  const bookingSlot = useMemo(() => {
+    if (!selectedTime) return null
+    const parts = selectedTime.split('|')
+    return parts.length === 2
+      ? { date: parts[0], time: parts[1] }
+      : { date: dateKey(selectedDate), time: selectedTime }
+  }, [selectedDate, selectedTime])
+
+  const bookingSlotLabel = useMemo(() => {
+    if (!bookingSlot) return ''
+    const [year, month, day] = bookingSlot.date.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+    const dateLabel = new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    }).format(date)
+    return `${dateLabel} at ${formatTime(bookingSlot.time, clock)}`
+  }, [bookingSlot, clock])
+
+  useEffect(() => {
+    if (!bookingOpen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    firstFieldRef.current?.focus()
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape' && bookingStatus !== 'submitting') setBookingOpen(false)
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [bookingOpen, bookingStatus])
 
   function selectDate(date: Date) {
     setSelectedDate(date)
     setVisibleMonth({ year: date.getFullYear(), month: date.getMonth() })
     setSelectedTime(null)
     setNotice(null)
+    setBookingOpen(false)
+    setBookingStatus('idle')
+    setBookingError(null)
   }
 
   function changeMonth(amount: number) {
@@ -430,7 +480,35 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
     }
     setSelectedTime(value)
     const label = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(noticeDate)
-    setNotice(`${label} at ${formatTime(rawTime, clock)} selected. Calendar delivery is not connected yet; email sales@replova.app to request this time.`)
+    setNotice(`${label} at ${formatTime(rawTime, clock)} selected. Add contact details to confirm the demo.`)
+    setBookingStatus('idle')
+    setBookingError(null)
+    setBookingOpen(true)
+  }
+
+  async function submitBooking(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!bookingSlot || bookingStatus === 'submitting') return
+    setBookingStatus('submitting')
+    setBookingError(null)
+
+    try {
+      const response = await fetch('/api/demo/book', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...bookingForm, ...bookingSlot }),
+      })
+      const result = await response.json() as { success?: boolean; slotLabel?: string; error?: string }
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || 'The calendar invitation could not be sent.')
+      }
+      const confirmedSlot = result.slotLabel || bookingSlotLabel
+      setBookingStatus('success')
+      setNotice(`${confirmedSlot} scheduled successfully. A calendar invite was sent to ${bookingForm.email.trim()}.`)
+    } catch (error) {
+      setBookingStatus('error')
+      setBookingError(error instanceof Error ? error.message : 'The calendar invitation could not be sent.')
+    }
   }
 
   return (
@@ -464,6 +542,99 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
         </div>
       )}
       {notice ? <div className={styles.notice} role="status">{notice}</div> : null}
+      {bookingOpen && bookingSlot ? (
+        <div className={styles.bookingLayer}>
+          <button
+            type="button"
+            className={styles.bookingBackdrop}
+            aria-label="Close demo booking"
+            onClick={() => bookingStatus !== 'submitting' && setBookingOpen(false)}
+          />
+          <section className={styles.bookingPanel} role="dialog" aria-modal="true" aria-labelledby="booking-title">
+            {bookingStatus === 'success' ? (
+              <div className={styles.bookingSuccess}>
+                <span aria-hidden="true">✓</span>
+                <p>Demo scheduled</p>
+                <h2 id="booking-title">Calendar invite sent</h2>
+                <strong>{bookingSlotLabel}</strong>
+                <small>The invitation was sent to {bookingForm.email.trim()}. A copy was also sent to the organizer.</small>
+                <button type="button" className={styles.primaryAction} onClick={() => setBookingOpen(false)}>Done</button>
+              </div>
+            ) : (
+              <>
+                <header className={styles.bookingHeader}>
+                  <div>
+                    <span>Replova introduction</span>
+                    <h2 id="booking-title">Confirm your demo</h2>
+                  </div>
+                  <button type="button" aria-label="Close demo booking" onClick={() => setBookingOpen(false)}>×</button>
+                </header>
+                <div className={styles.bookingSummary}>
+                  <strong>{bookingSlotLabel}</strong>
+                  <span>45 minutes · America/Los Angeles</span>
+                </div>
+                <form className={styles.bookingForm} onSubmit={submitBooking}>
+                  <label>
+                    Name
+                    <input
+                      ref={firstFieldRef}
+                      type="text"
+                      name="name"
+                      autoComplete="name"
+                      maxLength={100}
+                      required
+                      value={bookingForm.name}
+                      onChange={event => setBookingForm(current => ({ ...current, name: event.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    Email
+                    <input
+                      type="email"
+                      name="email"
+                      autoComplete="email"
+                      maxLength={254}
+                      required
+                      value={bookingForm.email}
+                      onChange={event => setBookingForm(current => ({ ...current, email: event.target.value }))}
+                    />
+                  </label>
+                  <label>
+                    Business <span>Optional</span>
+                    <input
+                      type="text"
+                      name="company"
+                      autoComplete="organization"
+                      maxLength={120}
+                      value={bookingForm.company}
+                      onChange={event => setBookingForm(current => ({ ...current, company: event.target.value }))}
+                    />
+                  </label>
+                  <label className={styles.honeypot} aria-hidden="true">
+                    Website
+                    <input
+                      type="text"
+                      name="website"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      value={bookingForm.website}
+                      onChange={event => setBookingForm(current => ({ ...current, website: event.target.value }))}
+                    />
+                  </label>
+                  {bookingError ? <p className={styles.bookingError} role="alert">{bookingError}</p> : null}
+                  <p className={styles.bookingPrivacy}>Contact details are used only to arrange the demo. See the <Link href="/privacy">privacy policy</Link>.</p>
+                  <div className={styles.bookingActions}>
+                    <button type="button" onClick={() => setBookingOpen(false)} disabled={bookingStatus === 'submitting'}>Cancel</button>
+                    <button type="submit" className={styles.primaryAction} disabled={bookingStatus === 'submitting'}>
+                      {bookingStatus === 'submitting' ? 'Sending invite…' : 'Send calendar invite'}
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
+          </section>
+        </div>
+      ) : null}
     </main>
   )
 }

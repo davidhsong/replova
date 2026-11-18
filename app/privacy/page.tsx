@@ -20,6 +20,7 @@ const sections: LegalSection[] = [
           'Optional profile information: display name, phone number, profile picture',
           'Google reviews fetched via the Google Places API (publicly available data)',
           'Payment information (processed by Stripe, we never see your card details)',
+          'Demo scheduling details: name, email address, business name, and requested meeting time',
           'Career application details and an optional résumé when you apply for an internship',
         ].map(item => (
           <li key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
@@ -38,6 +39,7 @@ const sections: LegalSection[] = [
           'To generate AI reply drafts for your Google reviews',
           'To send you weekly email digests with those drafts',
           'To manage your account and subscription',
+          'To schedule requested demos and deliver calendar invitations',
           'To evaluate career applications and contact applicants',
           'We do not sell your data to third parties',
         ].map(item => (
@@ -61,6 +63,7 @@ const sections: LegalSection[] = [
             { name: 'OpenAI', role: 'AI reply generation and review analysis' },
             { name: 'Google Places API',  role: 'Fetching public reviews'     },
             { name: 'Resend',             role: 'Email delivery'              },
+            { name: 'Zoho Mail',          role: 'Demo calendar invitations'   },
             { name: 'Vercel',             role: 'Hosting and infrastructure'  },
           ].map(({ name, role }) => (
             <div key={name} style={{ padding: '10px 14px', background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 8 }}>
@@ -114,7 +117,7 @@ export default function PrivacyPage() {
     <LegalLayout
       page="privacy"
       title="Privacy Policy"
-      kicker="Last updated November 13, 2026"
+      kicker="Last updated November 17, 2026"
       sections={sections}
     />
   )
