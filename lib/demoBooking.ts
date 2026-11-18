@@ -17,6 +17,20 @@ type CalendarInviteInput = {
   organizerEmail: string
   start: Date
   end: Date
+  meetingUrl?: string
+}
+
+export function validateDemoMeetingUrl(value: string | undefined) {
+  const candidate = value?.trim()
+  if (!candidate) return undefined
+  try {
+    const url = new URL(candidate)
+    return url.protocol === 'https:' && url.hostname === 'meet.google.com'
+      ? url.href
+      : undefined
+  } catch {
+    return undefined
+  }
 }
 
 function parseDate(value: string) {
@@ -144,11 +158,13 @@ export function createDemoCalendarInvite({
   organizerEmail,
   start,
   end,
+  meetingUrl,
 }: CalendarInviteInput) {
   const description = [
     'A 45-minute introduction to Replova.',
     `Attendee: ${attendeeName} (${attendeeEmail})`,
     company ? `Business: ${company}` : null,
+    meetingUrl ? `Google Meet: ${meetingUrl}` : null,
     'Reply to this invitation if any details need to change.',
   ].filter(Boolean).join('\n')
 
@@ -165,7 +181,8 @@ export function createDemoCalendarInvite({
     `DTEND:${formatIcsDate(end)}`,
     'SUMMARY:Replova Introduction',
     `DESCRIPTION:${escapeIcs(description)}`,
-    'LOCATION:Online',
+    `LOCATION:${escapeIcs(meetingUrl || 'Online')}`,
+    meetingUrl ? `URL:${escapeIcs(meetingUrl)}` : null,
     `ORGANIZER;CN=Replova:mailto:${organizerEmail}`,
     `ATTENDEE;CN=${safeCalendarName(attendeeName)};ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=TRUE:mailto:${attendeeEmail}`,
     'STATUS:CONFIRMED',
@@ -174,5 +191,5 @@ export function createDemoCalendarInvite({
     'END:VEVENT',
     'END:VCALENDAR',
     '',
-  ].join('\r\n')
+  ].filter(value => value !== null).join('\r\n')
 }

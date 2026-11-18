@@ -5,6 +5,7 @@ import {
   createDemoCalendarInvite,
   DEMO_TIME_ZONE,
   formatDemoSlot,
+  validateDemoMeetingUrl,
   validateDemoSlot,
 } from '@/lib/demoBooking'
 
@@ -109,6 +110,12 @@ export async function POST(request: NextRequest) {
   const password = process.env.ZOHO_SMTP_PASSWORD
   const sender = process.env.DEMO_FROM_EMAIL?.trim() || user
   const ownerEmail = process.env.DEMO_OWNER_EMAIL?.trim() || 'davidhsongg@gmail.com'
+  const configuredMeetingUrl = process.env.DEMO_MEETING_URL?.trim()
+  const meetingUrl = validateDemoMeetingUrl(configuredMeetingUrl)
+
+  if (configuredMeetingUrl && !meetingUrl) {
+    console.error('[demo/book] DEMO_MEETING_URL must be an HTTPS meet.google.com URL')
+  }
 
   if (!user || !password || !sender || !Number.isInteger(port) || port < 1 || port > 65535) {
     console.error('[demo/book] Zoho SMTP is not configured')
@@ -129,6 +136,7 @@ export async function POST(request: NextRequest) {
     organizerEmail: sender,
     start: slot.start,
     end: slot.end,
+    meetingUrl,
   })
   const safeName = escapeHtml(name)
   const safeEmail = escapeHtml(email)
@@ -158,6 +166,7 @@ export async function POST(request: NextRequest) {
         `Your Replova introduction is confirmed for ${slotLabel}.`,
         `The meeting is ${45} minutes and uses the ${DEMO_TIME_ZONE} time zone.`,
         company ? `Business: ${company}` : null,
+        meetingUrl ? `Join Google Meet: ${meetingUrl}` : null,
         '',
         'A calendar invitation is attached. Reply to this email if the time needs to change.',
         '',
@@ -175,6 +184,7 @@ export async function POST(request: NextRequest) {
             <tr><td style="padding:8px 14px 8px 0;color:#746f67">Email</td><td style="padding:8px 0">${safeEmail}</td></tr>
             ${company ? `<tr><td style="padding:8px 14px 8px 0;color:#746f67">Business</td><td style="padding:8px 0">${safeCompany}</td></tr>` : ''}
           </table>
+          ${meetingUrl ? `<p style="margin:22px 0"><a href="${escapeHtml(meetingUrl)}" style="display:inline-block;padding:12px 18px;border-radius:7px;background:#191713;color:#fff;text-decoration:none;font-size:14px;font-weight:600">Join Google Meet</a></p>` : ''}
           <p style="font-size:14px;line-height:1.65;color:#5f5a53">A calendar invitation is attached. Reply to this email if the time needs to change.</p>
         </div>
       `.trim(),

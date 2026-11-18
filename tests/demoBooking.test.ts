@@ -5,7 +5,15 @@ import {
   demoSlotToUtc,
   formatDemoSlot,
   validateDemoSlot,
+  validateDemoMeetingUrl,
 } from '../lib/demoBooking'
+
+test('demo meeting URL accepts only HTTPS Google Meet links', () => {
+  assert.equal(validateDemoMeetingUrl('https://meet.google.com/abc-defg-hij'), 'https://meet.google.com/abc-defg-hij')
+  assert.equal(validateDemoMeetingUrl('http://meet.google.com/abc-defg-hij'), undefined)
+  assert.equal(validateDemoMeetingUrl('https://evil.meet.google.com/abc-defg-hij'), undefined)
+  assert.equal(validateDemoMeetingUrl(undefined), undefined)
+})
 
 test('demo slots preserve Los Angeles local time across standard and daylight time', () => {
   assert.equal(demoSlotToUtc('2027-01-15', '7:30am').toISOString(), '2027-01-15T15:30:00.000Z')
@@ -31,6 +39,7 @@ test('calendar invite is a confirmed request with one attendee and no owner addr
     organizerEmail: 'hello@replova.app',
     start,
     end: new Date(start.getTime() + 45 * 60 * 1000),
+    meetingUrl: 'https://meet.google.com/abc-defg-hij',
   })
 
   assert.match(invite, /METHOD:REQUEST\r\n/)
@@ -39,5 +48,8 @@ test('calendar invite is a confirmed request with one attendee and no owner addr
   assert.match(invite, /DTSTART:20270115T153000Z/)
   assert.match(invite, /DTEND:20270115T161500Z/)
   assert.match(invite, /STATUS:CONFIRMED/)
+  assert.match(invite, /LOCATION:https:\/\/meet\.google\.com\/abc-defg-hij/)
+  assert.match(invite, /DESCRIPTION:.*Google Meet: https:\/\/meet\.google\.com\/abc-defg-hij/)
+  assert.match(invite, /URL:https:\/\/meet\.google\.com\/abc-defg-hij/)
   assert.doesNotMatch(invite, /davidhsongg/)
 })
