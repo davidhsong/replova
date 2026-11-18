@@ -30,6 +30,8 @@ test('demo scheduler provides calendar views and confirmed invite delivery', asy
   assert.match(stylesheet, /repeating-linear-gradient/)
   assert.match(stylesheet, /prefers-reduced-motion:\s*reduce/)
   assert.match(page, /title: 'Schedule a Demo'/)
+  assert.match(page, /await connection\(\)/)
+  assert.match(page, /timeZone: DEMO_TIME_ZONE/)
   assert.match(route, /nodemailer\.createTransport/)
   assert.match(route, /icalEvent:/)
   assert.match(route, /bcc: ownerEmail/)
