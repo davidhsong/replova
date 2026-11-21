@@ -43,6 +43,8 @@ Operation and receipt types are defined in `lib/pilot/providers.ts` and `lib/pil
 
 Never treat an estimate, a sent email, an HTTP timeout or an unconfirmed reservation request as a booking. The worker journals committed and uncertain operations. A pause stops new dispatch while outstanding actions are reconciled. Budget or preference edits rerank valid quotes. Scope, area or window edits invalidate affected research or quote work. Committed appointments require a separate, explicitly confirmed change.
 
+The controlled release provisions the Tap minute and daily triggers separately using authenticated Supabase Cron jobs. Follow the [production activation checklist](tap-release.md) before enabling either job. Legacy Vercel schedules retain their existing configuration.
+
 ## Checks
 
 Run `npm test` and `npm run verify`. The pilot tests exercise migrations through 034 in PostgreSQL-compatible PGlite, encounter consumption, expiry, tenant boundaries, immutable snapshots, worker leases, quote eligibility, lost acknowledgements and appointment changes. The existing staging suites require the dedicated `.env.staging.local` described in `tests/staging/README.md`. Actual pilot provisioning, deployment and live provider acceptance are separate launch operations.
