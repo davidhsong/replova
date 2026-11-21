@@ -1,10 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import {
-  IconAlert,
   IconBook,
   IconCard,
   IconCog,
@@ -20,7 +19,6 @@ import type { Plan } from '@/lib/planLimits'
 import styles from './DashboardSidebar.module.css'
 
 type Location = { id: string; name: string; active: boolean }
-type Feature = 'feedback' | 'playbook' | 'integrations'
 
 interface Props {
   restaurantName: string
@@ -41,43 +39,9 @@ const PLAN_LABELS: Record<Plan, string> = {
   growth: 'Growth',
   agency: 'Agency',
 }
-const FEATURES: Array<{
-  id: Feature
-  label: string
-  href: string
-  description: string
-}> = [
-  {
-    id: 'feedback',
-    label: 'Customer Feedback',
-    href: '/dashboard',
-    description: 'Reviews and insights',
-  },
-  {
-    id: 'playbook',
-    label: 'Business Playbook',
-    href: '/dashboard/playbook',
-    description: 'Procedures and tasks',
-  },
-  {
-    id: 'integrations',
-    label: 'Integrations',
-    href: '/dashboard/settings?section=google-business',
-    description: 'Connected services',
-  },
-]
-
-// Compatibility routes remain available even though the simplified switcher now names
-// their destinations Reviews, Insights, and Try sample data: Review center, Competitors,
-// Feedback demo, and Review requests (/dashboard/review-requests).
-
 function Chevron({ down = false }: { down?: boolean }) {
   return (
-    <svg
-      viewBox="0 0 16 16"
-      aria-hidden="true"
-      className={down ? styles.chevronDown : undefined}
-    >
+    <svg viewBox="0 0 16 16" aria-hidden="true" className={down ? styles.chevronDown : undefined}>
       <path d="m5.5 3.5 4.5 4.5-4.5 4.5" />
     </svg>
   )
@@ -93,105 +57,32 @@ export default function DashboardSidebar({
   locations,
   activeLocationId,
   locationLimit,
-  awaitingCount,
+  isCareersAdmin,
 }: Props) {
   const pathname = usePathname()
-  const searchParams = useSearchParams()
   const router = useRouter()
-  const featureMenuRef = useRef<HTMLDivElement>(null)
-  const accountMenuRef = useRef<HTMLDivElement>(null)
-  const [featureMenuOpen, setFeatureMenuOpen] = useState(false)
-  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [pendingReviewCount, setPendingReviewCount] = useState(0)
-  const hasLocations = locations.length > 0
-
-  const activeFeature: Feature = pathname.startsWith('/dashboard/playbook')
-    ? 'playbook'
-    : pathname.startsWith('/dashboard/youtube') ||
-        pathname.startsWith('/dashboard/settings')
-      ? 'integrations'
-      : 'feedback'
-  const feature =
-    FEATURES.find((item) => item.id === activeFeature) ?? FEATURES[0]
-  const FeatureIcon =
-    activeFeature === 'playbook'
-      ? IconBook
-      : activeFeature === 'integrations'
-        ? IconCog
-        : IconMessage
-  const playbookBase = pathname.startsWith('/dashboard/playbook/demo')
-    ? '/dashboard/playbook/demo'
-    : '/dashboard/playbook'
-  const playbookView = searchParams.get('view') ?? 'procedures'
-
-  const navItems =
-    activeFeature === 'feedback'
-      ? [
-          {
-            href: '/dashboard',
-            label: 'Reviews',
-            Icon: IconMessage,
-            exact: true,
-            badge: awaitingCount || null,
-          },
-          {
-            href: '/dashboard/competitors',
-            label: 'Insights',
-            Icon: IconUsers,
-            disabled: !hasLocations,
-          },
-          {
-            href: '/dashboard/feedback-demo',
-            label: 'Try sample data',
-            Icon: IconAlert,
-          },
-        ]
-      : activeFeature === 'playbook'
-        ? [
-            {
-              href: playbookBase,
-              label: 'All procedures',
-              Icon: IconBook,
-              view: 'procedures',
-            },
-            {
-              href: `${playbookBase}?view=review`,
-              label: 'Needs action',
-              Icon: IconAlert,
-              view: 'review',
-              badge: pendingReviewCount || null,
-            },
-            {
-              href: `${playbookBase}?view=tasks`,
-              label: 'Tasks',
-              Icon: IconUsers,
-              view: 'tasks',
-            },
-          ]
-        : [
-            {
-              href: '/dashboard/settings?section=google-business',
-              label: 'Google Business Profile',
-              Icon: IconCog,
-            },
-            {
-              href: '/dashboard/youtube',
-              label: 'YouTube Studio',
-              Icon: IconSend,
-            },
-          ]
-
+  useEffect(() => {
+    const update = (event: Event) =>
+      setPendingReviewCount(Number((event as CustomEvent).detail?.count) || 0)
+    window.addEventListener('replova:playbook-review-count', update)
+    return () => window.removeEventListener('replova:playbook-review-count', update)
+  }, [])
+  const accountMenuRef = useRef<HTMLDivElement>(null)
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false)
+  const navItems = [
+    { href: '/dashboard', label: 'Overview', Icon: IconUsers },
+    { href: '/dashboard/feedback', label: 'Feedback', Icon: IconMessage },
+    { href: '/dashboard/playbooks', label: 'Playbooks', Icon: IconBook },
+    { href: '/dashboard/tap', label: 'Tap', Icon: IconSend },
+  ]
   useEffect(() => {
     function closeMenus(event: PointerEvent) {
       if (!(event.target instanceof Node)) return
-      if (!featureMenuRef.current?.contains(event.target))
-        setFeatureMenuOpen(false)
-      if (!accountMenuRef.current?.contains(event.target))
-        setAccountMenuOpen(false)
+      if (!accountMenuRef.current?.contains(event.target)) setAccountMenuOpen(false)
     }
     function closeOnEscape(event: KeyboardEvent) {
       if (event.key === 'Escape') {
-        setFeatureMenuOpen(false)
         setAccountMenuOpen(false)
       }
     }
@@ -203,28 +94,6 @@ export default function DashboardSidebar({
     }
   }, [])
 
-  useEffect(() => {
-    function updatePendingReviewCount(event: Event) {
-      const count = (event as CustomEvent<{ count?: number }>).detail?.count
-      setPendingReviewCount(
-        Number.isFinite(count) ? Math.max(0, Math.min(99, Math.floor(count ?? 0))) : 0,
-      )
-    }
-
-    window.addEventListener('replova:playbook-review-count', updatePendingReviewCount)
-    return () =>
-      window.removeEventListener('replova:playbook-review-count', updatePendingReviewCount)
-  }, [])
-
-  function isActive(item: (typeof navItems)[number]) {
-    if ('view' in item && item.view)
-      return (
-        pathname.startsWith('/dashboard/playbook') && playbookView === item.view
-      )
-    if ('exact' in item && item.exact) return pathname === item.href
-    return pathname.startsWith(item.href.split('?')[0])
-  }
-
   async function handleSignOut() {
     await getSupabaseBrowser().auth.signOut()
     router.push('/signin')
@@ -232,11 +101,7 @@ export default function DashboardSidebar({
 
   return (
     <aside className={`sidebar ${styles.sidebar}`}>
-      <Link
-        href="/dashboard"
-        className={styles.brand}
-        aria-label="Replova dashboard"
-      >
+      <Link href="/dashboard" className={styles.brand} aria-label="Replova dashboard">
         <ReplovaLogo
           className={styles.brandFull}
           variant="primary"
@@ -269,7 +134,7 @@ export default function DashboardSidebar({
             </span>
           </div>
         </div>
-        {locations.length > 1 ? (
+        {locations.length > 1 || (locations.length === 1 && locationLimit > 1) ? (
           <div className={styles.locationSwitcher}>
             <LocationSwitcherClient
               locations={locations}
@@ -281,77 +146,46 @@ export default function DashboardSidebar({
         ) : null}
       </div>
 
-      <div className={styles.featureSwitcher} ref={featureMenuRef}>
-        <span className={styles.controlLabel}>Feature</span>
-        <button
-          type="button"
-          className={styles.featureButton}
-          aria-label={`Switch feature. Current feature: ${feature.label}`}
-          aria-haspopup="menu"
-          aria-expanded={featureMenuOpen}
-          onClick={() => setFeatureMenuOpen((open) => !open)}
-        >
-          <span className={styles.featureGlyph} aria-hidden="true">
-            <FeatureIcon s={15} />
-          </span>
-          <span className={styles.featureCopy}>
-            <strong>{feature.label}</strong>
-            <small>{feature.description}</small>
-          </span>
-          <Chevron down={featureMenuOpen} />
-        </button>
-        {featureMenuOpen ? (
-          <div className={styles.featureMenu} role="menu">
-            {FEATURES.map((item) => (
-              <Link
-                key={item.id}
-                href={item.href}
-                role="menuitem"
-                aria-current={item.id === activeFeature ? 'true' : undefined}
-                onClick={() => setFeatureMenuOpen(false)}
-              >
-                <span>
-                  <strong>{item.label}</strong>
-                  <small>{item.description}</small>
-                </span>
-                {item.id === activeFeature ? (
-                  <span className={styles.selectedMark} aria-hidden="true" />
-                ) : null}
-              </Link>
-            ))}
-          </div>
-        ) : null}
-      </div>
-
-      <nav
-        className={styles.navigation}
-        aria-label={`${feature.label} navigation`}
-      >
-        <span className={styles.navLabel}>{feature.label}</span>
+      <nav className={styles.navigation} aria-label="Workspace navigation">
         <div className={styles.navList}>
           {navItems.map((item) => {
-            const active = isActive(item)
-            if ('disabled' in item && item.disabled) return null
+            const active =
+              pathname === item.href ||
+              (pathname.startsWith(item.href + '/') && item.href !== '/dashboard')
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`${styles.navItem} ${active ? styles.navItemActive : ''}`}
+                title={item.label}
                 aria-label={item.label}
                 aria-current={active ? 'page' : undefined}
-                title={item.label}
+                className={`${styles.navItem} ${active ? styles.navItemActive : ''}`}
               >
-                <span className={styles.navIcon} aria-hidden="true">
-                  <item.Icon s={15} />
-                </span>
+                <item.Icon s={18} />
                 <span>{item.label}</span>
-                {'badge' in item && item.badge ? (
-                  <span className={styles.navCounter}>{item.badge}</span>
-                ) : null}
               </Link>
             )
           })}
         </div>
+        <details className="secondary-tools">
+          <summary>More tools</summary>
+          <Link href="/dashboard/playbook">Procedure library</Link>
+          <Link href="/dashboard/playbook?view=review">
+            Needs action {pendingReviewCount || ''}
+          </Link>
+          <Link href="/dashboard/playbook?view=tasks">Team tasks</Link>
+          <Link href="/dashboard/reviews">Review center</Link>
+          {locations.length > 0 && (
+            <>
+              <Link href="/dashboard/competitors">Competitors</Link>
+              <Link href="/dashboard/review-requests">Review requests</Link>
+            </>
+          )}
+          <Link href="/dashboard/feedback-demo">Feedback demo</Link>
+          <Link href="/dashboard/youtube">YouTube Studio</Link>
+          <Link href="/dashboard/settings?section=google-business">Integrations</Link>
+          {isCareersAdmin && <Link href="/dashboard/applicants">Applicants</Link>}
+        </details>
       </nav>
 
       <div className={styles.accountArea} ref={accountMenuRef}>

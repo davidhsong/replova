@@ -4,10 +4,10 @@ import Link from 'next/link'
 import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
 
 export default function Error({
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string }
-  reset: () => void
+  retry: () => void
 }) {
   return (
     <div style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
@@ -29,7 +29,7 @@ export default function Error({
             An unexpected error occurred. Try again, or head back home.
           </p>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
-            <button onClick={reset} className="btn btn-primary btn-press">
+            <button onClick={retry} className="btn btn-primary btn-press">
               Try again
             </button>
             <Link href="/" className="btn btn-ghost btn-press" style={{ textDecoration: 'none' }}>

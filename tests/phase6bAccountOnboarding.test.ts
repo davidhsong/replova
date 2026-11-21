@@ -450,7 +450,7 @@ test('provisioning RPC is server-only and application routes enforce auth and CS
   const createCheckoutRoute = await readFile(path.join(repoRoot, 'app', 'api', 'create-checkout', 'route.ts'), 'utf8')
   const checkoutSuccessRoute = await readFile(path.join(repoRoot, 'app', 'api', 'checkout-success', 'route.ts'), 'utf8')
   const stripeWebhookRoute = await readFile(path.join(repoRoot, 'app', 'api', 'webhooks', 'stripe', 'route.ts'), 'utf8')
-  const dashboardPage = await readFile(path.join(repoRoot, 'app', 'dashboard', 'page.tsx'), 'utf8')
+  const dashboardPage = await readFile(path.join(repoRoot, 'app', 'dashboard', 'reviews', 'page.tsx'), 'utf8')
 
   assert.match(signupRoute, /email_confirm:\s*false/)
   assert.match(signupRoute, /shouldCreateUser:\s*false/)

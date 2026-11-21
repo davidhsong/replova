@@ -423,3 +423,7 @@
     transition-duration: 0.01ms;
   }
 }
+
+.sidebar .navItem { min-height:44px; font-size:14px; }
+.sidebar .navItemActive { background:#061737; color:white; }
+.sidebar .accountMenu { background:white; z-index:50; }

@@ -1,4 +1,3 @@
-
 {
   "crons": [
     {
@@ -24,6 +23,14 @@
     {
       "path": "/api/cron/weekly-digest",
       "schedule": "0 9 * * 1"
+    },
+    {
+      "path": "/api/cron/pilot",
+      "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/pilot-quarter",
+      "schedule": "20 9 * * *"
     }
   ]
 }

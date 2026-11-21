@@ -28,7 +28,12 @@ export default function LocationSwitcherClient({ locations, activeLocationId, lo
         body: JSON.stringify({ restaurantId: newId }),
       })
       if (!response.ok) return
-      router.refresh()
+      if (window.location.pathname.startsWith('/dashboard/playbooks/') ||
+          (window.location.pathname === '/dashboard/feedback' && window.location.search)) {
+        window.location.assign('/dashboard/feedback')
+      } else {
+        router.refresh()
+      }
     } finally {
       setSwitching(false)
     }
@@ -36,7 +41,8 @@ export default function LocationSwitcherClient({ locations, activeLocationId, lo
 
   return (
     <div style={{ padding: '0 12px 12px' }}>
-      <select
+      {locations.length > 1 && <select
+        aria-label="Active location"
         value={activeLocationId}
         onChange={handleChange}
         disabled={switching}
@@ -63,7 +69,7 @@ export default function LocationSwitcherClient({ locations, activeLocationId, lo
             {loc.name}{loc.active ? '' : ' (not included in current plan)'}
           </option>
         ))}
-      </select>
+      </select>}
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', marginTop: 6 }}>
         {atLimit ? (

@@ -81,7 +81,22 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 ## Dashboard pages (require active session + business)
 
-### `/dashboard` — Review Center (main dashboard)
+### `/dashboard` — Overview
+
+- Shows the current location, urgent first-party feedback, ranked issues and active Playbooks.
+- A new workspace can create its first location and test a Tap before connecting Google.
+- Overview, Feedback, Playbooks and Tap use the same navigation on mobile and desktop.
+
+### Tap, Feedback and Playbooks
+
+- `/dashboard/tap` manages revocable placards, local time zones, QR downloads and test links.
+- `/t/[placard]` serves a script-free customer form. A separate ten-minute encounter is consumed atomically. Revoking a placard also closes its open forms.
+- `/dashboard/feedback` filters location-scoped submissions, shows analysis status and lets owners correct themes. Each submission counts once per theme. Keep test visits out of customer metrics.
+- `/dashboard/playbooks` and its detail pages save issue evidence, authorization versions, provider activity, appointment confirmations and owner verification. `/dashboard/playbook` remains the existing procedure library.
+- Live dispatch requires the verified integration and owner constraints. Reconcile uncertain external outcomes before retrying. A committed appointment requires an explicit change request.
+- `/api/cron/pilot` handles analysis and provider jobs each minute. `/api/cron/pilot-quarter` saves previous-quarter plans daily. Both require the existing cron bearer secret.
+
+### `/dashboard/reviews` — Review Center
 
 **Header:**
 

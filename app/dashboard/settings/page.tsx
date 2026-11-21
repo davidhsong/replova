@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { IconRefresh, IconSignOut } from '@/components/icons'
 import YouTubeKnowledgeBase from '@/components/YouTubeKnowledgeBase'
@@ -459,6 +460,7 @@ export default function SettingsPage() {
       </header>
 
       <div className="page-body simple-settings">
+        <Link href="/dashboard/settings/providers" className="btn btn-quiet">Provider integrations</Link>
         <GoogleBusinessWorkspaceSettings />
 
         <section className="simple-settings-section" id="youtube">

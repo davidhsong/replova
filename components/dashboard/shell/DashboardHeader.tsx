@@ -20,6 +20,10 @@ const PLAN_LABELS: Record<Plan, string> = {
 }
 
 function pageTrail(pathname: string) {
+  if (pathname.startsWith('/dashboard/playbooks')) return ['Playbooks']
+  if (pathname === '/dashboard/tap') return ['Tap']
+  if (pathname === '/dashboard/feedback') return ['Feedback']
+  if (pathname === '/dashboard') return ['Overview']
   if (pathname.startsWith('/dashboard/playbook/demo')) return ['Playbook', 'Synthetic demo']
   if (pathname.startsWith('/dashboard/playbook')) return ['Playbook']
   if (pathname.startsWith('/dashboard/feedback-demo')) return ['Feedback demo']

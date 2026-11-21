@@ -15,6 +15,8 @@ const sections: LegalSection[] = [
     content: (
       <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 0 }}>
         {[
+          'Tap feedback includes the rating, optional comment, time, location, and placard. The form does not ask for contact details or use marketing analytics.',
+          'Playbooks store issue evidence, owner notes, service limits, written quotes and provider confirmations.',
           'Your email address (used to sign in and send weekly digests)',
           'Your business name and Google Place ID (to fetch reviews)',
           'Optional profile information: display name, phone number, profile picture',
@@ -41,6 +43,8 @@ const sections: LegalSection[] = [
           'To manage your account and subscription',
           'To schedule requested demos and deliver calendar invitations',
           'To evaluate career applications and contact applicants',
+          'Tap comments are sent to OpenAI for theme and urgency analysis. Replova requests that OpenAI does not store the response.',
+          'Authorized provider requests include the service scope, service area, dates and relevant quote or appointment terms.',
           'We do not sell your data to third parties',
         ].map(item => (
           <li key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>

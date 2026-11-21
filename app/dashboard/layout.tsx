@@ -41,12 +41,13 @@ export default async function DashboardLayout({ children }: { children: React.Re
       .order('created_at', { ascending: true }),
     admin
       .from('restaurants')
-      .select('id, name, active, created_at')
+      .select('id, name, active, created_at, workspace_id')
       .eq('owner_email', account.owner_email)
       .order('created_at', { ascending: true }),
   ])
 
-  const workspace = workspaces?.[0]
+  const selectedLocation = restaurants?.find(r=>r.active && r.id===cookieStore.get(ACTIVE_LOCATION_COOKIE)?.value) ?? restaurants?.find(r=>r.active)
+  const workspace = workspaces?.find(w=>w.id===selectedLocation?.workspace_id) ?? workspaces?.[0]
   if (!workspace) redirect('/onboard/workspace')
 
   const plan: Plan = account.plan
@@ -57,8 +58,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
     const accountOnlyRoutes = new Set([
       '/dashboard',
       '/dashboard/feedback-demo',
+      '/dashboard/feedback',
+      '/dashboard/tap',
+      '/dashboard/reviews',
       '/dashboard/billing',
       '/dashboard/settings',
+      '/dashboard/settings/providers',
       ...(isCareersAdmin ? ['/dashboard/applicants'] : []),
     ])
     if (

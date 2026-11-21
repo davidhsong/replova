@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Geist_Mono, Onest } from "next/font/google";
 import { GoogleAnalytics } from "@next/third-parties/google";
 import {
   SITE_DESCRIPTION,
@@ -9,18 +8,7 @@ import {
 } from "@/lib/seo";
 import OfflineStatus from "@/components/OfflineStatus";
 import "./globals.css";
-
-const onest = Onest({
-  variable: "--font-onest",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
+import "./pilot.css";
 
 export const metadata: Metadata = {
   title: {
@@ -33,15 +21,7 @@ export const metadata: Metadata = {
   publisher: SITE_NAME,
   keywords: [
     "Replova",
-    "AI review replies",
-    "business reputation management",
-    "Google review management software",
-    "AI Google review replies",
-    "Google review management",
-    "customer sentiment analysis",
-    "local competitor tracking",
-    "AI reply generator",
-    "reputation management SaaS",
+    "customer feedback", "NFC feedback", "QR feedback", "business playbooks",
   ],
   metadataBase: new URL(SITE_URL),
   manifest: "/manifest.webmanifest",
@@ -81,8 +61,9 @@ export default function RootLayout({
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${onest.variable} ${geistMono.variable}`}
+      className="replova-type"
     >
+      <head><link rel="preload" href="/fonts/montserrat.woff2" as="font" type="font/woff2" crossOrigin="anonymous" /></head>
       <body data-theme="light" data-density="comfortable">
         <a className="skip-link" href="#main-content">Skip to content</a>
         <OfflineStatus />

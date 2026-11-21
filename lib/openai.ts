@@ -14,6 +14,13 @@ export function getOpenAI(): OpenAI {
 }
 
 type JsonSchema = Record<string, unknown>
+export type ModelReceipt = {
+  model: string
+  requestId: string | null
+  inputTokens: number
+  outputTokens: number
+  modelCallMs: number
+}
 
 export async function createStructuredResponse<T>({
   name,
@@ -22,6 +29,8 @@ export async function createStructuredResponse<T>({
   schema,
   maxOutputTokens,
   signal,
+  maxRetries,
+  onModelResponse,
 }: {
   name: string
   instructions: string
@@ -29,7 +38,10 @@ export async function createStructuredResponse<T>({
   schema: JsonSchema
   maxOutputTokens: number
   signal?: AbortSignal
-}): Promise<{ data: T; inputTokens: number; outputTokens: number }> {
+  maxRetries?: number
+  onModelResponse?: (receipt: ModelReceipt) => void
+}) {
+  const start = performance.now()
   const response = await getOpenAI().responses.create({
     model: OPENAI_MODEL,
     instructions,
@@ -45,12 +57,21 @@ export async function createStructuredResponse<T>({
         schema,
       },
     },
-  }, { signal })
+  }, { signal, ...(maxRetries !== undefined && { maxRetries }) })
 
+  onModelResponse?.({
+    model: response.model,
+    requestId: response._request_id ?? null,
+    inputTokens: response.usage?.input_tokens ?? 0,
+    outputTokens: response.usage?.output_tokens ?? 0,
+    modelCallMs: Math.round(performance.now() - start),
+  })
   if (!response.output_text) throw new Error('OpenAI returned an empty response')
 
   return {
     data: JSON.parse(response.output_text) as T,
+    model: response.model,
+    requestId: response._request_id,
     inputTokens: response.usage?.input_tokens ?? 0,
     outputTokens: response.usage?.output_tokens ?? 0,
   }

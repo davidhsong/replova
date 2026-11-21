@@ -616,10 +616,15 @@ function snapshotFromProcedure(procedure: PlaybookProcedure) {
   }
 }
 
+async function openProcedureTool(page: Page, label: string | RegExp) {
+  const tools = page.locator('details').filter({ has: page.locator('summary', { hasText: /^More tools$/ }) })
+  if (await tools.getAttribute('open') === null) await tools.locator('summary').click()
+  await tools.getByRole('link', { name: label, exact: true }).click()
+}
+
 async function navigateFromDashboardToPersistentPlaybook(page: Page) {
   await page.goto('/dashboard')
-  await page.getByRole('button', { name: /Switch feature\. Current feature:/ }).click()
-  await page.getByRole('menuitem', { name: /Business Playbook/ }).click()
+  await openProcedureTool(page, 'Procedure library')
   await page.waitForURL(url => url.pathname === '/dashboard/playbook')
   assert.equal(new URL(page.url()).pathname, '/dashboard/playbook')
   await page.getByRole('heading', { name: 'Business Playbook', exact: true }).waitFor()
@@ -905,7 +910,7 @@ async function run() {
     pass('deterministic no-OpenAI proposal persisted with authorized evidence only')
 
     await pageA.reload()
-    await pageA.getByRole('link', { name: 'Needs action' }).click()
+    await openProcedureTool(pageA, /^Needs action\b/)
     await pageA.waitForURL(url => url.searchParams.get('view') === 'review')
     await pageA.getByRole('button', { name: new RegExp(proposalProblem) }).click()
     const proposalState = await loadBrowserState(pageA, actorA.workspaceId)
@@ -968,7 +973,7 @@ async function run() {
     await pageA.getByRole('status').filter({ hasText: 'Approved change applied as a new procedure version.' }).waitFor()
     pass('browser UI edited, approved, and separately applied a proposal with linked evidence')
 
-    await pageA.getByRole('link', { name: 'Tasks', exact: true }).click()
+    await openProcedureTool(pageA, 'Team tasks')
     await pageA.getByRole('row', { name: new RegExp(taskTitle) }).click()
     taskDialog = pageA.getByRole('dialog', { name: 'Task details' })
     await taskDialog.getByLabel('Notes (optional)').fill('Completed through the real browser task editor.')
@@ -978,7 +983,7 @@ async function run() {
     await pageA.getByRole('row', { name: new RegExp(`${taskTitle}.*Done`, 's') }).waitFor()
     pass('browser UI created and completed a proposal-linked improvement task')
 
-    await pageA.getByRole('link', { name: 'All procedures' }).click()
+    await openProcedureTool(pageA, 'Procedure library')
     await pageA.getByRole('heading', { name: procedureTitle }).waitFor()
     await pageA.locator('summary[aria-label="More procedure actions"]').click()
     await pageA.getByRole('menuitem', { name: 'Version history' }).click()
@@ -1092,7 +1097,7 @@ async function run() {
     server = await startApp(environment, port)
     await pageA.reload()
     await pageA.getByRole('heading', { name: procedureTitle }).waitFor()
-    await pageA.getByRole('link', { name: 'Tasks', exact: true }).click()
+    await openProcedureTool(pageA, 'Team tasks')
     await pageA.getByRole('row', { name: new RegExp(taskTitle) }).waitFor()
     pass('procedure and task data remain available after a complete application restart')
 

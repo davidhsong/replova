@@ -19,9 +19,9 @@ function ChevronDown() {
 }
 
 const platformLinks = [
-  ['Review response workflow', 'Draft, approve, and publish thoughtful Google replies.', '/#platform', 'reply'],
-  ['Reputation intelligence', 'See sentiment, themes, scores, and staff praise.', '/#intelligence', 'insights'],
-  ['Competitor benchmarking', 'Compare your rating with nearby businesses.', '/dashboard-preview', 'benchmark'],
+  ['Tap', 'Collect a private rating and comment at each location.', '/#tap-workflow', 'reply'],
+  ['Feedback', 'See the recurring issues behind customer visits.', '/dashboard-preview#sample-issue', 'insights'],
+  ['Playbooks', 'Inspect the evidence and track a fix.', '/#tap-workflow', 'benchmark'],
 ] as const
 
 const industryLinks = [
@@ -155,6 +155,7 @@ const footerGroups = [
     links: [
       ['Careers', '/careers'],
       ['Request a demo', '/demo'],
+      ['Create a workspace', '/onboard'],
       ['Sign in', '/signin'],
       ['Contact', 'mailto:support@replova.app'],
     ],

@@ -32,7 +32,7 @@ const structuredData = {
         width: 1024,
         height: 1024,
       },
-      description: 'AI-powered B2B SaaS for review management, customer feedback analysis, and actionable business insights.',
+      description: 'First-party feedback and issue Playbooks for local businesses.',
     },
     {
       '@type': 'WebSite',
@@ -131,25 +131,28 @@ export default function Home() {
       <MarketingHeader />
       <main id="main-content">
         <section className="lp-hero-centered">
-          <Link href="/industries" className="hero-announcement">Customer feedback intelligence for local businesses</Link>
-          <h1><span>Turn every review into</span><span>your next advantage</span></h1>
-          <p>Replova turns customer feedback into clearer priorities, thoughtful replies, and practical Playbooks your team can act on.</p>
+
+          <h1><span>Turn feedback</span><span>into action.</span></h1>
+          <p>Customers tap or scan, rate their visit, and leave a comment. See which issues keep coming up and use a Playbook to track the fix.</p>
           <div className="hero-actions hero-actions-centered">
-            <Link href="/demo" className="btn btn-primary btn-lg">Request a demo</Link>
+            <Link href="/demo" className="btn btn-primary btn-lg">Book a demo</Link>
+            <Link href="/dashboard-preview#sample-issue" className="btn btn-quiet btn-lg">Preview sample feedback</Link>
           </div>
-          <div className="hero-product hero-product-wide fade-up"><ProductPreview /></div>
+          <div className="tap-preview" aria-label="Sample feedback workflow">
+            <div className="tap-preview-placard"><small>Sample placard</small><strong>How was <br/>your visit?</strong><span>Tap or scan to leave feedback</span></div>
+            <div className="tap-preview-issue"><small>Sample quarterly Playbook</small><h2>Pests and hygiene</h2><p>70 of 150 submissions</p><meter aria-label="Sample mentions" min="0" max="150" value="70" /><details><summary>See the evidence and next step</summary><p>“We saw insects near the entrance.”</p><p>Log the affected area and request a written inspection quote.</p></details></div>
+          </div>
         </section>
 
         <ResearchProof />
 
-        <section className="proof-section" aria-label="Platform capabilities">
+        <section id="tap-workflow" className="proof-section" aria-label="Platform capabilities">
           <div className="lp-inner">
-            <p className="proof-title">A complete review workflow, without another full-time inbox</p>
-            <div className="proof-cards">
-              <article><span>01</span><strong>Automatic monitoring</strong><p>Sync new Google reviews on a six-hour cadence.</p></article>
-              <article><span>02</span><strong>Replies ready to review</strong><p>Professional, warm, and brief drafts for every rating.</p></article>
-              <article><span>03</span><strong>Signals you can use</strong><p>Turn comments into themes, trends, alerts, and actions.</p></article>
-              <article><span>04</span><strong>One place to act</strong><p>Approve replies, publish to Google, and compare performance.</p></article>
+            <h2 className="proof-title">From the counter to the next action</h2>
+            <div className="proof-cards pilot-story">
+              <article><strong>Tap</strong><p>Give each location a placard with one link for NFC and QR.</p></article>
+              <article><strong>Feedback</strong><p>Read private comments and see how many visits mention each issue.</p></article>
+              <article><strong>Playbooks</strong><p>Log the problem, coordinate a fix and check whether it worked.</p></article>
             </div>
             <div className="industry-wordmarks" aria-label="Business types supported">
               <span>Healthcare</span><span>Home services</span><span>Automotive</span><span>Retail</span><span>Hospitality</span><span>Professional services</span>
@@ -165,14 +168,15 @@ export default function Home() {
           <div className="story-grid"><ReplyStoryCard /><InsightStoryCard /></div>
         </section>
 
+        <details className="lp-container legacy-preview"><summary>Explore the sample review dashboard</summary><ProductPreview /></details>
         <ProductShowcase />
 
         <section className="promise-section">
           <div className="lp-inner promise-card">
             <div>
               <div className="t-eyebrow">Our promise</div>
-              <h2>Automation that still sounds like you.</h2>
-              <p>Replova handles the repetitive work while keeping judgment where it belongs: with the people responsible for the customer relationship.</p>
+              <h2>You set the limits.</h2>
+              <p>Inspect the evidence, set a service window and budget, and pause a Playbook whenever you need to.</p>
               <span>Human-controlled by default</span>
             </div>
             <PromiseWorkflowVisual />

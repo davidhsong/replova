@@ -207,7 +207,7 @@ test('demo UI persists isolated state and cannot call an external publishing rou
 })
 
 test('real review overview uses authorized workspace records without demo data', () => {
-  const overview = readFileSync('app/dashboard/page.tsx', 'utf8')
+  const overview = readFileSync('app/dashboard/reviews/page.tsx', 'utf8')
   const css = readFileSync('app/dashboard/Overview.module.css', 'utf8')
 
   assert.match(overview, /\.from\('reviews'\)/)

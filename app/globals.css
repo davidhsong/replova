@@ -1,16 +1,18 @@
 @import "tailwindcss";
 
+@font-face { font-family: Montserrat; src: url("/fonts/montserrat.woff2") format("woff2"); font-style: normal; font-weight: 100 900; font-display: swap; }
+
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--t1);
-  --font-sans: var(--font-onest);
-  --font-serif: var(--font-onest);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: Montserrat;
+  --font-serif: Montserrat;
+  --font-mono: Montserrat;
 }
 
 /* ─────────── REPLOVA DESIGN SYSTEM ───────────
    Visual register: Mercury × Stripe × Linear × Things 3
-   Warm neutrals, terracotta accent, Geist
+   Neutral surfaces, navy actions, Montserrat
 */
 
 :root {
@@ -32,7 +34,7 @@
   --t4:           #a6a6a6;
 
   /* Brand accent is ink; chroma is reserved for semantic state. */
-  --accent:       #141414;
+  --accent:       #061737;
   --accent-hi:    #000000;
   --accent-sub:   rgba(17, 17, 17, 0.06);
   --accent-line:  rgba(17, 17, 17, 0.22);
@@ -66,9 +68,9 @@
   --r-pill: 999px;
 
   /* Font family vars (populated by next/font in layout.tsx) */
-  --font-ui:     var(--font-onest), system-ui, -apple-system, sans-serif;
-  --font-serif:  var(--font-onest), system-ui, -apple-system, sans-serif;
-  --font-mono:   var(--font-geist-mono), ui-monospace, SFMono-Regular, monospace;
+  --font-ui:     Montserrat, system-ui, -apple-system, sans-serif;
+  --font-serif:  Montserrat, system-ui, -apple-system, sans-serif;
+  --font-mono:   Montserrat, sans-serif;
 
   /* ── Legacy aliases to keep un-ported components working ── */
   --border:             var(--line);
@@ -3904,3 +3906,8 @@ textarea { touch-action: manipulation; }
   .workspace-empty-actions .btn { width: 100%; }
   .workspace-empty-footnote { align-items: flex-start; flex-direction: column; }
 }
+
+.replova-type { font-family: Montserrat, sans-serif; font-variant-numeric: tabular-nums; }
+.replova-type :is(code, pre, kbd, samp, svg text, select, option, dialog, [role="tooltip"]) { font-family: Montserrat, sans-serif; }
+.replova-type :focus-visible { outline: 3px solid #557eb9; outline-offset: 3px; }
+.marketing-shell .btn-primary { background: #061737; color: white; }

@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 
 export const SITE_NAME = 'Replova'
 export const SITE_URL = 'https://www.replova.app'
-export const SITE_TITLE = 'Replova | AI Review Management & Customer Insights'
+export const SITE_TITLE = 'Replova | Turn feedback into action'
 export const SITE_DESCRIPTION =
-  'Replova helps businesses manage Google reviews with AI-powered replies, sentiment analysis, competitor tracking, and actionable customer insights.'
+  'Collect private customer feedback with Replova Tap, see recurring issues at each location, and track the fix with a Playbook.'
 
 type PageMetadataOptions = {
   title: string
