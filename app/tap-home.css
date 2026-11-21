@@ -43,6 +43,15 @@
   align-content: center;
   padding: 20px;
 }
+.tap-home .cta-sample {
+  justify-self: start;
+  margin-top: 8px;
+  padding: 4px 7px;
+  border-radius: 5px;
+  background: #343330;
+  color: white;
+  font-size: 10px;
+}
 .tap-home .final-cta-visual::after { content: none; }
 .tap-home .final-cta-preview {
   position: relative;

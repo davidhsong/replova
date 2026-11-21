@@ -11,12 +11,24 @@ import { createPageMetadata, SITE_TITLE, SITE_URL } from '@/lib/seo'
 
 const description = 'Customers tap or scan a placard to leave a private rating and optional comment. See recurring issues at each location and track the fix in a Replova Playbook.'
 
-export const metadata: Metadata = createPageMetadata({
+const pageMetadata = createPageMetadata({
   title: SITE_TITLE,
   description,
   path: '/',
   absoluteTitle: true,
 })
+
+const shareImage = {
+  url: '/tap-showcase/social.png',
+  alt: 'Replova Tap with a sample Market Lane feedback inbox',
+  width: 1200,
+  height: 630,
+}
+export const metadata: Metadata = {
+  ...pageMetadata,
+  openGraph: { ...pageMetadata.openGraph, images: [shareImage] },
+  twitter: { ...pageMetadata.twitter, images: [shareImage] },
+}
 
 const structuredData = {
   '@context': 'https://schema.org',
@@ -237,6 +249,7 @@ export default function Home() {
                   />
                 </picture>
               </div>
+              <small className="cta-sample">Sample data · Market Lane</small>
             </div>
           </div>
         </section>

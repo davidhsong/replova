@@ -20,7 +20,7 @@ const FEATURES = [
     imageAlt: 'Sample Market Lane customer form with a 4 out of 5 rating and an optional comment about the pickup shelves.',
   },
   {
-    id: 'inbox', width: 1070, height: 700, mobileWidth: 648, mobileHeight: 820,
+    id: 'inbox', width: 1070, height: 668, mobileWidth: 648, mobileHeight: 820,
     label: 'Feedback inbox', Icon: IconAlert,
     headlineLines: ['Read the visit', 'in context.'],
     description: 'See the original 4 out of 5 beside the customer’s words. They liked the tea and had trouble finding their order. Their comment sentiment is mixed.',
