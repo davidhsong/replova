@@ -12,7 +12,7 @@ test('marketing header exposes an accessible animated mobile menu', async () => 
     readFile(path.join(root, 'app/globals.css'), 'utf8'),
   ])
 
-  assert.match(header, /<MobileMarketingNav\s*\/>/)
+  assert.match(header, /<MobileMarketingNav tapHome=\{tapHome\} \/>/)
   assert.match(mobileMenu, /aria-expanded=\{open\}/)
   assert.match(mobileMenu, /aria-controls="mobile-marketing-menu"/)
   assert.match(mobileMenu, /event\.key === 'Escape'/)

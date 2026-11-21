@@ -5,14 +5,15 @@ import test from 'node:test'
 
 const repoRoot = process.cwd()
 
-test('homepage sentiment chart replays synchronized greyscale segments with minimal colored deltas', async () => {
+test('legacy sentiment chart replays synchronized greyscale segments with minimal colored deltas', async () => {
   const [page, component, stylesheet] = await Promise.all([
     readFile(path.join(repoRoot, 'app', 'page.tsx'), 'utf8'),
     readFile(path.join(repoRoot, 'components', 'marketing', 'AnimatedStoryBarChart.tsx'), 'utf8'),
     readFile(path.join(repoRoot, 'app', 'globals.css'), 'utf8'),
   ])
 
-  assert.match(page, /<AnimatedStoryBarChart\s*\/>/)
+  assert.match(page, /id="sample-feedback"/)
+  assert.doesNotMatch(page, /<AnimatedStoryBarChart\s*\/>/)
   assert.match(component, /^'use client'/)
   assert.match(component, /const Observer = window\.IntersectionObserver/)
   assert.match(component, /new Observer/)

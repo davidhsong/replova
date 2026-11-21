@@ -1,0 +1,57 @@
+/* Palette overrides belong to the public homepage; Tap uses its own product colors. */
+.tap-home { --accent: #141414; }
+.tap-home .btn-primary,
+.tap-home .tap-preview-placard { background: var(--t1); color: white; }
+.tap-home .btn-primary:hover:not(:disabled) { background: #2a2a2a; }
+.tap-home .lp-demo-cta:hover:not(:disabled) { background: var(--t1); }
+.tap-home .tap-preview meter { accent-color: var(--accent); }
+.tap-home .tap-preview meter::-webkit-meter-optimum-value { background: var(--accent); }
+.tap-home .tap-preview meter::-moz-meter-bar { background: var(--accent); }
+.tap-home :is(#platform, #sample-feedback, #sample-issue, #intelligence) { scroll-margin-top: 90px; }
+.tap-home .sample-caption { margin: 18px 0 0; color: #57534c; font-size: 12px; }
+.tap-home .story-visual { height: auto; min-height: 245px; }
+.tap-home .visit-sample {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  width: min(100%, 315px);
+  margin: auto;
+  padding: 16px 20px;
+  border: 1px solid #dedbd4;
+  border-radius: 10px;
+  background: white;
+  color: #202020;
+}
+.tap-home .visit-sample small { font-size: 10px; letter-spacing: .01em; }
+.tap-home .visit-sample strong { font-size: 18px; letter-spacing: -.035em; }
+.tap-home .visit-sample p, .tap-home .visit-sample a { margin: 0; font-size: 12px; line-height: 1.5; }
+.tap-home .visit-sample a { text-decoration: underline; text-underline-offset: .15em; }
+.tap-home .sample-ratings { display: flex; gap: 4px; }
+.tap-home .sample-ratings b {
+  flex: 1;
+  padding: 5px 0;
+  border: 1px solid #ccc9c2;
+  border-radius: 5px;
+  color: #32302d;
+  font-size: 12px;
+  text-align: center;
+}
+.tap-home .sample-ratings [data-selected='true'] { background: #252422; color: white; }
+.tap-home .final-cta-visual {
+  background: linear-gradient(145deg, #061737 0%, #535861 60%, #c5c4bf 100%);
+  display: grid;
+  align-content: center;
+  padding: 20px;
+}
+.tap-home .final-cta-visual::after { content: none; }
+.tap-home .final-cta-preview {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  border-radius: 9px;
+}
+.tap-home .final-cta-preview img { display: block; width: 100%; height: auto; }
+@media (max-width: 620px) {
+  .tap-home .final-cta-visual { padding: 14px; }
+}
+

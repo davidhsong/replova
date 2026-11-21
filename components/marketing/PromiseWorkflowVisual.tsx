@@ -30,8 +30,8 @@ export function PromiseWorkflowVisual() {
       aria-hidden="true"
     >
       <div className="promise-node promise-customer-review">
-        <small>Customer review</small>
-        <p>&ldquo;They explained the options clearly and finished ahead of schedule.&rdquo;</p>
+        <small>Sample visit · Market Lane</small>
+        <p>&ldquo;The tea was great, but I couldn’t tell which shelf was for pickup.&rdquo;</p>
       </div>
 
       <div className="promise-draft-stage">
@@ -42,8 +42,8 @@ export function PromiseWorkflowVisual() {
         </div>
 
         <div className="promise-node promise-replova-draft">
-          <small>Replova draft</small>
-          <p>&ldquo;Thank you for trusting our team. We&apos;re glad the options felt clear and the early finish made your day easier.&rdquo;</p>
+          <small>Owner’s Playbook · Pickup shelves</small>
+          <p>Label the shelves “Pickup” and “Order here” before the next shift.</p>
         </div>
       </div>
     </div>

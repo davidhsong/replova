@@ -1,6 +1,6 @@
 'use client'
 
-import Image, { type StaticImageData } from 'next/image'
+import Image from 'next/image'
 import Link from 'next/link'
 import { type KeyboardEvent, useRef, useState } from 'react'
 import {
@@ -9,80 +9,38 @@ import {
   IconBook,
   IconMessage,
 } from '@/components/icons'
-import reviewIntelligenceImage from '@/public/product-showcase/review-intelligence.png'
-import reviewIntelligenceFocusImage from '@/public/product-showcase/review-intelligence-focus.png'
-import aiReplyDraftsImage from '@/public/product-showcase/ai-reply-drafts.png'
-import aiReplyDraftsFocusImage from '@/public/product-showcase/ai-reply-drafts-focus.png'
-import feedbackAnalyticsImage from '@/public/product-showcase/feedback-analytics.png'
-import feedbackAnalyticsFocusImage from '@/public/product-showcase/feedback-analytics-focus.png'
-import businessPlaybooksImage from '@/public/product-showcase/business-playbooks.png'
-import businessPlaybooksFocusImage from '@/public/product-showcase/business-playbooks-focus.png'
 import styles from './ProductShowcase.module.css'
 
-type FeatureId =
-  | 'review-intelligence'
-  | 'ai-reply-drafts'
-  | 'feedback-analytics'
-  | 'business-playbooks'
-
-type Feature = {
-  id: FeatureId
-  label: string
-  headline: string
-  headlineLines: readonly string[]
-  description: string
-  image: StaticImageData
-  focusImage: StaticImageData
-  imageAlt: string
-  Icon: typeof IconAlert
-}
-
-const FEATURES: Feature[] = [
+const FEATURES = [
   {
-    id: 'review-intelligence',
-    label: 'Review intelligence',
-    headline: 'Find the signal in every review.',
-    headlineLines: ['Find the signal', 'in every review.'],
-    description: 'Understand what customers love, uncover recurring complaints, and turn reviews into clearer business decisions.',
-    image: reviewIntelligenceImage,
-    focusImage: reviewIntelligenceFocusImage,
-    imageAlt: 'Synthetic Replova Review Center showing reputation metrics, a review queue, reply controls, and queue health.',
-    Icon: IconAlert,
+    id: 'tap', width: 992, height: 1372, mobileWidth: 650, mobileHeight: 1318,
+    label: 'Replova Tap', Icon: IconMessage,
+    headlineLines: ['How was', 'your visit?'],
+    description: 'At Market Lane, a tap or scan opens one short form. Choose a rating, add a comment if you like, and send it straight to the shop.',
+    imageAlt: 'Sample Market Lane customer form with a 4 out of 5 rating and an optional comment about the pickup shelves.',
   },
   {
-    id: 'ai-reply-drafts',
-    label: 'AI reply drafts',
-    headline: 'Thoughtful replies, in your voice.',
-    headlineLines: ['Thoughtful replies,', 'in your voice.'],
-    description: 'Generate personalized responses, adjust the tone, and review every draft before responding.',
-    image: aiReplyDraftsImage,
-    focusImage: aiReplyDraftsFocusImage,
-    imageAlt: 'Synthetic Replova Review Center showing a selected customer review and a warm AI reply draft awaiting owner review.',
-    Icon: IconMessage,
+    id: 'inbox', width: 1070, height: 700, mobileWidth: 648, mobileHeight: 820,
+    label: 'Feedback inbox', Icon: IconAlert,
+    headlineLines: ['Read the visit', 'in context.'],
+    description: 'See the original 4 out of 5 beside the customer’s words. They liked the tea and had trouble finding their order. Their comment sentiment is mixed.',
+    imageAlt: 'Sample Market Lane inbox showing the original rating, comment, mixed sentiment, and Pickup shelves theme.',
   },
   {
-    id: 'feedback-analytics',
-    label: 'Feedback analytics',
-    headline: "See what's improving. Spot what's not.",
-    headlineLines: ["See what's improving.", "Spot what's not."],
-    description: 'Turn customer feedback into meaningful trends, track recurring issues, and understand where your business can improve.',
-    image: feedbackAnalyticsImage,
-    focusImage: feedbackAnalyticsFocusImage,
-    imageAlt: 'Synthetic Replova feedback insights dashboard showing a six-week trend, recurring themes, and improvement priorities.',
-    Icon: IconArrowUp,
+    id: 'issues', width: 1130, height: 900, mobileWidth: 708, mobileHeight: 1120,
+    label: 'Recurring issues', Icon: IconArrowUp,
+    headlineLines: ['Two visits,', 'one issue.'],
+    description: 'Two of six submissions mention the pickup shelves. Open that issue to read the comments behind the count.',
+    imageAlt: 'Sample Pickup shelves issue with two of six submissions and the two customers’ supporting excerpts.',
   },
   {
-    id: 'business-playbooks',
-    label: 'Business Playbooks',
-    headline: 'Turn feedback into a better way to work.',
-    headlineLines: ['Turn feedback into', 'a better way to work.'],
-    description: 'Build better procedures, review suggested improvements, assign tasks, and track changes in one organized Playbook.',
-    image: businessPlaybooksImage,
-    focusImage: businessPlaybooksFocusImage,
-    imageAlt: 'Synthetic Replova Business Playbook showing the procedure library and the Service status updates document reader.',
-    Icon: IconBook,
+    id: 'playbook', width: 1070, height: 840, mobileWidth: 648, mobileHeight: 1100,
+    label: 'Playbooks', Icon: IconBook,
+    headlineLines: ['Give the fix', 'a next step.'],
+    description: 'The owner logs an internal task to label the shelves before the next shift. The Playbook keeps the notes and tracks the task through completion.',
+    imageAlt: 'Sample Playbook with saved shelf-labeling instructions and an internal corrective task.',
   },
-]
+] as const
 
 export function ProductShowcase() {
   const [activeIndex, setActiveIndex] = useState(0)
@@ -153,7 +111,7 @@ export function ProductShowcase() {
           >
             <div key={`copy-${activeFeature.id}`} className={styles.copy}>
               <div>
-                <h3 aria-label={activeFeature.headline}>
+                <h3 aria-label={activeFeature.headlineLines.join(' ')}>
                   {activeFeature.headlineLines.map(line => <span key={line}>{line}</span>)}
                 </h3>
                 <p>{activeFeature.description}</p>
@@ -167,38 +125,15 @@ export function ProductShowcase() {
               </Link>
             </div>
 
-            <div className={styles.visualStage} aria-live="polite">
-              {FEATURES.map((feature, index) => (
-                <div
-                  key={feature.id}
-                  className={styles.visualLayer}
-                  data-active={activeIndex === index}
-                  data-visual={feature.id}
-                  aria-hidden={activeIndex !== index}
-                >
-                  <div className={styles.contextWindow}>
-                    <Image
-                      src={feature.image}
-                      alt=""
-                      fill
-                      sizes="(max-width: 820px) 160vw, 72vw"
-                      quality={92}
-                    />
-                  </div>
-                  <div className={styles.focusWindow}>
-                    <div className={styles.focusImage}>
-                      <Image
-                        src={feature.focusImage}
-                        alt={feature.imageAlt}
-                        fill
-                        sizes="(max-width: 820px) 150vw, 64vw"
-                        quality={92}
-                      />
-                    </div>
-                  </div>
-                  <span className={styles.sampleLabel}>Synthetic workspace</span>
-                </div>
-              ))}
+            <div className={styles.visualStage} data-feature={activeFeature.id}>
+              <div className={styles.screenshot} key={activeFeature.id}>
+                <picture>
+                  <source media="(max-width: 620px)" width={activeFeature.mobileWidth} height={activeFeature.mobileHeight} srcSet={'/tap-showcase/' + activeFeature.id + '-mobile.png'} />
+                  <Image src={'/tap-showcase/' + activeFeature.id + '.png'} alt={activeFeature.imageAlt}
+                    width={activeFeature.width} height={activeFeature.height} sizes="(max-width: 620px) 90vw, 550px" />
+                </picture>
+              </div>
+              <span className={styles.sampleLabel}>Sample data · Market Lane</span>
             </div>
           </div>
         </div>

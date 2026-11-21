@@ -73,7 +73,20 @@ function MenuChevron() {
   )
 }
 
-export function MobileMarketingNav() {
+export function MobileMarketingNav({ tapHome = false }: { tapHome?: boolean }) {
+  const groups = tapHome ? [
+    { label: 'Platform', items: [
+      { label: 'Replova Tap', detail: 'Collect a rating and optional comment.', href: '/#platform', icon: 'review' },
+      { label: 'Feedback inbox', detail: 'Read a sample visit at Market Lane.', href: '/#sample-feedback', icon: 'reply' },
+      { label: 'Recurring issues', detail: 'See the comments behind each count.', href: '/#sample-issue', icon: 'analytics' },
+      { label: 'Playbooks', detail: 'Track the next step for an issue.', href: '/#intelligence', icon: 'playbook' },
+    ] } satisfies MobileNavGroup,
+    { ...menuGroups[1], items: menuGroups[1].items.map(item => ({
+      ...item, detail: item.icon === 'health' ? 'Understand the patient experience.' :
+        item.icon === 'pin' ? 'Collect feedback at your location.' : item.detail,
+    })) },
+    ...menuGroups.slice(2),
+  ] : menuGroups
   const [open, setOpen] = useState(false)
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -161,7 +174,7 @@ export function MobileMarketingNav() {
       <div className="mobile-marketing-menu-layer" data-open={open} aria-hidden={!open}>
         <aside ref={panelRef} id="mobile-marketing-menu" className="mobile-marketing-menu-panel" aria-label="Mobile navigation" tabIndex={-1}>
           <nav className="mobile-marketing-menu-groups" aria-label="Mobile main navigation">
-            {menuGroups.map((group, index) => {
+            {groups.map((group, index) => {
               const expanded = expandedGroup === group.label
               const submenuId = `mobile-${group.label.toLowerCase()}-menu`
               return (

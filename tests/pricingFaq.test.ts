@@ -179,7 +179,7 @@ test('FAQ starts collapsed and remains a single-expanded accessible accordion wi
   assert.match(component, /aria-labelledby=\{buttonId\}/)
   assert.match(component, /aria-hidden=\{!isOpen\}/)
   assert.match(component, /inert=\{!isOpen \? true : undefined\}/)
-  assert.match(component, /unattended publishing remains disabled/i)
+  assert.match(component, /A Google Business Profile is optional/i)
   assert.doesNotMatch(component, /enable delayed auto-reply/i)
   assert.match(stylesheet, /grid-template-rows:\s*0fr/)
   assert.match(stylesheet, /grid-template-rows:\s*1fr/)
@@ -194,10 +194,10 @@ test('homepage replacement leaves its established non-pricing sections in place'
     readFile(path.join(repoRoot, 'app', 'page.tsx'), 'utf8'),
     readFile(path.join(repoRoot, 'components', 'MarketingChrome.tsx'), 'utf8'),
   ])
-  assert.match(page, /<MarketingHeader\s*\/>/)
-  assert.match(page, /<ProductPreview\s*\/>/)
-  assert.match(page, /<ReplyStoryCard\s*\/>/)
-  assert.match(page, /<InsightStoryCard\s*\/>/)
+  assert.match(page, /<MarketingHeader tapHome \/>/)
+  assert.doesNotMatch(page, /<ProductPreview\s*\/>/)
+  assert.match(page, /<VisitStory\s*\/>/)
+  assert.match(page, /See what needs attention/)
   assert.match(page, /className="promise-section"/)
   assert.match(page, /className="security-section"/)
   assert.equal(page.match(/className="security-icon /g)?.length, 4)
@@ -208,7 +208,7 @@ test('homepage replacement leaves its established non-pricing sections in place'
   for (const icon of ['healthcare', 'home', 'automotive', 'professional', 'retail', 'local']) {
     assert.match(page, new RegExp(`icon: '${icon}'`))
   }
-  assert.match(page, /<MarketingFooter\s*\/>/)
+  assert.match(page, /<MarketingFooter tapHome \/>/)
   assert.doesNotMatch(page, /const plans =/)
   assert.doesNotMatch(page, /const faqs =/)
 })

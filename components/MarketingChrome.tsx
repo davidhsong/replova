@@ -99,22 +99,26 @@ function XIcon() {
   )
 }
 
-export function MarketingHeader() {
+export function MarketingHeader({ tapHome = false }: { tapHome?: boolean }) {
   return (
     <header className="lp-header">
       <div className="lp-nav-inner">
-        <MobileMarketingNav />
+        <MobileMarketingNav tapHome={tapHome} />
         <Link href="/" aria-label="Replova home" className="lp-home-link"><BrandLogo height={28} eager /></Link>
         <nav className="lp-menu" aria-label="Main navigation">
           <NavDropdown
             label="Platform"
             href="/#platform"
-            links={platformLinks}
+            links={tapHome ? [
+              ['Replova Tap', 'Collect a rating and optional comment.', '/#platform', 'reply'],
+              ['Feedback inbox', 'Read a sample visit at Market Lane.', '/#sample-feedback', 'insights'],
+              ['Playbooks', 'Track the next step for a recurring issue.', '/#sample-issue', 'benchmark'],
+            ] : platformLinks}
           />
           <NavDropdown
             label="Solutions"
             href="/industries"
-            links={industryLinks}
+            links={tapHome ? industryLinks.map(([label, detail, href, icon]) => [label, icon === 'healthcare' ? 'Understand the patient experience at each location.' : detail, href, icon]) : industryLinks}
           />
           <Link href="/resources">Resources</Link>
         </nav>
@@ -172,7 +176,7 @@ const footerGroups = [
   },
 ] as const
 
-export function MarketingFooter() {
+export function MarketingFooter({ tapHome = false }: { tapHome?: boolean }) {
   return (
     <footer className="lp-footer">
       <div className="lp-footer-grid">
@@ -202,7 +206,9 @@ export function MarketingFooter() {
         {footerGroups.map(group => (
           <div className="lp-footer-group" key={group.title}>
             <strong>{group.title}</strong>
-            {group.links.map(([label, href]) => <Link key={label} href={href}>{label}</Link>)}
+            {(tapHome && group.title === 'Platform'
+              ? [['Replova Tap', '/#platform'], ['Feedback and Playbooks', '/#intelligence']]
+              : group.links).map(([label, href]) => <Link key={label} href={href}>{label}</Link>)}
           </div>
         ))}
         <div className="lp-footer-bottom">

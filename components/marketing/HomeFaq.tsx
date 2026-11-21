@@ -5,24 +5,28 @@ import styles from './HomeFaq.module.css'
 
 export const HOME_FAQS = [
   {
-    question: 'Who is Replova built for?',
-    answer: 'Replova is built for local service businesses that want a clearer review and customer-feedback workflow. You can create an account and workspace without connecting Google or adding a physical location.',
+    question: 'Does the customer need an app or account?',
+    answer: 'No. Tapping the NFC tag or scanning the QR opens the feedback form in the phone’s browser.',
   },
   {
-    question: 'Does Replova post replies automatically?',
-    answer: 'Replova prepares professional, warm, and brief drafts for your review. A person approves and confirms each public reply; unattended publishing remains disabled.',
+    question: 'Can customers leave just a rating?',
+    answer: 'Yes. Customers choose 1 to 5 and can send their rating with the comment box empty. That visit still counts in the inbox.',
   },
   {
-    question: 'How does the AI learn our voice?',
-    answer: 'Every plan includes three practical reply styles. Agency customers can add a custom reply persona for more specific brand guidance, while every draft still stays subject to approval.',
+    question: 'Who can see the feedback?',
+    answer: 'The signed-in business owner can read submissions in the location’s Feedback inbox. Submitting the form does not publish a Google review.',
   },
   {
-    question: 'What happens when a low rating arrives?',
-    answer: 'For an authorized review source, Replova can flag the review as urgent and email the owner with the review and a suggested response based on the configured threshold.',
+    question: 'How do locations stay separate?',
+    answer: 'Each placard belongs to one location. Its link sends visits to that location’s inbox, issue counts, and Playbooks.',
   },
   {
-    question: 'Can I cancel or change plans?',
-    answer: 'Yes. Subscription changes are handled through the secure Stripe billing portal. Existing subscriptions keep their current Stripe price unless the customer explicitly changes plans.',
+    question: 'What happens to written comments?',
+    answer: 'The owner can read the original comment and rating. When analysis is enabled for the location, Replova can group recurring issues and show supporting excerpts. On eligible plans, the inbox also shows sentiment for the written words.',
+  },
+  {
+    question: 'Is a Google Business Profile required for Tap?',
+    answer: 'No. An eligible owner can create a first location from Tap with its name and time zone. A Google Business Profile is optional for separate Google review tools.',
   },
 ] as const
 
@@ -36,7 +40,7 @@ export function HomeFaq() {
         <div className={styles.heading}>
           <div className={styles.eyebrow}>FAQ</div>
           <h2 id={`${componentId}-title`}>A few things worth knowing.</h2>
-          <p>Plain answers about control, access, and billing before you create an account.</p>
+          <p>What customers send and what the owner sees.</p>
         </div>
 
         <div className={styles.list}>

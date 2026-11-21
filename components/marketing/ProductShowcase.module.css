@@ -208,111 +208,27 @@
 
 .visualStage {
   position: relative;
+  display: grid;
+  place-items: center;
   min-width: 0;
   min-height: 426px;
   margin: 9px 9px 9px 0;
+  padding: 28px 20px 42px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, .24);
   border-radius: 12px;
-  background:
-    radial-gradient(circle at 82% 17%, rgba(255, 255, 255, .66), transparent 38%),
-    radial-gradient(circle at 50% 34%, rgba(178, 178, 174, .48), transparent 53%),
-    radial-gradient(circle at 18% 82%, rgba(38, 39, 41, .82), transparent 58%),
-    linear-gradient(145deg, #222426 0%, #696a69 50%, #c5c4bf 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .24);
+  background: linear-gradient(145deg, #061737 0%, #535861 60%, #c5c4bf 100%);
 }
 
-.visualStage::before {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  background:
-    linear-gradient(115deg, rgba(255, 255, 255, .14), transparent 34%),
-    linear-gradient(180deg, transparent 62%, rgba(17, 18, 20, .2));
-  content: '';
-}
-
-.visualLayer {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  pointer-events: none;
-  transform: translate3d(18px, 0, 0) scale(.985);
-  transition:
-    opacity 400ms cubic-bezier(.12, .23, .17, 1),
-    transform 400ms cubic-bezier(.12, .23, .17, 1);
-}
-
-.visualLayer[data-active='true'] {
-  z-index: 1;
-  opacity: 1;
-  transform: translate3d(0, 0, 0) scale(1);
-}
-
-.contextWindow {
-  position: absolute;
-  inset: 46px 40px -26px 0;
+.screenshot {
+  width: 100%;
   overflow: hidden;
-  border: 0;
-  border-radius: 0 14px 0 0;
-  background: #fff;
-  box-shadow: 0 24px 52px rgba(24, 24, 23, .16);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.2);
+  animation: copy-enter 300ms ease both;
 }
 
-.contextWindow img {
-  object-fit: cover;
-  filter: blur(5px) saturate(.8) contrast(1.04) brightness(1.01);
-  opacity: .88;
-  transform: scale(1.035);
-}
-
-.focusWindow {
-  position: absolute;
-  z-index: 1;
-  overflow: hidden;
-  border: 6px solid rgba(255, 255, 255, .82);
-  border-radius: 16px 16px 0 0;
-  background: #fff;
-  box-shadow: 0 22px 52px rgba(24, 24, 23, .22), 0 2px 10px rgba(24, 24, 23, .12);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, .08) 5%, rgba(0, 0, 0, .34) 10%, rgba(0, 0, 0, .72) 16%, #000 24%, #000 100%);
-  mask-image: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, .08) 5%, rgba(0, 0, 0, .34) 10%, rgba(0, 0, 0, .72) 16%, #000 24%, #000 100%);
-}
-
-.focusImage {
-  position: absolute;
-  inset: 0;
-}
-
-.focusImage img {
-  object-fit: cover;
-  filter: saturate(.98) contrast(1.14) brightness(.99);
-  transform: scale(1.006);
-}
-
-.visualLayer[data-visual='review-intelligence'] .focusWindow {
-  inset: 46px 5% -26px 46%;
-}
-
-.visualLayer[data-visual='ai-reply-drafts'] .focusWindow {
-  inset: 46px 5% -26px 46%;
-}
-
-.visualLayer[data-visual='feedback-analytics'] .focusWindow {
-  inset: 38px 4% 32px 6%;
-}
-
-.visualLayer[data-visual='feedback-analytics'] .contextWindow {
-  right: 4%;
-}
-
-.visualLayer[data-visual='business-playbooks'] .focusWindow {
-  inset: 38px 3% 26px 6%;
-}
-
-.visualLayer[data-visual='business-playbooks'] .contextWindow {
-  right: 3%;
-}
+.visualStage[data-feature='tap'] .screenshot { max-width: 285px; }
+.screenshot img { display: block; width: 100%; height: auto; }
 
 .sampleLabel {
   position: absolute;
@@ -322,11 +238,11 @@
   padding: 5px 7px;
   border: 1px solid rgba(255, 255, 255, .26);
   border-radius: 7px;
-  background: rgba(24, 24, 23, .52);
+  background: rgba(24, 24, 23, .78);
   color: rgba(255, 255, 255, .88);
   box-shadow: 0 8px 22px rgba(24, 24, 23, .16);
   backdrop-filter: blur(12px);
-  font-size: 7px;
+  font-size: 9px;
 }
 
 @keyframes copy-enter {
@@ -357,17 +273,6 @@
   .copy p { font-size: 13px; line-height: 1.48; }
   .cta { min-height: 36px; font-size: 11px; }
   .visualStage { min-height: 446px; margin: 9px 9px 9px 0; }
-  .contextWindow { inset: 46px 31px -24px 0; }
-  .visualLayer[data-visual='review-intelligence'] .focusWindow,
-  .visualLayer[data-visual='ai-reply-drafts'] .focusWindow {
-    inset: 46px 5% -24px 46%;
-  }
-  .visualLayer[data-visual='feedback-analytics'] .focusWindow {
-    inset: 34px 4% 25px 6%;
-  }
-  .visualLayer[data-visual='business-playbooks'] .focusWindow {
-    inset: 34px 3% 22px 6%;
-  }
 }
 
 @media (max-width: 960px) {
@@ -381,7 +286,6 @@
   .tabList button { padding-inline: 8px; font-size: 12px; }
   .copy { padding-inline: 32px; }
   .visualStage { min-height: 520px; }
-  .contextWindow { inset: 42px 24px -24px 0; }
 }
 
 @media (max-width: 820px) {
@@ -402,11 +306,6 @@
   .copy p { max-width: 42ch; }
   .cta { width: 100%; max-width: 356px; }
   .visualStage { min-height: 390px; margin: 0 12px 12px; }
-  .contextWindow { inset: 38px 18px -18px 0; }
-  .visualLayer[data-visual='review-intelligence'] .focusWindow { inset: 38px 4% -18px 52%; }
-  .visualLayer[data-visual='ai-reply-drafts'] .focusWindow { inset: 38px 4% -18px 52%; }
-  .visualLayer[data-visual='feedback-analytics'] .focusWindow { inset: 30px 3% 20px 4%; }
-  .visualLayer[data-visual='business-playbooks'] .focusWindow { inset: 30px 3% 18px 4%; }
 }
 
 @media (max-width: 620px) {
@@ -427,11 +326,6 @@
   .copy h3 { font-size: 31px; }
   .copy p { font-size: 13.5px; }
   .visualStage { min-height: 340px; }
-  .contextWindow { inset: 30px 12px -16px 0; }
-  .visualLayer[data-visual='review-intelligence'] .focusWindow { inset: 30px 3% -16px 32%; }
-  .visualLayer[data-visual='ai-reply-drafts'] .focusWindow { inset: 30px 3% -16px 32%; }
-  .visualLayer[data-visual='feedback-analytics'] .focusWindow { inset: 24px 2% 14px 3%; }
-  .visualLayer[data-visual='business-playbooks'] .focusWindow { inset: 24px 2% 14px 3%; }
   .sampleLabel { left: 12px; bottom: 11px; }
 }
 
@@ -439,10 +333,11 @@
   .activeIndicator,
   .tabList button,
   .cta,
-  .visualLayer {
+  .screenshot {
     transition-duration: .01ms !important;
   }
 
+  .screenshot,
   .copy {
     animation: none;
   }

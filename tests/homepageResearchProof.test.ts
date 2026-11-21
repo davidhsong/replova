@@ -5,14 +5,14 @@ import test from 'node:test'
 
 const root = process.cwd()
 
-test('homepage research proof uses scoped published findings and real evidence links', async () => {
+test('resources retain scoped published findings and real evidence links', async () => {
   const [home, component, evidencePage] = await Promise.all([
     readFile(path.join(root, 'app/page.tsx'), 'utf8'),
     readFile(path.join(root, 'components/marketing/ResearchProof.tsx'), 'utf8'),
     readFile(path.join(root, 'app/resources/customer-review-research/page.tsx'), 'utf8'),
   ])
 
-  assert.match(home, /<ResearchProof \/>/)
+  assert.doesNotMatch(home, /<ResearchProof \/>/)
   assert.match(component, /REVIEWS\.io/)
   assert.match(component, /94%/)
   assert.match(component, /2,631/)
