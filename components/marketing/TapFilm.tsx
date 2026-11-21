@@ -17,7 +17,10 @@ export function TapFilm() {
     if (!video.hasAttribute('src')) video.src = filmUrl
     video.muted = true
     void video.play().catch((error: DOMException) => {
-      if (error.name !== 'AbortError') manualOnly.current = true
+      if (error.name !== 'AbortError') {
+        manualOnly.current = true
+        setPlaying(false)
+      }
     })
   }
 
@@ -56,7 +59,7 @@ export function TapFilm() {
   function handlePlayback(restart: boolean) {
     const video = videoRef.current
     if (!video) return
-    if (!restart && !video.paused && !video.ended) {
+    if (!restart && !video.error && !video.paused && !video.ended) {
       manualOnly.current = true
       video.pause()
       return
@@ -86,7 +89,7 @@ export function TapFilm() {
         onPlay={() => { setPlaying(true); setEnded(false) }}
         onPause={() => setPlaying(false)}
         onEnded={() => { setPlaying(false); setEnded(true) }}
-        onError={() => setUnavailable(true)}
+        onError={() => { setUnavailable(true); setPlaying(false) }}
       />
       <figcaption className={styles.footer}>
         <span className={styles.caption}>Replova Tap <span aria-hidden="true">·</span> 30 seconds</span>
