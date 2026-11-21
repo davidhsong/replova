@@ -1,10 +1,14 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { createPageMetadata } from '@/lib/seo'
 import InteractiveDashboardPreview from '@/components/marketing/InteractiveDashboardPreview'
 
 export const metadata: Metadata = {
-  title: 'Dashboard Preview',
-  description: 'Explore a fictional location’s feedback and a sample service-business dashboard.',
+  ...createPageMetadata({
+    title: 'Dashboard Preview',
+    description: 'Explore a fictional location’s feedback and a sample service-business dashboard.',
+    path: '/dashboard-preview',
+  }),
   robots: { index: false, follow: false },
 }
 
@@ -22,15 +26,15 @@ export default function DashboardPreviewPage() {
         <header>
           <small>Sample feedback · Fictional location</small>
           <h1>What needs attention</h1>
-          <p>Riverside branch · July to September</p>
+          <p>Northstar Auto Care · Riverside branch · July to September</p>
         </header>
         <details className="issue-bar">
           <summary>
-            Pests and hygiene · 70 of 150 submissions
-            <meter min="0" max="150" value="70" />
+            After-hours drop-off · 2 of 12 submissions
+            <meter min="0" max="12" value="2" />
           </summary>
-          <p>Sample comment: “We saw insects near the entrance.”</p>
-          <p>Next action: log the affected areas and compare pest-control providers.</p>
+          <p>Sample comment: “I found the key box, but I couldn’t tell where to leave my car.”</p>
+          <p>Next action: mark the overnight parking spaces and update the drop-off instructions.</p>
         </details>
       </section>
       <InteractiveDashboardPreview variant="page" />

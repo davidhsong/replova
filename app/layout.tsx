@@ -3,6 +3,7 @@ import { GoogleAnalytics } from "@next/third-parties/google";
 import {
   SITE_DESCRIPTION,
   SITE_NAME,
+  SITE_SHARE_IMAGE,
   SITE_TITLE,
   SITE_URL,
 } from "@/lib/seo";
@@ -30,11 +31,13 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "/",
     siteName: SITE_NAME,
+    images: [SITE_SHARE_IMAGE],
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
   },
   twitter: {
     card: "summary_large_image",
+    images: [SITE_SHARE_IMAGE],
     title: SITE_TITLE,
     description: SITE_DESCRIPTION,
     creator: "@Replova",

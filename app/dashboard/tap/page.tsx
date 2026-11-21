@@ -44,7 +44,7 @@ export default async function Tap({
         <p>
           {location
             ? location.name
-            : 'Choose the location that will receive feedback from this placard.'}
+            : 'Start with the location where customers will tap or scan your placard.'}
         </p>
       </header>
       {notice && <p role="alert">{notice}</p>}

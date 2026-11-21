@@ -12,24 +12,12 @@ import { createPageMetadata, SITE_TITLE, SITE_URL } from '@/lib/seo'
 
 const description = 'Collect private ratings and optional comments with a Replova Tap placard. Review feedback for each location and track improvements in a Playbook.'
 
-const pageMetadata = createPageMetadata({
+export const metadata: Metadata = createPageMetadata({
   title: SITE_TITLE,
   description,
   path: '/',
   absoluteTitle: true,
 })
-
-const shareImage = {
-  url: '/tap-showcase/social.png',
-  alt: 'Replova Tap with a sample Market Lane feedback inbox',
-  width: 1200,
-  height: 630,
-}
-export const metadata: Metadata = {
-  ...pageMetadata,
-  openGraph: { ...pageMetadata.openGraph, images: [shareImage] },
-  twitter: { ...pageMetadata.twitter, images: [shareImage] },
-}
 
 const structuredData = {
   '@context': 'https://schema.org',

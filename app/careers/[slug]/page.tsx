@@ -66,9 +66,9 @@ export default async function CareerRolePage({ params }: CareerRolePageProps) {
             <div className="career-job-content">
               <section id="who-we-are" className="career-copy-section">
                 <div className="career-section-heading"><span>01 / Company</span><h2>Who we are</h2></div>
-                <p className="career-lead">Replova helps businesses manage Google reviews with less repetitive work and more useful context.</p>
-                <p>The product drafts thoughtful responses, helps teams publish approved replies, and turns customer feedback into themes, trends, and practical actions.</p>
-                <p>We are building for any business with a Google Business Profile. The work spans product design, software, AI quality, customer research, operations, and the trust required to handle real customer feedback responsibly.</p>
+                <p className="career-lead">Replova helps businesses learn from private customer feedback at each location.</p>
+                <p>With Tap, customers leave a rating and optional comment. The owner can read what happened and track a change in a Playbook.</p>
+                <p>Teams that manage public Google reviews can also draft and publish replies. The work spans product design, software, AI quality, customer research, operations, and the trust required to handle real customer feedback responsibly.</p>
               </section>
 
               <section id="the-role" className="career-copy-section">
