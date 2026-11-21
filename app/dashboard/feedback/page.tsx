@@ -17,14 +17,18 @@ export default async function Feedback({ searchParams }: { searchParams: Promise
     if (!target) notFound()
     return <BookmarkLocation id={target.id} name={target.name} />
   }
-  const [{ data, start, end, page }, sources] = await Promise.all([
+  const [{ data, start, end, page }, sources, activation] = await Promise.all([
     period(ctx, q),
     ctx.admin
       .from('tap_placards')
       .select('id,placement')
       .eq('location_id', l.id)
       .order('created_at'),
+    ctx.admin.from('tap_analysis_locations').select('enabled_from,remaining_claims').eq('location_id', l.id).maybeSingle(),
   ])
+  const scope = checked(activation)
+  const scheduled = (createdAt: string) =>
+    scope && scope.remaining_claims !== 0 && Date.parse(createdAt) >= Date.parse(scope.enabled_from)
   const issueUrl = (theme: string) =>
     filterUrl({ ...q, location: l.id, start, end }, { theme, page: undefined }) + '#evidence'
   return (
@@ -145,7 +149,11 @@ export default async function Feedback({ searchParams }: { searchParams: Promise
                   ]
                     .filter(Boolean)
                     .join(' · ')
-                : r.analysis_status === 'failed'
+                : r.analysis_status === 'working' && scope && Date.parse(r.created_at) >= Date.parse(scope.enabled_from)
+                  ? 'Saved · analysis in progress'
+                  : !scheduled(r.created_at)
+                  ? 'Saved · analysis not scheduled'
+                  : r.analysis_status === 'failed'
                   ? 'Analysis failed'
                   : 'Analysis pending'}
             </small>
@@ -161,7 +169,7 @@ export default async function Feedback({ searchParams }: { searchParams: Promise
                 </form>
               </details>
             )}
-            {r.analysis_status === 'failed' && (
+            {r.analysis_status === 'failed' && scheduled(r.created_at) && (
               <form action={editFeedback.bind(null, l.id, r.id)}>
                 <button name="action" value="retry">
                   Retry analysis

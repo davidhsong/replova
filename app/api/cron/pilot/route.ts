@@ -1,5 +1,6 @@
 import type { NextRequest } from 'next/server'
 import { isAuthorizedCron } from '@/lib/cronAuth'
+import { getOpenAI, OPENAI_MODEL } from '@/lib/openai'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { analyzeNext } from '@/lib/pilot/analysis'
 import { advance } from '@/lib/pilot/worker'
@@ -8,6 +9,16 @@ import type { Book } from '@/lib/pilot/workflow'
 export const maxDuration = 120
 export async function GET(req: NextRequest) {
   if (!isAuthorizedCron(req)) return new Response('Unauthorized', { status: 401 })
+  if (req.nextUrl.searchParams.has('check')) {
+    return Response.json({
+      environment: process.env.VERCEL_ENV,
+      databaseOrigin: new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).origin,
+      model: OPENAI_MODEL,
+      modelConfigured: Boolean(process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL),
+      officialOrigin: Boolean(process.env.OPENAI_API_KEY) && getOpenAI().baseURL.replace(/\/$/, '') === 'https://api.openai.com/v1',
+      providerDisabled: process.env.PILOT_PROVIDER_LIVE !== 'true',
+    })
+  }
   const admin = getSupabaseAdmin()
   checked(
     await admin

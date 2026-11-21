@@ -70,6 +70,25 @@ export async function benchmark({ origin, cron, client }) {
   }
   await open(hot.placard)
   await tick()
+  await sql('insert into tap_analysis_locations(location_id) values($1)', [hot.location])
+  if (process.argv.includes('--excluded-backlog')) {
+    // Make all historical visits outside the one enabled site due before the new arrival.
+    const changed = await client.query("update tap_feedback set analysis_status='failed', attempts=1,next_attempt=created_at where location_id<>$1", [hot.location])
+    await sql('analyze tap_feedback')
+    const id = await open(hot.placard)
+    await submit(hot.placard, id, 'Synthetic scoped queue check')
+    await sql('begin')
+    const [plan] = await sql('explain (analyze,format json) select * from tap_claim_scoped_analysis()')
+    await sql('rollback')
+    const start = now()
+    assert.equal((await tick()).claimed, 1)
+    assert.equal((await sql('select analysis_status from tap_feedback where id=$1', [id]))[0].analysis_status,'ready')
+    assert.equal((await sql('select count(*)::int n from tap_feedback where location_id<>$1 and attempts<>1', [hot.location]))[0].n,0)
+    console.log('SCOPED QUEUE', JSON.stringify({ locations:60, historical:100000, excludedDue:changed.rowCount,
+      claimMs:plan['QUERY PLAN'][0]['Execution Time'], firstTickMs:Math.round(now()-start) }))
+    return
+  }
+  await sql('insert into tap_analysis_locations(location_id) values($1)', [quiet.location])
   if (process.argv.includes('--stream')) {
     const arrivals = []
     for (let minute = 0; minute < 2; minute++) {
@@ -307,7 +326,7 @@ export async function benchmark({ origin, cron, client }) {
     "update tap_feedback set attempts=0,analysis_status='pending',next_attempt=now() where id=$1",
     [id],
   )
-  const [claim] = await sql('select * from tap_claim_analysis()')
+  const [claim] = await sql('select * from tap_claim_scoped_analysis()')
   assert.equal(claim.id, id)
   await sql("update tap_feedback set next_attempt=now()-interval '1 second' where id=$1", [id])
   await tick()

@@ -13,7 +13,7 @@
     "test": "tsx --test tests/**/*.test.ts",
     "test:staging:playbook": "tsx tests/staging/playbook.integration.ts",
     "test:staging:playbook:browser": "tsx tests/staging/playbook.browser.e2e.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "schema:audit": "tsx scripts/schema-audit.ts",
     "schema:audit:check": "tsx scripts/schema-audit.ts --check",
     "verify": "npm run lint && npm run typecheck && npm run build",

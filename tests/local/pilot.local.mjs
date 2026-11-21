@@ -1,9 +1,11 @@
 import { createServer } from 'node:http'
+import { createServer as createSocketServer } from 'node:net'
 import { setTimeout as delay } from 'node:timers/promises'
 import { rehearse } from './pilotBrowser.mjs'
 import { benchmark } from './pilotVolume.mjs'
 import { sentimentReplay } from './pilotSentimentReplay.mjs'
 import { commentSentimentCheck } from './pilotCommentSentiment.mjs'
+import { scopedAnalysis } from './pilotScope.mjs'
 import { createHmac, randomUUID, randomBytes } from 'node:crypto'
 import {
   readFileSync,
@@ -30,11 +32,15 @@ const userId = randomUUID(),
   secret = randomBytes(40).toString('hex'),
   cron = randomUUID(),
   origin = 'http://127.0.0.1:3673'
+const portProbe = createSocketServer()
+await new Promise((ok) => portProbe.listen(0, '127.0.0.1', ok))
+const databasePort = portProbe.address().port
+await new Promise((ok) => portProbe.close(ok))
 const pg = new Embedded({
   databaseDir: path.join(lab, 'db'),
   initdbFlags: ['--encoding=UTF8', '--locale=C'],
   postgresFlags: ['-c', 'io_method=sync'],
-  port: 54365,
+  port: databasePort,
   user: 'postgres',
   password,
   persistent: true,
@@ -140,7 +146,7 @@ try {
                 ';' +
                 process.env.PATH
               : process.env.PATH,
-          PGRST_DB_URI: 'postgres://postgres:' + password + '@127.0.0.1:54365/postgres',
+          PGRST_DB_URI: 'postgres://postgres:' + password + '@127.0.0.1:' + databasePort + '/postgres',
           PGRST_DB_SCHEMAS: 'public',
           PGRST_DB_ANON_ROLE: 'anon',
           PGRST_JWT_SECRET: secret,
@@ -156,6 +162,7 @@ try {
   const replay = replayIndex >= 0 ? sentimentReplay(process.argv[replayIndex + 1]) : null
   const sentiment = process.argv.includes('--comment-sentiment') ? commentSentimentCheck() : null
   const failedOnce = new Set()
+  const scopedCalls = []
   proxy = createServer(async (req, res) => {
     try {
       if (req.url === '/auth/v1/user' && req.headers.authorization === 'Bearer ' + token) {
@@ -167,6 +174,7 @@ try {
         for await (const c of req) body += c
         const request = JSON.parse(body)
         const input = JSON.parse(request.input)
+        if (process.argv.includes('--scoped-analysis')) scopedCalls.push(input.comment)
         if (volume) await delay(100)
         const inject = volume && /visit (0|17|34)$/.test(input.comment) && !failedOnce.has(input.comment)
         if (inject || (input.comment.includes('by the window') && !failedAnalysis)) {
@@ -286,10 +294,11 @@ try {
     } catch {}
     await delay(500)
   }
-  if (sentiment) await sentiment.run({ origin, cron, client })
+  if (process.argv.includes('--scoped-analysis')) await scopedAnalysis({ origin, cron, client, session, scopedCalls })
+  else if (sentiment) await sentiment.run({ origin, cron, client })
   else if (replay) await replay.run({ origin, cron, client })
   else if (volume) await benchmark({ origin, cron, client })
-  else await rehearse({ origin, cron, session, service })
+  else await rehearse({ origin, cron, session, service, client })
 } catch (e) {
   console.error(e)
   process.exitCode = 1

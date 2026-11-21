@@ -27,6 +27,7 @@ export function commentSentimentCheck() {
       const sql = async (query, params = []) => (await client.query(query, params)).rows
       const [site] = await sql("select tap_first_location(id,'Sentiment desk','UTC',true) id from business_workspaces limit 1")
       const [placard] = await sql('insert into tap_placards(location_id) values($1) returning id', [site.id])
+      await sql('insert into tap_analysis_locations(location_id) values($1)', [site.id])
       const visits = []
       for (const rating of [2, 5]) {
         for (const row of [...cases, { comment: '', sentiment: null }]) {

@@ -104,17 +104,7 @@ export async function editFeedback(locationId: string, id: string, f: FormData) 
   if (!row) fail('/dashboard/feedback', 'Submission unavailable.')
   if (f.get('action') === 'retry' && row.analysis_status !== 'ready') {
     checked(
-      await admin
-        .from('tap_feedback')
-        .update({
-          analysis_status: 'pending',
-          lease: null,
-          attempts: 0,
-          next_attempt: new Date().toISOString(),
-        })
-        .eq('location_id', locationId)
-        .eq('id', id)
-        .eq('analysis_status', 'failed'),
+      await admin.rpc('tap_retry_analysis', { p_location: locationId, p_id: id }),
     )
   } else if (row.analysis_status === 'ready') {
     const names = [

@@ -17,14 +17,17 @@ type ClaimedFeedback = {
 
 export async function analyzeNext() {
   const admin = getSupabaseAdmin()
-  const row = checked(await admin.rpc('tap_claim_analysis'))?.[0]
+  const row = checked(await admin.rpc('tap_claim_scoped_analysis'))?.[0]
   if (!row) return false
-  await analyzeClaimed(row)
+  if (checked(await admin.rpc('tap_analysis_can_start', { p_id: row.id, p_lease: row.lease }))) {
+    await analyzeClaimed(row, 0)
+  }
   return true
 }
 
 export async function analyzeClaimed(row: ClaimedFeedback, maxRetries?: number, onModelResponse?: (receipt: ModelReceipt) => void) {
   const admin = getSupabaseAdmin()
+  let receipt: ModelReceipt | undefined
   try {
     const { data, model, requestId, inputTokens, outputTokens } =
       await createStructuredResponse<Analysis>({
@@ -39,7 +42,10 @@ export async function analyzeClaimed(row: ClaimedFeedback, maxRetries?: number, 
         maxOutputTokens: 800,
         signal: AbortSignal.timeout(30000),
         maxRetries,
-        onModelResponse,
+        onModelResponse(value) {
+          receipt = value
+          onModelResponse?.(value)
+        },
         schema: {
           type: 'object',
           additionalProperties: false,
@@ -73,6 +79,7 @@ export async function analyzeClaimed(row: ClaimedFeedback, maxRetries?: number, 
           themes: [...themes.values()],
           urgent: data.urgent,
           sentiment: data.sentiment,
+          analysis_receipt: receipt,
           analysis_status: 'ready',
           lease: null,
         })

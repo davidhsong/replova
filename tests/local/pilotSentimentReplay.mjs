@@ -19,6 +19,7 @@ export function sentimentReplay(file) {
       const query = async (sql, args = []) => (await client.query(sql, args)).rows
       const [site] = await query("select tap_first_location(id,'Replay desk','UTC',true) id from business_workspaces limit 1")
       const [placard] = await query('insert into tap_placards(location_id) values($1) returning id',[site.id])
+      await query('insert into tap_analysis_locations(location_id) values($1)', [site.id])
       for (const useExpected of [false, true]) {
         control = useExpected
         const ids = []

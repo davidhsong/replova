@@ -1,6 +1,6 @@
 import { chromium } from 'playwright-core'
 import assert from 'node:assert/strict'
-export async function rehearse({ origin, cron, session, service }) {
+export async function rehearse({ origin, cron, session, service, client }) {
   assert.equal(origin, 'http://127.0.0.1:3673')
   const browser = await chromium.launch({ headless: true })
   const owner = await browser.newContext({ viewport: { width: 1440, height: 950 } })
@@ -58,6 +58,7 @@ export async function rehearse({ origin, cron, session, service }) {
       .getByRole('link', { name: 'Preview and test form' })
       .getAttribute('href')
     assert.ok(link)
+    await client.query('insert into tap_analysis_locations(location_id) select location_id from tap_placards where id=$1', [link.split('?')[0].split('/').pop()])
     await font(page, 'button')
     console.log(
       'Desktop workspace created a location, generated a QR and opened its test destination',
