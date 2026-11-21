@@ -41,3 +41,59 @@
 .controls button:hover { background: #eeece6; }
 .controls button:focus-visible { outline: 2px solid #383530; outline-offset: -2px; }
 
+
+.chapters {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  flex-basis: 100%;
+  padding-top: 10px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid #e2dfd7;
+}
+.chapters::before {
+  content: '';
+  position: absolute;
+  top: 25px;
+  left: calc(100% / 6);
+  right: calc(100% / 6);
+  height: 1px;
+  background: #a39e94;
+  pointer-events: none;
+}
+.chapters button {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  min-width: 44px;
+  min-height: 52px;
+  padding: 7px 1px 8px;
+  border-radius: 5px;
+  font: inherit;
+  font-size: clamp(11px, 3vw, 12px);
+  line-height: 1.25;
+  font-weight: 550;
+  color: #514d46;
+  cursor: pointer;
+}
+.circle {
+  display: grid;
+  place-items: center;
+  width: 17px;
+  height: 17px;
+  border: 1px solid #827c72;
+  border-radius: 50%;
+  background: #fbfaf6;
+  color: #37342f;
+}
+.chapters button[aria-current='step'] { color: #242320; font-weight: 700; }
+.chapters button[aria-current='step'] .circle {
+  background: #34312c;
+  color: white;
+  border: 3px solid #fbfaf6;
+  outline: 1.5px solid #34312c;
+}
+.chapters button:hover .circle { box-shadow: 0 0 0 3px #dedbd4; }
+.chapters button:focus-visible { outline: 2px solid #383530; outline-offset: -2px; }
