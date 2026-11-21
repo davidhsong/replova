@@ -3,12 +3,12 @@
 import { useEffect, useRef, useState } from 'react'
 import styles from './TapFilm.module.css'
 
-const filmUrl = '/tap-showcase/replova-tap-pickup.mp4'
+const filmUrl = '/tap-showcase/replova-tap-shop-film.mp4'
 
 const chapters = [
   { label: 'Leave feedback', start: 0 },
-  { label: 'Read feedback', start: 11.4 },
-  { label: 'Improve pickup', start: 23 },
+  { label: 'Read feedback', start: 10.7 },
+  { label: 'Improve pickup', start: 20.5 },
 ] as const
 
 export function TapFilm() {
@@ -143,15 +143,15 @@ export function TapFilm() {
             </button>
           ))}
         </div>
-        <span className={styles.caption}>Replova Tap <span aria-hidden="true">·</span> 36 seconds</span>
-        <span id="tap-film-description" className="sr-only">A customer taps the counter placard, rates the visit, and asks which shelf is for pickup. A receipt confirms the submission. The manager reads the comment in the inbox and labels the pickup shelf. The next customer picks up the amber drink and leaves with it.</span>
+        <span className={styles.caption}>Replova Tap <span aria-hidden="true">·</span> 34 seconds</span>
+        <span id="tap-film-description" className="sr-only">A customer taps the counter placard, rates the visit, and asks which shelf is for pickup. A receipt confirms the submission. The manager reads the comment, types at the workstation, and sets a sign on the pickup shelf. The next customer takes the amber drink and turns toward the exit with it.</span>
         <div className={styles.controls}>
           <button type="button" aria-controls="tap-film" onClick={togglePlayback}>{ended ? 'Replay' : playing ? 'Pause' : 'Play'}</button>
           {!ended && <button type="button" aria-controls="tap-film" onClick={() => startAt(0)}>Replay</button>}
         </div>
       </figcaption>
       {unavailable && <p role="status">The film couldn’t load. Select Play to try again.</p>}
-      <noscript><a href={filmUrl}>Watch the 36-second Tap demo</a></noscript>
+      <noscript><a href={filmUrl}>Watch the 34-second Tap demo</a></noscript>
     </figure>
   )
 }
