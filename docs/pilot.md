@@ -2,11 +2,11 @@
 
 ## First location
 
-Apply Supabase migrations through `036_tap_resume.sql` in order in staging. Use the app’s existing Supabase Auth configuration, account-first onboarding and active subscription or trial. Set `NEXT_PUBLIC_BASE_URL` to the canonical HTTPS origin before building. Placard links and downloads embed this origin.
+Apply Supabase migrations through `037_scoped_tap_analysis.sql` in order in staging. Use the app’s existing Supabase Auth configuration, account-first onboarding and active subscription or trial. Set `NEXT_PUBLIC_BASE_URL` to the canonical HTTPS origin before building. Placard links and downloads embed this origin.
 
 Sign in as the pilot owner, open **Tap**, select the location or create the first one, and enter its IANA time zone and placard placement. Copy the customer URL to the NFC tag and print the downloadable QR. Keep the marketing business card pointed at the website. Submit a test visit from **Preview and test form**. Opening the published customer link starts a real visit.
 
-Set `OPENAI_API_KEY`, a structured-output-capable `OPENAI_MODEL`, and `CRON_SECRET`. Schedule the two bearer-authenticated GET routes in `vercel.json`. The minute worker claims feedback analysis and advances due provider actions. The daily worker saves the previous local quarter and removes old encounters. Use a scheduler that supports the specified frequency. The database holds jobs between invocations. Failed analysis backs off, and the owner can retry from Feedback.
+Set server-side `OPENAI_API_KEY`, `OPENAI_MODEL=gpt-6-luna`, and `CRON_SECRET`. Provision the bearer-authenticated GET routes `/api/cron/pilot` every minute and `/api/cron/pilot-quarter` daily through Supabase Cron. The minute worker claims feedback only for explicitly enabled location windows and advances due Playbooks. The daily worker saves the previous local quarter and removes old encounters. The database holds jobs between invocations. Failed analysis backs off, and the owner can retry eligible comments from Feedback.
 
 The analysis worker starts up to four concurrent calls per wave, claims at most 24 jobs per invocation, and stops starting waves after eight seconds. An in-flight call has its own 30-second deadline. A successful claim moves that location behind other locations with eligible work. Rating-only visits enter the inbox immediately. Opening a new placard link starts a new encounter. Refreshing the submitted form URL returns the receipt for a committed visit or reopens the same unsubmitted encounter.
 
@@ -51,6 +51,6 @@ Run `npm test` and `npm run verify`. The pilot tests exercise migrations through
 
 ### Repeat the isolated browser rehearsal
 
-`npm run test:pilot:browser` exercises real Next.js routes and forms against disposable PostgreSQL and PostgREST on loopback. The fixture supplies its own authenticated test identity, AI response and provider receipts. It copies the site without environment files, generates ephemeral credentials, and removes its database after the run. It requires free ports 3673, 3674, 3675 and 54365.
+`npm run test:pilot:browser` exercises real Next.js routes and forms against disposable PostgreSQL and PostgREST on loopback. The fixture supplies its own authenticated test identity, AI response and provider receipts. It copies the site without environment files, generates ephemeral credentials, and removes its database after the run. It requires free ports 3673, 3674 and 3675 and allocates a local database port.
 
 Install the optional `embedded-postgres` package into a tools directory using `npm install --prefix <tools-directory> embedded-postgres@18.7.0-beta.19`. Set `PILOT_LOCAL_TOOLS` to that directory. Supply the PostgREST 16.6 executable via `POSTGREST_BIN`, or put it in the tools directory under `bin/postgrest.exe` on Windows or `bin/postgrest` elsewhere. The default tools directory is `replova-pilot-local` inside the operating system temp directory. Install the test browser with `npx playwright-core install chromium`.

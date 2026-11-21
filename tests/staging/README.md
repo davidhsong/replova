@@ -47,6 +47,13 @@ local review and contain synthetic data only.
 
 ## Published Tap and model acceptance
 
+The fixture and four-ID preparation instructions below describe the 036
+classifier rehearsal. After 037 the canonical legacy claim function yields
+zero rows. Use the ordinary-worker driver `scoped.hosted.mjs` and the
+[scoped activation procedure](../../docs/tap-release.md) for release acceptance.
+The database operator must create the eligible location window. Issuing a
+placard or submitting a comment alone never enables analysis.
+
 `node tests/staging/tap.hosted.mjs` tests the canonical staging HTTPS deployment.
 Use `REPLOVA_STAGING_FILE` to point at the guarded staging file outside the
 checkout. It creates two synthetic owners and three placards, downloads and
