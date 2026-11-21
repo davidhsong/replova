@@ -1,12 +1,8 @@
 /* Palette overrides belong to the public homepage; Tap uses its own product colors. */
 .tap-home { --accent: #141414; }
-.tap-home .btn-primary,
-.tap-home .tap-preview-placard { background: var(--t1); color: white; }
+.tap-home .btn-primary { background: var(--t1); color: white; }
 .tap-home .btn-primary:hover:not(:disabled) { background: #2a2a2a; }
 .tap-home .lp-demo-cta:hover:not(:disabled) { background: var(--t1); }
-.tap-home .tap-preview meter { accent-color: var(--accent); }
-.tap-home .tap-preview meter::-webkit-meter-optimum-value { background: var(--accent); }
-.tap-home .tap-preview meter::-moz-meter-bar { background: var(--accent); }
 .tap-home :is(#platform, #sample-feedback, #sample-issue, #intelligence) { scroll-margin-top: 90px; }
 .tap-home .sample-caption { margin: 18px 0 0; color: #57534c; font-size: 12px; }
 .tap-home .story-visual { height: auto; min-height: 245px; }

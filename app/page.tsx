@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowIcon, MarketingFooter, MarketingHeader, NavItemIcon } from '@/components/MarketingChrome'
 import { HomeFaq } from '@/components/marketing/HomeFaq'
+import { TapFilm } from '@/components/marketing/TapFilm'
 import { ProductShowcase } from '@/components/marketing/ProductShowcase'
 import { PromiseWorkflowVisual } from '@/components/marketing/PromiseWorkflowVisual'
 import finalCtaPreview from '@/public/tap-showcase/inbox.png'
@@ -165,10 +166,7 @@ export default function Home() {
             <Link href="/demo" className="btn btn-primary btn-lg">Book a demo</Link>
             <Link href="#sample-feedback" className="btn btn-quiet btn-lg">Preview sample feedback</Link>
           </div>
-          <div className="tap-preview" aria-label="Sample feedback workflow">
-            <div className="tap-preview-placard"><small>Sample placard</small><strong>How was <br/>your visit?</strong><span>Tap or scan to leave feedback</span></div>
-            <div className="tap-preview-issue"><small>Sample issue · Market Lane</small><h2>Pickup shelves</h2><p>2 of 6 submissions</p><meter aria-label="Sample mentions" min="0" max="6" value="2" /><details><summary>See the evidence and next step</summary><p>“I checked both shelves before I found my order.”</p><p>Label the shelves “Pickup” and “Order here” before the next shift.</p></details></div>
-          </div>
+          <TapFilm />
         </section>
 
         <VisitStory />
