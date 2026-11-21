@@ -44,7 +44,7 @@ export default async function Tap({
         <p>
           {location
             ? location.name
-            : 'Start with the location where customers will see the placard.'}
+            : 'Choose the location that will receive feedback from this placard.'}
         </p>
       </header>
       {notice && <p role="alert">{notice}</p>}
@@ -85,7 +85,7 @@ export default async function Tap({
             <h2>{placards.length ? 'Add another placard' : 'Create a placard'}</h2>
             <label>
               Placement (optional)
-              <input name="placement" maxLength={100} placeholder="Front counter" />
+              <input name="placement" maxLength={100} placeholder="Near the exit" />
             </label>
             <Timezone value={location.pilot_timezone} />
             <button>Create Tap link</button>

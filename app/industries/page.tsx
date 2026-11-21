@@ -6,7 +6,7 @@ import { createPageMetadata } from '@/lib/seo'
 
 export const metadata: Metadata = createPageMetadata({
   title: 'Solutions',
-  description: 'Explore Google review response and reputation intelligence workflows tailored to the customer moments that matter in your business.',
+  description: 'Explore examples of private Tap feedback across industries, from appointment check-in to repair estimates and retail returns.',
   path: '/industries',
 })
 
@@ -17,10 +17,10 @@ export default function SolutionsPage() {
       <main id="main-content" className="marketing-page-main">
         <section className="subpage-hero">
           <div className="t-eyebrow c-accent">Solutions</div>
-          <h1>One review workflow. Tuned to your business.</h1>
-          <p>The moments customers remember differ by category. Replova keeps the operating system consistent while adapting replies and insight to the way each business earns trust.</p>
+          <h1>What do customers notice during a visit?</h1>
+          <p>A customer taps or scans your placard to leave a private rating and optional comment. Choose an example below to see what that feedback could tell you.</p>
           <div className="subpage-hero-actions">
-            <Link href="/onboard" className="btn btn-primary btn-lg">Find my business <ArrowIcon /></Link>
+            <Link href="/onboard" className="btn btn-primary btn-lg">Create a workspace <ArrowIcon /></Link>
             <Link href="/resources" className="btn btn-ghost btn-lg">Explore resources</Link>
           </div>
         </section>
@@ -50,9 +50,8 @@ export default function SolutionsPage() {
 
         <section className="final-cta" style={{ marginTop: 92 }}>
           <div className="final-cta-inner">
-            <div className="t-eyebrow">Your category is not a constraint.</div>
-            <h2>Start with your Google listing.</h2>
-            <p>Replova uses your actual business context, not a generic script pretending every customer is the same.</p>
+            <h2>See the feedback for one location.</h2>
+            <p>Follow a visit from the Tap placard to the owner’s inbox and Playbook.</p>
             <Link href="/demo" className="btn btn-primary btn-lg">Request a demo <ArrowIcon /></Link>
           </div>
         </section>

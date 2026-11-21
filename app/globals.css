@@ -3910,4 +3910,6 @@ textarea { touch-action: manipulation; }
 .replova-type { font-family: Montserrat, sans-serif; font-variant-numeric: tabular-nums; }
 .replova-type :is(code, pre, kbd, samp, svg text, select, option, dialog, [role="tooltip"]) { font-family: Montserrat, sans-serif; }
 .replova-type :focus-visible { outline: 3px solid #557eb9; outline-offset: 3px; }
-.marketing-shell .btn-primary { background: #061737; color: white; }
+.marketing-page, .marketing-shell, .signin-shell, .account-onboarding-shell,
+.workspace-onboarding-shell, .location-onboarding-shell, .dash-preview-page { --accent: var(--t1); }
+.marketing-shell .btn-primary { background: var(--t1); color: white; }

@@ -6,7 +6,7 @@ import { createPageMetadata } from '@/lib/seo'
 
 export const metadata: Metadata = createPageMetadata({
   title: 'Schedule a Demo',
-  description: 'Choose a time to see how Replova turns customer feedback into practical business intelligence and owner-approved improvements.',
+  description: 'Choose a time to see Replova Tap, the private feedback inbox for a location, and the Playbook an owner uses to track a fix.',
   path: '/demo',
 })
 

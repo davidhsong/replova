@@ -3,7 +3,7 @@ import { createPageMetadata } from '@/lib/seo'
 
 export const metadata: Metadata = createPageMetadata({
   title: 'Sign In',
-  description: 'Sign in to Replova to manage Google reviews, AI reply drafts, and customer insights.',
+  description: 'Sign in to review private feedback and Playbooks for your locations, or manage your connected Google reviews.',
   path: '/signin',
 })
 

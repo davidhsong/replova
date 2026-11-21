@@ -58,15 +58,14 @@ export default function AccountSignup() {
       <div className="account-onboarding-grid">
         <section className="account-onboarding-intro" aria-labelledby="signup-title">
           <p className="t-eyebrow">Create your Replova account</p>
-          <h1 id="signup-title">Start with your email. Connect Google when you are ready.</h1>
+          <h1 id="signup-title">Create your business workspace.</h1>
           <p className="account-onboarding-lead">
-            Your account and business workspace come first. You do not need an address,
-            Google listing, verified profile, or YouTube channel to get started.
+            Start with your email and business name. You can set up Tap without a Google listing.
           </p>
           <ol className="account-onboarding-steps" aria-label="Account setup steps">
             <li data-state="current"><span>01</span><div><strong>Verify your email</strong><small>Use a secure, one-time link.</small></div></li>
             <li><span>02</span><div><strong>Name your workspace</strong><small>Enter the business name your team uses.</small></div></li>
-            <li><span>03</span><div><strong>Connect Google optionally</strong><small>Add locations when access is available.</small></div></li>
+            <li><span>03</span><div><strong>Set up your first location</strong><small>Open Tap when your workspace has access.</small></div></li>
           </ol>
         </section>
 

@@ -50,7 +50,7 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
           </div>
         </section>
 
-        <section className="solution-audience" aria-label={`Businesses using Replova for ${solution.name}`}>
+        <section className="solution-audience" aria-label={`Example businesses in ${solution.name}`}>
           <span>Built for</span>
           <div className="solution-audience-list">
             {solution.businesses.map(business => <span key={business}>{business}</span>)}
@@ -61,7 +61,7 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
           <div className="solution-section-intro">
             <div className="t-eyebrow c-accent">The operating view</div>
             <h2>The customer moments worth watching.</h2>
-            <p>Move past a single star rating. Replova organizes the language behind it around the moments your team can actually improve.</p>
+            <p>A private Tap rating tells you how the visit went. An optional comment can tell you which part of the experience mattered.</p>
           </div>
           <div className="solution-moment-list">
             {solution.moments.map((moment, index) => (
@@ -74,28 +74,10 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
           </div>
         </section>
 
-        <section className="solution-section solution-example">
-          <div className="solution-example-review">
-            <div className="t-eyebrow">From a customer</div>
-            <blockquote>“{solution.example.review}”</blockquote>
-            <div className="solution-review-rating" aria-label="Four out of five stars">★★★★<span>★</span></div>
-          </div>
-          <div className="solution-example-analysis">
-            <div>
-              <div className="t-eyebrow c-accent">Suggested response</div>
-              <p>{solution.example.response}</p>
-            </div>
-            <div>
-              <div className="t-eyebrow c-accent">Signal for the team</div>
-              <p>{solution.example.insight}</p>
-            </div>
-          </div>
-        </section>
-
         <section className="solution-section">
           <div className="solution-section-heading">
             <div className="t-eyebrow c-accent">How it works</div>
-            <h2>From public feedback to a better next visit.</h2>
+            <h2>From a private rating to a local fix.</h2>
           </div>
           <div className="solution-workflow-list">
             {solution.workflow.map((step, index) => (
@@ -105,6 +87,24 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
                 <p>{step.detail}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="solution-section solution-example">
+          <div className="solution-example-review">
+            <div className="t-eyebrow">Example Google review</div>
+            <blockquote>“{solution.example.review}”</blockquote>
+            <div className="solution-review-rating" aria-label="Four out of five stars">★★★★<span>★</span></div>
+          </div>
+          <div className="solution-example-analysis">
+            <div>
+              <div className="t-eyebrow c-accent">Example owner reply</div>
+              <p>{solution.example.response}</p>
+            </div>
+            <div>
+              <div className="t-eyebrow c-accent">Signal for the team</div>
+              <p>{solution.example.insight}</p>
+            </div>
           </div>
         </section>
 
@@ -137,9 +137,8 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
 
         <section className="final-cta solution-final-cta">
           <div className="final-cta-inner">
-            <div className="t-eyebrow">Built around your real customer feedback.</div>
             <h2>See Replova with your business in mind.</h2>
-            <p>Walk through the review workflow, response controls, and insight layer with us.</p>
+            <p>Explore the Tap inbox and Playbooks for a selected location. If you also manage Google reviews, see how to prepare a reply for your Business Profile.</p>
             <Link href="/demo" className="btn btn-primary btn-lg">Request a demo <ArrowIcon /></Link>
           </div>
         </section>

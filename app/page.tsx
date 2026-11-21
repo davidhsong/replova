@@ -10,7 +10,7 @@ import finalCtaPreview from '@/public/tap-showcase/inbox.png'
 import './tap-home.css'
 import { createPageMetadata, SITE_TITLE, SITE_URL } from '@/lib/seo'
 
-const description = 'Customers tap or scan a placard to leave a private rating and optional comment. See recurring issues at each location and track the fix in a Replova Playbook.'
+const description = 'Collect private ratings and optional comments with a Replova Tap placard. Review feedback for each location and track improvements in a Playbook.'
 
 const pageMetadata = createPageMetadata({
   title: SITE_TITLE,
@@ -60,11 +60,11 @@ const structuredData = {
 }
 
 const industries = [
-  { name: 'Healthcare & wellness', note: 'Find recurring concerns about check-in, waiting rooms, and appointment instructions.', href: '/industries/healthcare-wellness', icon: 'healthcare' },
+  { name: 'Healthcare & wellness', note: 'See whether first-time visitors know where to check in for a class or appointment.', href: '/industries/healthcare-wellness', icon: 'healthcare' },
   { name: 'Home services', note: 'Track communication, punctuality, craftsmanship, and recurring service gaps.', href: '/industries/home-services', icon: 'home' },
-  { name: 'Automotive', note: 'Understand trust, estimates, wait times, repair quality, and advisor shoutouts.', href: '/industries/automotive', icon: 'automotive' },
+  { name: 'Automotive', note: 'Find out whether drivers can follow your after-hours drop-off instructions.', href: '/industries/automotive', icon: 'automotive' },
   { name: 'Professional services', note: 'Turn client feedback into specific improvements across every office.', href: '/industries/professional-services', icon: 'professional' },
-  { name: 'Retail & hospitality', note: 'Spot location-level trends in service, products, atmosphere, and value.', href: '/industries/retail-hospitality', icon: 'retail' },
+  { name: 'Retail & hospitality', note: 'Learn where shoppers look for the returns desk and what would make it easier to find.', href: '/industries/retail-hospitality', icon: 'retail' },
   { name: 'Any local business', note: 'Give customers a way to tell you what worked and what could be clearer.', href: '/industries/local-businesses', icon: 'local' },
 ] as const
 
@@ -112,8 +112,8 @@ function VisitStory() {
     <section id="platform" className="lp-container story-section">
       <div className="section-intro" id="sample-feedback">
         <div className="t-eyebrow c-accent">How Replova works</div>
-        <h2>One visit, on both sides of the counter.</h2>
-        <p>Sample feedback from Alder &amp; Loom · Market Lane.</p>
+        <h2>What the customer sends. What the owner sees.</h2>
+        <p>Follow a sample visit at Alder &amp; Loom’s Market Lane location.</p>
       </div>
       <div className="story-grid">
         <article className="story-card story-card-violet">
@@ -140,7 +140,7 @@ function VisitStory() {
             </div>
           </div>
           <h3>See what needs attention.</h3>
-          <p>The owner can open an issue and read the visits behind its count.</p>
+          <p>Select a location to read its feedback. Open a recurring issue to see which visits mention it.</p>
         </article>
       </div>
     </section>
@@ -160,10 +160,10 @@ export default function Home() {
       <main id="main-content">
         <section className="lp-hero-centered">
 
-          <h1><span>Turn feedback</span><span>into action.</span></h1>
-          <p>Customers tap or scan a placard to rate their visit and leave an optional comment. See feedback for each location, spot recurring issues, and track the fix in a Playbook.</p>
+          <h1><span>Turn feedback</span>{' '}<span>into action.</span></h1>
+          <p>Customers tap or scan a Replova Tap placard to leave private feedback. See what’s working, spot recurring issues, and track improvements at each location.</p>
           <div className="hero-actions hero-actions-centered">
-            <Link href="/demo" className="btn btn-primary btn-lg">Book a demo</Link>
+            <Link href="/demo" className="btn btn-primary btn-lg">Request a demo</Link>
             <Link href="#sample-feedback" className="btn btn-quiet btn-lg">Preview sample feedback</Link>
           </div>
           <TapFilm />
@@ -200,7 +200,7 @@ export default function Home() {
         <section className="lp-container industries-section">
           <div className="section-intro">
             <div className="t-eyebrow c-accent">Solutions</div>
-            <h2>Built for the way your business earns trust.</h2>
+            <h2>What customers notice at your location.</h2>
           </div>
           <div className="industry-grid">
             {industries.map(industry => (
@@ -233,7 +233,7 @@ export default function Home() {
           <div className="final-cta-inner">
             <div className="final-cta-copy">
               <h2>See Replova in action.</h2>
-              <p>See how a tap at the counter becomes feedback your team can act on.</p>
+              <p>Walk through a location’s feedback inbox and see how to track a fix in a Playbook.</p>
               <Link href="/demo" className="btn btn-primary btn-lg">Request a demo</Link>
             </div>
             <div className="final-cta-visual">

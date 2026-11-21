@@ -19,13 +19,13 @@ function ChevronDown() {
 }
 
 const platformLinks = [
-  ['Tap', 'Collect a private rating and comment at each location.', '/#tap-workflow', 'reply'],
-  ['Feedback', 'See the recurring issues behind customer visits.', '/dashboard-preview#sample-issue', 'insights'],
-  ['Playbooks', 'Inspect the evidence and track a fix.', '/#tap-workflow', 'benchmark'],
+  ['Replova Tap', 'Collect private ratings with a tap or scan.', '/#platform', 'reply'],
+  ['Feedback inbox', 'Read a rating and comment for one location.', '/#sample-feedback', 'insights'],
+  ['Playbooks', 'See how the owner tracks a fix.', '/#sample-issue', 'benchmark'],
 ] as const
 
 const industryLinks = [
-  ['Healthcare & wellness', 'Find patient experience themes across every review.', '/industries/healthcare-wellness', 'healthcare'],
+  ['Healthcare & wellness', 'Understand check-in and communication at each location.', '/industries/healthcare-wellness', 'healthcare'],
   ['Home services', 'Track communication, punctuality, and service quality.', '/industries/home-services', 'home'],
   ['Automotive', 'Understand trust, estimates, wait times, and repair quality.', '/industries/automotive', 'automotive'],
   ['Professional services', 'Turn client feedback into clear operational signals.', '/industries/professional-services', 'professional'],
@@ -109,16 +109,12 @@ export function MarketingHeader({ tapHome = false }: { tapHome?: boolean }) {
           <NavDropdown
             label="Platform"
             href="/#platform"
-            links={tapHome ? [
-              ['Replova Tap', 'Collect a rating and optional comment.', '/#platform', 'reply'],
-              ['Feedback inbox', 'Read a sample visit at Market Lane.', '/#sample-feedback', 'insights'],
-              ['Playbooks', 'Track the next step for a recurring issue.', '/#sample-issue', 'benchmark'],
-            ] : platformLinks}
+            links={platformLinks}
           />
           <NavDropdown
             label="Solutions"
             href="/industries"
-            links={tapHome ? industryLinks.map(([label, detail, href, icon]) => [label, icon === 'healthcare' ? 'Understand the patient experience at each location.' : detail, href, icon]) : industryLinks}
+            links={industryLinks}
           />
           <Link href="/resources">Resources</Link>
         </nav>
@@ -140,8 +136,10 @@ const footerGroups = [
   {
     title: 'Platform',
     links: [
-      ['Review response workflow', '/#platform'],
-      ['Reputation intelligence', '/#intelligence'],
+      ['Replova Tap', '/#platform'],
+      ['Feedback inbox', '/#sample-feedback'],
+      ['Playbooks', '/#sample-issue'],
+      ['Sample dashboard', '/dashboard-preview'],
     ],
   },
   {
@@ -206,9 +204,7 @@ export function MarketingFooter({ tapHome = false }: { tapHome?: boolean }) {
         {footerGroups.map(group => (
           <div className="lp-footer-group" key={group.title}>
             <strong>{group.title}</strong>
-            {(tapHome && group.title === 'Platform'
-              ? [['Replova Tap', '/#platform'], ['Feedback and Playbooks', '/#intelligence']]
-              : group.links).map(([label, href]) => <Link key={label} href={href}>{label}</Link>)}
+            {group.links.map(([label, href]) => <Link key={label} href={tapHome && href.startsWith('/#') ? href.slice(1) : href}>{label}</Link>)}
           </div>
         ))}
         <div className="lp-footer-bottom">

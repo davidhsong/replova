@@ -43,7 +43,7 @@ const sections: LegalSection[] = [
           'To manage your account and subscription',
           'To schedule requested demos and deliver calendar invitations',
           'To evaluate career applications and contact applicants',
-          'Tap comments are sent to OpenAI for theme and urgency analysis. Replova requests that OpenAI does not store the response.',
+          'When analysis is enabled for a location, written Tap comments are sent to OpenAI to identify sentiment, themes, and urgency. Replova requests that OpenAI does not store the response.',
           'Authorized provider requests include the service scope, service area, dates and relevant quote or appointment terms.',
           'We do not sell your data to third parties',
         ].map(item => (
@@ -64,7 +64,7 @@ const sections: LegalSection[] = [
           {[
             { name: 'Supabase',           role: 'Database and authentication' },
             { name: 'Stripe',             role: 'Payment processing'          },
-            { name: 'OpenAI', role: 'AI reply generation and review analysis' },
+            { name: 'OpenAI', role: 'Reply drafting, Google review analysis, and Tap comment analysis' },
             { name: 'Google Places API',  role: 'Fetching public reviews'     },
             { name: 'Resend',             role: 'Email delivery'              },
             { name: 'Zoho Mail',          role: 'Demo calendar invitations'   },

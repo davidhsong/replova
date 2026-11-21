@@ -112,7 +112,7 @@ export function TapFilm() {
         preload="none"
         muted
         playsInline
-        aria-label="From a counter tap to a clearer pickup shelf"
+        aria-label="A tea shop uses private feedback to improve pickup"
         aria-describedby="tap-film-description"
         onLoadedMetadata={({ currentTarget }) => {
           const start = pendingStart.current
@@ -143,7 +143,7 @@ export function TapFilm() {
             </button>
           ))}
         </div>
-        <span className={styles.caption}>Replova Tap <span aria-hidden="true">·</span> 34 seconds</span>
+        <span className={styles.caption}>A tea shop’s pickup story <span aria-hidden="true">·</span> 34 seconds</span>
         <span id="tap-film-description" className="sr-only">A customer taps the counter placard, rates the visit, and asks which shelf is for pickup. A receipt confirms the submission. The manager reads the comment, types at the workstation, and sets a sign on the pickup shelf. The next customer takes the amber drink and turns toward the exit with it.</span>
         <div className={styles.controls}>
           <button type="button" aria-controls="tap-film" onClick={togglePlayback}>{ended ? 'Replay' : playing ? 'Pause' : 'Play'}</button>

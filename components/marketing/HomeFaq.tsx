@@ -18,7 +18,7 @@ export const HOME_FAQS = [
   },
   {
     question: 'How do locations stay separate?',
-    answer: 'Each placard belongs to one location. Its link sends visits to that location’s inbox, issue counts, and Playbooks.',
+    answer: 'Each placard sends feedback to one location. If you manage several, select a location to see its inbox, issue counts, and Playbooks.',
   },
   {
     question: 'What happens to written comments?',

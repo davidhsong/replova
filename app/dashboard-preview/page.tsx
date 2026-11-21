@@ -4,7 +4,7 @@ import InteractiveDashboardPreview from '@/components/marketing/InteractiveDashb
 
 export const metadata: Metadata = {
   title: 'Dashboard Preview',
-  description: 'An interactive sample-data preview of the Replova operating dashboard.',
+  description: 'Explore a fictional location’s feedback and a sample service-business dashboard.',
   robots: { index: false, follow: false },
 }
 
@@ -22,7 +22,7 @@ export default function DashboardPreviewPage() {
         <header>
           <small>Sample feedback · Fictional location</small>
           <h1>What needs attention</h1>
-          <p>Front counter · July to September</p>
+          <p>Riverside branch · July to September</p>
         </header>
         <details className="issue-bar">
           <summary>

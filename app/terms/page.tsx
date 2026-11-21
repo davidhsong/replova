@@ -5,7 +5,7 @@ import { createPageMetadata } from '@/lib/seo'
 
 export const metadata: Metadata = createPageMetadata({
   title: 'Terms of Service',
-  description: 'Read the terms governing use of the Replova review management and customer insights platform.',
+  description: 'Read the terms governing use of the Replova customer feedback and review management platform.',
   path: '/terms',
 })
 
@@ -16,7 +16,7 @@ const sections: LegalSection[] = [
       <p>
         By accessing or using Replova (&ldquo;the Service&rdquo;), you agree to be bound by these Terms and our{' '}
         <a href="/privacy" style={{ color: 'var(--t1)', textDecoration: 'underline' }}>Privacy Policy</a>.
-        Replova is a reputation management platform for businesses with a Google Business Profile. Features include AI-generated review reply drafts,
+        Replova Tap collects private ratings and optional comments for a business location. Owners can review submissions and track improvements in Playbooks. Separate Google review tools include AI-generated reply drafts,
         sentiment analysis, competitor rating tracking, review request campaigns, weekly digest emails, and reputation scoring.
       </p>
     ),

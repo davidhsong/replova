@@ -40,11 +40,11 @@ export default function ResourcesPage() {
           </article>
 
           <article id="insights" className="resource-article">
-            <span>02</span><div><h2>Turn scattered reviews into an operating signal</h2></div>
+            <span>02</span><div><h2>Choose a fix from private feedback</h2></div>
             <div>
-              <p>One review is an experience. A repeated theme is a signal. Look at the direction, frequency, and operational owner before deciding what to change.</p>
-              <h3>A simple weekly review</h3><ol><li>Separate urgent recovery work from long-term themes.</li><li>Compare positive and negative mentions of the same topic.</li><li>Check whether the theme is isolated to a day, location, or team handoff.</li><li>Assign one small action and watch the next four weeks.</li></ol>
-              <h3>What not to do</h3><p>Do not redesign a process around the loudest single comment. Use the review text, rating trend, response history, and real operational data together.</p>
+              <p>Open a location’s Tap inbox. Read the comments behind a recurring issue and check how many of that location’s submissions mention it.</p>
+              <h3>A simple weekly review</h3><ol><li>Separate urgent recovery work from long-term themes.</li><li>Compare positive and negative mentions of the same topic.</li><li>Check whether the theme is isolated to a day, location, or team handoff.</li><li>Track one change in a Playbook and check the feedback from later visits.</li></ol>
+              <h3>What not to do</h3><p>Read the original comments before choosing a fix. A rating on its own tells you how a visit felt, but it cannot tell you what happened.</p>
             </div>
           </article>
 

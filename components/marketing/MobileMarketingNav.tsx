@@ -19,21 +19,21 @@ const menuGroups: readonly MobileNavGroup[] = [
   {
     label: 'Platform',
     items: [
-      { label: 'Review intelligence', detail: 'See every review, priority, and recurring signal.', href: '/dashboard-preview', icon: 'review' },
-      { label: 'AI reply drafts', detail: 'Prepare thoughtful replies in your business voice.', href: '/#platform', icon: 'reply' },
-      { label: 'Feedback analytics', detail: 'Turn customer comments into clear trends.', href: '/#intelligence', icon: 'analytics' },
-      { label: 'Business Playbooks', detail: 'Build owner-approved operating improvements.', href: '/#platform', icon: 'playbook' },
+      { label: 'Replova Tap', detail: 'Collect private ratings with a tap or scan.', href: '/#platform', icon: 'review' },
+      { label: 'Feedback inbox', detail: 'Read a visit for the selected location.', href: '/#sample-feedback', icon: 'reply' },
+      { label: 'Recurring issues', detail: 'See the comments behind each count.', href: '/#sample-issue', icon: 'analytics' },
+      { label: 'Playbooks', detail: 'See how the owner tracks a fix.', href: '/#sample-issue', icon: 'playbook' },
     ],
   },
   {
     label: 'Solutions',
     items: [
-      { label: 'Healthcare & wellness', detail: 'Patient experience themes and thoughtful replies.', href: '/industries/healthcare-wellness', icon: 'health' },
+      { label: 'Healthcare & wellness', detail: 'Check-in and communication at each location.', href: '/industries/healthcare-wellness', icon: 'health' },
       { label: 'Home services', detail: 'Communication, punctuality, and service quality.', href: '/industries/home-services', icon: 'home' },
       { label: 'Automotive', detail: 'Trust, estimates, wait times, and repair quality.', href: '/industries/automotive', icon: 'car' },
       { label: 'Professional services', detail: 'Specific improvements across every office.', href: '/industries/professional-services', icon: 'briefcase' },
       { label: 'Retail & hospitality', detail: 'Location-level service and product trends.', href: '/industries/retail-hospitality', icon: 'shop' },
-      { label: 'Any local business', detail: 'A flexible workflow for Google Business teams.', href: '/industries/local-businesses', icon: 'pin' },
+      { label: 'Any local business', detail: 'Collect private feedback at your location.', href: '/industries/local-businesses', icon: 'pin' },
     ],
   },
   {
@@ -74,19 +74,6 @@ function MenuChevron() {
 }
 
 export function MobileMarketingNav({ tapHome = false }: { tapHome?: boolean }) {
-  const groups = tapHome ? [
-    { label: 'Platform', items: [
-      { label: 'Replova Tap', detail: 'Collect a rating and optional comment.', href: '/#platform', icon: 'review' },
-      { label: 'Feedback inbox', detail: 'Read a sample visit at Market Lane.', href: '/#sample-feedback', icon: 'reply' },
-      { label: 'Recurring issues', detail: 'See the comments behind each count.', href: '/#sample-issue', icon: 'analytics' },
-      { label: 'Playbooks', detail: 'Track the next step for an issue.', href: '/#intelligence', icon: 'playbook' },
-    ] } satisfies MobileNavGroup,
-    { ...menuGroups[1], items: menuGroups[1].items.map(item => ({
-      ...item, detail: item.icon === 'health' ? 'Understand the patient experience.' :
-        item.icon === 'pin' ? 'Collect feedback at your location.' : item.detail,
-    })) },
-    ...menuGroups.slice(2),
-  ] : menuGroups
   const [open, setOpen] = useState(false)
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -174,7 +161,7 @@ export function MobileMarketingNav({ tapHome = false }: { tapHome?: boolean }) {
       <div className="mobile-marketing-menu-layer" data-open={open} aria-hidden={!open}>
         <aside ref={panelRef} id="mobile-marketing-menu" className="mobile-marketing-menu-panel" aria-label="Mobile navigation" tabIndex={-1}>
           <nav className="mobile-marketing-menu-groups" aria-label="Mobile main navigation">
-            {groups.map((group, index) => {
+            {menuGroups.map((group, index) => {
               const expanded = expandedGroup === group.label
               const submenuId = `mobile-${group.label.toLowerCase()}-menu`
               return (
@@ -192,7 +179,7 @@ export function MobileMarketingNav({ tapHome = false }: { tapHome?: boolean }) {
                   <div className="mobile-marketing-submenu" id={submenuId} data-open={expanded} aria-hidden={!expanded}>
                     <div>
                       {group.items.map(item => (
-                        <Link href={item.href} key={item.label} tabIndex={open && expanded ? 0 : -1} onClick={() => closeMenu()}>
+                        <Link href={tapHome && item.href.startsWith('/#') ? item.href.slice(1) : item.href} key={item.label} tabIndex={open && expanded ? 0 : -1} onClick={() => closeMenu()}>
                           <MobileNavGlyph name={item.icon} />
                           <span><strong>{item.label}</strong><small>{item.detail}</small></span>
                         </Link>

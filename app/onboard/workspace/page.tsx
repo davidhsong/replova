@@ -39,8 +39,7 @@ export default async function WorkspaceOnboardingPage() {
           <p className="t-eyebrow">Email verified</p>
           <h1 id="workspace-title">Name your business workspace</h1>
           <p>
-            This is the durable home for your reviews, locations, analytics, and optional integrations.
-            It does not need to match a Google listing exactly.
+            Use the business name you recognize across your locations. You’ll choose a location when you review its feedback or open a Playbook.
           </p>
           <div className="workspace-privacy-note">
             Only your authenticated account can create or access this workspace. Google Business

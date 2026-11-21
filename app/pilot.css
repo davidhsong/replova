@@ -157,11 +157,12 @@
   border: 0;
   height: 9px;
 }
+.pilot.sample { --ink: var(--t1); }
 .pilot meter::-webkit-meter-optimum-value {
-  background: #061737;
+  background: var(--ink);
 }
 .pilot meter::-moz-meter-bar {
-  background: #061737;
+  background: var(--ink);
 }
 .pilot-row {
   padding: 18px 0;
