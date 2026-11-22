@@ -369,8 +369,7 @@ export async function evidenceRehearsal({
       assert.equal(await panel.locator('form').count(), 0)
       if (process.env.TAP_TREND_SCREENSHOT) {
         await page.evaluate(() => document.fonts.ready)
-        await page.locator('main').scrollIntoViewIfNeeded()
-        await page.evaluate(() => window.scrollTo(0, 0))
+        await panel.scrollIntoViewIfNeeded()
         await page.screenshot({ path: process.env.TAP_TREND_SCREENSHOT })
       }
       await panel.locator('summary').click()
