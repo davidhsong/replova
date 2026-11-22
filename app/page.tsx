@@ -8,7 +8,7 @@ import { ProductShowcase } from '@/components/marketing/ProductShowcase'
 import { PromiseWorkflowVisual } from '@/components/marketing/PromiseWorkflowVisual'
 import finalCtaPreview from '@/public/tap-showcase/inbox.png'
 import './tap-home.css'
-import { createPageMetadata, SITE_TITLE, SITE_URL } from '@/lib/seo'
+import { createPageMetadata, SITE_TITLE, SITE_URL, BRAND_ORIGIN } from '@/lib/seo'
 
 const description = 'Collect private ratings and optional comments with a Replova Tap placard. Review feedback for each location and track improvements in a Playbook.'
 
@@ -29,7 +29,7 @@ const structuredData = {
       url: SITE_URL,
       logo: {
         '@type': 'ImageObject',
-        url: `${SITE_URL}/brand/social/logo-social.png?v=arrow1`,
+        url: `${BRAND_ORIGIN}/brand/social/logo-social.png?v=arrow1`,
         width: 1024,
         height: 1024,
       },
