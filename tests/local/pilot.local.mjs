@@ -2,6 +2,7 @@ import { createServer } from 'node:http'
 import { createServer as createSocketServer } from 'node:net'
 import { setTimeout as delay } from 'node:timers/promises'
 import { rehearse } from './pilotBrowser.mjs'
+import { rehearseFlow } from './feedbackFlow.mjs'
 import { evidenceRehearsal } from './tapEvidence.mjs'
 import { benchmark } from './pilotVolume.mjs'
 import { sentimentReplay } from './pilotSentimentReplay.mjs'
@@ -166,7 +167,8 @@ async function run() {
   const sentiment = process.argv.includes('--comment-sentiment') ? commentSentimentCheck() : null
   const failedOnce = new Set()
   const scopedCalls = []
-  const evidenceRun=process.argv.includes('--evidence')
+  const flowRun=process.argv.includes('--flow')
+  const evidenceRun=flowRun || process.argv.includes('--evidence')
   const secondUser={...actor,id:randomUUID(),email:'second@example.invalid'}
   const secondSession={...session,user:secondUser,access_token:jwt('authenticated',secondUser.id)}
   if (evidenceRun) {
@@ -352,7 +354,8 @@ net.Socket.prototype.connect=function(...args){
     } catch {}
     await delay(500)
   }
-  if (evidenceRun) await evidenceRehearsal({origin,cron,client,session,secondSession,newClient:()=>pg.getPgClient(),scopedCalls,blockedFile})
+  if (flowRun) await rehearseFlow({origin,session,client,scopedCalls,blockedFile})
+  else if (evidenceRun) await evidenceRehearsal({origin,cron,client,session,secondSession,newClient:()=>pg.getPgClient(),scopedCalls,blockedFile})
   else if (process.argv.includes('--scoped-analysis')) await scopedAnalysis({ origin, cron, client, session, scopedCalls })
   else if (sentiment) await sentiment.run({ origin, cron, client })
   else if (replay) await replay.run({ origin, cron, client })

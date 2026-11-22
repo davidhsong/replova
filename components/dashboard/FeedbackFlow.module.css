@@ -1,0 +1,93 @@
+.card {
+  container-type: inline-size;
+  scroll-margin-top: 75px;
+}
+.card h2 {
+  margin: 0;
+}
+.card p {
+  margin: 6px 0 18px;
+}
+.card svg {
+  width: 100%;
+  height: auto;
+  overflow: visible;
+  font:
+    550 13px Montserrat,
+    sans-serif;
+  font-variant-numeric: tabular-nums;
+  display: block;
+}
+.card svg a {
+  cursor: pointer;
+  text-decoration: none !important;
+}
+.card svg a:hover path,
+.card svg a:focus path {
+  fill-opacity: 0.52;
+}
+.card svg a:focus-visible text,
+.card svg a:hover text {
+  text-decoration: underline;
+}
+.card svg.mobile {
+  display: none;
+}
+.card ul {
+  margin: 0;
+  padding-left: 20px;
+}
+.card li {
+  margin: 0.45rem 0;
+}
+.hint {
+  font-size: 0.85rem;
+  min-height: 1.5em;
+  color: #394452;
+}
+.card summary {
+  width: fit-content;
+}
+@container (max-width:700px) {
+  .card svg.desktop {
+    display: none;
+  }
+  .card svg.mobile {
+    display: block;
+    max-width: 420px;
+    font-size: 14px;
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .card[data-motion='waiting'] .stage {
+    opacity: 0;
+  }
+  .card[data-motion='reveal'] .stage {
+    animation: appear 0.38s ease-out var(--delay) both;
+  }
+}
+@keyframes appear {
+  from {
+    opacity: 0;
+    clip-path: inset(-4% 100% -4% -4%);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(-4%);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .card[data-motion='reveal'] .mobile .stage {
+    animation-name: appearDown;
+  }
+}
+@keyframes appearDown {
+  from {
+    opacity: 0;
+    clip-path: inset(-4% -4% 100% -4%);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(-4%);
+  }
+}

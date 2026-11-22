@@ -29,7 +29,7 @@ const structuredData = {
       url: SITE_URL,
       logo: {
         '@type': 'ImageObject',
-        url: `${SITE_URL}/brand/social/logo-social.png`,
+        url: `${SITE_URL}/brand/social/logo-social.png?v=arrow1`,
         width: 1024,
         height: 1024,
       },

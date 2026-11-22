@@ -1,4 +1,4 @@
-import QRCode from 'qrcode'
+import { printablePlacard } from '@/lib/pilot/placard'
 import Image from 'next/image'
 import Link from 'next/link'
 import { BASE_URL } from '@/lib/baseUrl'
@@ -100,12 +100,7 @@ async function Placard({ id, name, locationId }: { id: string; name: string; loc
   const url = new URL('/t/' + id, BASE_URL)
   if (url.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(url.hostname))
     throw new Error('Set NEXT_PUBLIC_BASE_URL to the HTTPS pilot origin.')
-  const qr = await QRCode.toString(url.href, {
-    type: 'svg',
-    width: 640,
-    margin: 4,
-    errorCorrectionLevel: 'M',
-  })
+  const qr = await printablePlacard(url.href)
   const src = 'data:image/svg+xml;base64,' + Buffer.from(qr).toString('base64')
   return (
     <section className="pilot-placard">
@@ -132,7 +127,7 @@ async function Placard({ id, name, locationId }: { id: string; name: string; loc
           </form>
         </details>
       </div>
-      <Image unoptimized src={src} alt={'QR code for ' + name} width={160} height={160} />
+      <Image unoptimized src={src} alt={'QR code for ' + name} width={160} height={179} />
     </section>
   )
 }

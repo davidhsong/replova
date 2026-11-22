@@ -12,7 +12,7 @@ body {
   min-height: 100svh;
   display: grid;
   place-items: center;
-  background: linear-gradient(90deg, #000, #061737);
+  background: linear-gradient(90deg, #000, #192332);
   padding: clamp(12px, 4vw, 24px);
   font:
     500 16px/1.6 Montserrat,
@@ -79,7 +79,7 @@ small {
 }
 .ratings input:checked + span,
 button {
-  background: #061737;
+  background: #192332;
   color: white;
 }
 .ratings input:focus-visible + span,
@@ -99,10 +99,10 @@ button {
 button {
   cursor: pointer;
   font-weight: 650;
-  border-color: #061737;
+  border-color: #192332;
 }
 a {
   display: inline-block;
   padding: 12px 0;
-  color: #061737;
+  color: #192332;
 }

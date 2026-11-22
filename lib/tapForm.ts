@@ -6,7 +6,7 @@ const escapeHtml = (value: string) =>
 
 export function tapDocument(content: string, status = 200) {
   return new Response(
-    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Visit feedback | Replova</title><link rel="stylesheet" href="/tap-form.css"></head><body><main><img src="/brand/logos/logo-primary-light.svg" width="89" height="25" alt="Replova">${content}</main></body></html>`,
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Visit feedback | Replova</title><link rel="icon" href="/favicon.ico?v=arrow1"><link rel="stylesheet" href="/tap-form.css"></head><body><main><img src="/brand/logos/logo-primary-light.svg?v=arrow1" width="89" height="25" alt="Replova">${content}</main></body></html>`,
     {
       status,
       headers: {

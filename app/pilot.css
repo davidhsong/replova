@@ -1,5 +1,5 @@
 .pilot {
-  --ink: #061737;
+  --ink: #192332;
   max-width: 1080px;
   width: 100%;
   margin: auto;
@@ -288,7 +288,7 @@
   justify-content: center;
 }
 .tap-preview-placard {
-  background: #061737;
+  background: #192332;
   color: white;
 }
 .tap-preview small {
@@ -318,10 +318,10 @@
 .tap-preview meter {
   width: 100%;
   margin: 4px 0 12px;
-  accent-color: #061737;
+  accent-color: #192332;
 }
 .tap-preview meter::-webkit-meter-optimum-value {
-  background: #061737;
+  background: #192332;
 }
 .tap-preview summary,
 .legacy-preview summary {
@@ -356,3 +356,8 @@
 .evidence-plan .evidence-decision + .evidence-decision { border-top: 1px solid #d7d9dc; }
 .evidence-plan blockquote { margin: 6px 0 14px; padding-inline-start: 12px; border-inline-start: 2px solid #bbc5cc; overflow-wrap: anywhere; }
 .evidence-plan details, .evidence-plan header { overflow-wrap: anywhere; }
+
+#evidence { scroll-margin-top: 70px; }
+@media (max-width: 480px) {
+  .pilot:has(#feedback-flow) { padding-inline: 12px; }
+}

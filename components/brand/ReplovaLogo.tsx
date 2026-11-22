@@ -24,24 +24,24 @@ type ReplovaLogoProps = CommonProps & (
 
 const ASSETS = {
   primary: {
-    light: '/brand/logos/logo-primary-light.svg',
-    dark: '/brand/logos/logo-primary-dark.svg',
+    light: '/brand/logos/logo-primary-light.svg?v=arrow1',
+    dark: '/brand/logos/logo-primary-dark.svg?v=arrow1',
     width: 790,
     height: 220,
   },
   icon: {
-    light: '/brand/logos/logo-icon-light.svg',
-    dark: '/brand/logos/logo-icon-dark.svg',
+    light: '/brand/logos/logo-icon-light.svg?v=arrow1',
+    dark: '/brand/logos/logo-icon-dark.svg?v=arrow1',
     width: 220,
     height: 220,
   },
   horizontal: {
-    light: '/brand/logos/logo-horizontal.svg',
+    light: '/brand/logos/logo-horizontal.svg?v=arrow1',
     width: 590,
     height: 135,
   },
   stacked: {
-    light: '/brand/logos/logo-stacked.svg',
+    light: '/brand/logos/logo-stacked.svg?v=arrow1',
     width: 640,
     height: 500,
   },

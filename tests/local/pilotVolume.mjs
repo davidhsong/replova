@@ -49,10 +49,12 @@ export async function benchmark({ origin, cron, client }) {
   await sql('analyze tap_feedback')
   const [hot, quiet] = sites
   if (process.argv.includes('--evidence-volume')) {
-    const samples={ranking:[],drilldown:[],evidence:[]}
+    const samples={ranking:[],drilldown:[],evidence:[],flow:[],flowVisits:[]}
     let count
     for(let i=0;i<20;i++) {
       for(const [key,query] of Object.entries({
+        flow:"select tap_flow_period($1,current_date-30,current_date,null,null,false,null,0,null,null) r",
+        flowVisits:"select tap_flow_period($1,current_date-30,current_date,null,null,false,null,0,null,'other') r",
         ranking:"select tap_issue_period($1,current_date-30,current_date,null,null,false,null,0) r",
         drilldown:"select tap_issue_period($1,current_date-30,current_date,null,null,false,'wait-times',0) r",
         evidence:"select count(*)::int n from tap_issue_evidence($1,current_date-30,current_date,null,null,false,'wait-times')",
@@ -60,7 +62,7 @@ export async function benchmark({ origin, cron, client }) {
         const start=now()
         const [row]=await sql(query,[hot.location])
         samples[key].push(now()-start)
-        if(key==='ranking')count=row.r.ranked[0].n
+        if(key==='ranking'||key==='flow')count=row.r.ranked[0].n
         else assert.equal(row.r?.matches ?? row.n,count)
       }
     }

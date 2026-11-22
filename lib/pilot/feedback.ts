@@ -1,3 +1,4 @@
+import { flowKey, type LeafCounts } from './flow'
 import { isUuid } from '@/lib/playbook'
 import { checked, pilotContext } from './access'
 import { isoDay, localDay } from './workflow'
@@ -14,6 +15,7 @@ type Feedback = {
   sentiment: string | null
 }
 type Period = {
+  leaves: LeafCounts
   total: number
   matches: number
   category: string | null
@@ -21,7 +23,11 @@ type Period = {
   ranked: { category: string; theme: string; urgent: number; n: number }[]
   rows: Feedback[]
 }
-export async function period(ctx: Awaited<ReturnType<typeof pilotContext>>, q: Query) {
+type Context = Awaited<ReturnType<typeof pilotContext>>
+export async function period(
+  ctx: { admin: Context['admin']; location: { id: string; pilot_timezone: string } | undefined },
+  q: Query,
+) {
   const l = ctx.location!
   const end = isoDay(q.end) ? q.end : localDay(l.pilot_timezone)
   const start = isoDay(q.start)
@@ -29,7 +35,7 @@ export async function period(ctx: Awaited<ReturnType<typeof pilotContext>>, q: Q
     : new Date(Date.parse(end) - 29 * 86400000).toISOString().slice(0, 10)
   const page = Math.max(0, Math.min(100000, parseInt(q.page ?? '0') || 0))
   const data: Period = checked(
-    await ctx.admin.rpc('tap_issue_period', {
+    await ctx.admin.rpc('tap_flow_period', {
       p_location: l.id,
       p_start: start,
       p_end: end,
@@ -38,6 +44,7 @@ export async function period(ctx: Awaited<ReturnType<typeof pilotContext>>, q: Q
       p_test: q.test === '1',
       p_theme: q.theme || null,
       p_page: page,
+      p_flow: flowKey(q.flow),
       p_entry: isUuid(q.entry) ? q.entry : null,
     }),
   )

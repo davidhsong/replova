@@ -7,7 +7,7 @@ export const SITE_DESCRIPTION =
   'Collect private customer feedback with Replova Tap, see recurring issues at each location, and track the fix with a Playbook.'
 
 export const SITE_SHARE_IMAGE = {
-  url: '/tap-showcase/social.png',
+  url: '/tap-showcase/social.png?v=arrow1',
   width: 1200,
   height: 630,
   alt: 'Replova Tap with a sample location feedback inbox',
