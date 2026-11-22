@@ -310,6 +310,7 @@ net.Socket.prototype.connect=function(...args){
     const builder=spawn(process.execPath,[path.join(site,'node_modules/next/dist/bin/next'),'build'],{cwd:site,env,windowsHide:true,stdio:['ignore',fd,fd]})
     children.push(builder)
     const code=await new Promise((resolve,reject)=>{builder.once('error',reject);builder.once('exit',resolve)})
+    children.pop() // Readiness monitors the long-lived services. The build has finished.
     if(code!==0)throw Error('Local production build failed: '+readFileSync(path.join(lab,'services.log'),'utf8').slice(-1600))
   }
   children.push(
