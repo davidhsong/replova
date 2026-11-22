@@ -54,7 +54,7 @@ export default async function FeedbackContent({
     <main id="main-content" className="pilot">
       <header>
         <small>
-          {l.name} · {l.pilot_timezone}
+          {demo && 'Demo workspace · '}{l.name} · {l.pilot_timezone}
         </small>
         <h1>{q.test === '1' ? 'Test feedback' : 'Feedback'}</h1>
         <p>
@@ -144,7 +144,7 @@ export default async function FeedbackContent({
       </section>
       <section id="evidence">
         {group && flowParent[group] && (
-          <small>{flowLabels[flowParent[group]!] + ' ? ' + flowLabels[group]}</small>
+          <small>{flowLabels[flowParent[group]!] + ' → ' + flowLabels[group]}</small>
         )}
         <h2>{group ? flowLabels[group] : label || 'Feedback inbox'}</h2>
         <p>
