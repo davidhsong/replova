@@ -13,7 +13,7 @@ export default function Error({
     <div style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
       <header style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface)' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto', padding: '0 32px', height: 56, display: 'flex', alignItems: 'center' }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+          <Link href="/" aria-label="Replova home" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
             <ReplovaLogo variant="primary" surface="light" height={24} decorative eager />
           </Link>
         </div>
