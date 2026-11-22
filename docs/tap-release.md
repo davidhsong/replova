@@ -4,6 +4,8 @@ The acceptance baseline is commit `0ea5b584e63b54ad3d13c6b2e51fcbebb60f702d`. It
 
 ## Launch on replova.app
 
+**Release candidate** `bd5bec3834924aa220478e51a04d422a006827e1`, local branch `release/tap-scoped-analysis`. The staged application was exported with `git archive` from this commit. Vercel Preview `dpl_6akavHJkXhpcKSGnPyQwbVXk6f3R` used the ordinary route from the archive. The production application, database and schedulers were untouched.
+
 1. Obtain the owner's approval for one business and physical location, a production release window, and a paid analysis allowance. Confirm the authorized operator has access to the production Vercel project, Supabase database, OpenAI project and scheduler. Verify the production domain and database project reference in both consoles. Inventory existing Tap schedules, workers, and leases.
 2. In the production database, look up the workspace and location, cross-check both UUIDs with the owner and verify its IANA time zone. Confirm the active location on the owner's Tap screen. Duplicate names and the placard label are insufficient. Retain the two UUIDs in the private change record.
 
@@ -31,6 +33,23 @@ The acceptance baseline is commit `0ea5b584e63b54ad3d13c6b2e51fcbebb60f702d`. It
 
 ## Pause, inspect and recover
 
+For the production schedule in step 5, use Supabase Cron with pg_net and Vault. Store the worker's production bearer as a Vault secret named `replova_pilot_cron` using the private project settings. After checking that the URLs and job names have no existing triggers, the database operator can register the following jobs. Supabase Cron interprets these schedules in UTC. Check both Cron history and the HTTP response because pg_net queues the HTTP request asynchronously.
+
+```sql
+select cron.schedule('replova-pilot-minute','* * * * *',$job$
+  select net.http_get(url := 'https://replova.app/api/cron/pilot',
+    headers := jsonb_build_object('Authorization', 'Bearer ' ||
+      (select decrypted_secret from vault.decrypted_secrets where name='replova_pilot_cron')),
+    timeout_milliseconds := 55000);
+$job$);
+select cron.schedule('replova-pilot-quarter','20 9 * * *',$job$
+  select net.http_get(url := 'https://replova.app/api/cron/pilot-quarter',
+    headers := jsonb_build_object('Authorization', 'Bearer ' ||
+      (select decrypted_secret from vault.decrypted_secrets where name='replova_pilot_cron')),
+    timeout_milliseconds := 55000);
+$job$);
+```
+
 Pause by deleting the location's eligibility row using the database operator role. Collection, customer receipts and inbox totals continue. The worker rechecks the active window and lease immediately before calling the SDK. An invocation already past that check is in flight and can finish, incur cost and persist its result. Pausing cannot cancel a request already authorized. After reactivation only feedback collected at or after the **new** database timestamp is eligible. Existing historical or paused comments stay saved. This includes unfinished retries and expired leases from the previous window. Customer submissions, owner retries, creating a placard and switching locations never grant eligibility.
 
 ```sql
@@ -49,5 +68,11 @@ where f.location_id=:location_id order by f.created_at desc limit 50;
 For an exhausted budget, explicitly authorize and add a finite number of claims to the existing activation row to resume eligible pending jobs. A worker that reserved the final claim can still finish. For an exhausted failed visit use the owner's Retry analysis action after restoring budget. Do not backdate the cutoff, edit submission timestamps, or reset a whole backlog. Analysis of pre-activation history requires a separately reviewed bounded backfill for specifically authorized submissions.
 
 ## Repeat the checks
+
+After the hosted check, independent reads verified zero enabled staging locations and the absence of the temporary job and Vault secrets. The temporary hosting bypass and Preview settings were removed. The original model settings remained present. The canonical staging alias still serves its earlier deployment. Juniper's prior physical phone QR-to-inbox confirmation stands. The physical NFC read still awaits the owner's confirmation.
+
+On November 21, 2026, the scheduler in Supabase project `yhoblsunpmheyoqtdlvu` successfully invoked that Preview at 02:12 Pacific. The HTTP worker processed one paid claim. The owner-issued Welcome counter QR decoded to the protected Preview. A signed-out mobile Chromium context with JavaScript disabled submitted two visits. The written visit received its receipt in 313 ms. The rating-only control received its receipt in 346 ms. The owner saw the saved analysis on the location's Feedback screen 23.817 seconds after submitting the written visit, including the scheduler wait and browser observation interval. The Responses call took 1.784 seconds. It requested and returned `gpt-6-luna` with 321 input and 21 output tokens. The inbox showed two submissions, the written 2/5 rating with positive comment sentiment and zero complaints, and the 5/5 rating-only row with zero attempts. The raw receipt is retained privately. An independent digest of all other locations' claim counts, leases, analysis status and receipt metadata matched before and after. Both original synthetic batches still contained five ready visits. Juniper and Coral placards were still active.
+
+The deterministic scoped browser and PostgreSQL test passed with two businesses, three identically labeled placards and only A1 enabled. It covered concurrent workers, failed-call retry, lease expiry, deactivation between claim and dispatch, reactivation with a fresh cutoff, empty scope, owner switching, and customer/owner role restrictions. With 20 businesses, 60 locations and 100,000 historical visits, an EXPLAIN ANALYZE of the entire claim RPC took 63.546 ms with the existing indexes and 98,333 older excluded due jobs. With the additional location/due index, a fresh run took 4.236 ms with 98,334 excluded jobs. The ordinary worker finished the enabled comment on its first tick (452 ms including the HTTP worker, fixture, and verification read). These are individual disposable measurements. The prior location/date and due-time indexes remain. The sentiment fixtures, existing pilot browser run, all 194 unit/integration tests, and lint/typecheck/build verification passed. Lint reported the existing location-switcher navigation warning.
 
 Run `npm test`, `npm run verify`, and the disposable pilot harness with `--scoped-analysis`, `--volume --excluded-backlog`, and `--comment-sentiment`. Run `npm run test:pilot:browser` for the existing owner and customer flow. See [local setup](pilot.md). For staging use a clean export of the release in an isolated Preview, point the authenticated staging minute schedule at its ordinary route, and follow the hosted driver in [scoped.hosted.mjs](../tests/staging/scoped.hosted.mjs). Set a two-claim database budget on an empty fresh synthetic location only. Verify runtime preflight before activation and remove the job and eligibility row in a finally block. An earlier deterministic staging deployment serving the legacy RPC will collect visits but cannot analyze new comments after 037.
