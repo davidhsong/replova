@@ -4,6 +4,7 @@ import { filterUrl } from '@/lib/pilot/feedback'
 import { localDay, type Book } from '@/lib/pilot/workflow'
 import type { IssueState } from '@/lib/pilot/issueSimulation'
 import { updateEvidencePlan } from '../../pilot-actions'
+import FeedbackTrend from './FeedbackTrend'
 import RunRefresh from '../RunRefresh'
 
 type Evidence = {
@@ -54,7 +55,8 @@ export default async function EvidencePlan({
 }) {
   const l = ctx.location!
   const id = b.id
-  const [follow, activity] = await Promise.all([
+  const [comparison, follow, activity] = await Promise.all([
+    ctx.admin.rpc('tap_feedback_trend', { p_location: l.id, p_run: id }),
     ctx.admin.rpc('tap_issue_followup', { p_location: l.id, p_run: id }),
     ctx.admin
       .from('issue_activity')
@@ -83,18 +85,19 @@ export default async function EvidencePlan({
       timeStyle: 'short',
     }).format(new Date(at))
   const act = updateEvidencePlan.bind(null, l.id, id)
-  const eligible =
-    !b.is_test &&
-    Date.parse(f.through) - Date.parse(snap.captured) >= 7 * 86400000 &&
-    snap.total >= 5 &&
-    f.total >= 5 &&
-    f.pending === 0 &&
-    f.matches * snap.total < snap.evidence.length * f.total
-  const observationStatus = b.owner_verification
-    ? 'Verified improvement'
-    : eligible
-      ? 'Ready for owner verification'
-      : 'Awaiting evidence'
+  const trend = checked(comparison)
+  const action =
+    s.route === 'facilities'
+      ? s.stage === 'completed'
+        ? 'Simulated service completed. Real service completion is unconfirmed.'
+        : s.stage === 'attention'
+          ? 'The service simulation needs review.'
+          : 'Service simulation in progress.'
+      : s.route === 'safety'
+        ? 'Safety report awaiting owner review.'
+        : task?.status === 'done'
+          ? 'Owner task marked complete.'
+          : 'Owner review task open.'
   function visits(rows: Evidence[]) {
     return rows.map((e) => {
       const day = localDay(l.pilot_timezone, new Date(e.at))
@@ -174,21 +177,11 @@ export default async function EvidencePlan({
           {snap.evidence.length} supporting {snap.evidence.length === 1 ? 'visit' : 'visits'} at
           creation{b.added_evidence.length > 0 && ' · ' + b.added_evidence.length + ' added'}
         </p>
-        <strong>
-          {s.route === 'facilities'
-            ? s.stage === 'completed'
-              ? 'Simulation · Simulated service completed'
-              : s.stage === 'attention'
-                ? 'Simulation needs review'
-                : 'Simulation in progress'
-            : task?.status === 'done'
-              ? 'Owner task completed'
-              : 'Owner review required'}
-        </strong>
         <p>
           {task?.status === 'done' ? 'Monitor new feedback and review progress.' : s.nextAction}
         </p>
       </header>
+      <FeedbackTrend trend={trend} zone={snap.timezone} action={action} preview={b.is_test} />
       {notice && <p role="status">{notice}</p>}
       <section>
         <h2>Supporting visits</h2>
@@ -310,44 +303,31 @@ export default async function EvidencePlan({
           </details>
         )}
       </section>
-      <section>
-        <h2>Monitoring new feedback</h2>
-        <strong>{observationStatus}</strong>
-        <details>
-          <summary>View details · Verification</summary>
-          <p>
-            Baseline · {snap.evidence.length} of {snap.total} visits in the selected period starting{' '}
-            {snap.start}.
-          </p>
-          <p>
-            Follow-up · {f.matches} of {f.total} visits from {format(snap.captured)} to{' '}
-            {format(f.through)} · {snap.timezone}. {f.pending} awaiting analysis.
-          </p>
-          <p>
-            Verification requires an owner observation of real corrective work, seven days of
-            follow-up, five eligible visits in each period, completed follow-up analysis and a lower
-            share of visits mentioning this issue.
-          </p>
-          {b.owner_verification && (
-            <p>
-              Owner verified on {format(b.owner_verification.at)} with{' '}
-              {b.owner_verification.matches} of {b.owner_verification.total} follow-up visits.{' '}
-              {b.owner_verification.note}
-            </p>
-          )}
-          {eligible && !b.owner_verification && (
-            <form action={act}>
-              <label>
-                What real corrective work and improvement did you observe?
-                <textarea required minLength={8} maxLength={1400} name="observation" />
-              </label>
-              <button name="action" value="verify">
-                Confirm observed improvement
-              </button>
-            </form>
-          )}
-        </details>
-      </section>
+      {(b.owner_verification || trend.status === 'less') && (
+        <section>
+          <details>
+            <summary>Owner confirmation{b.owner_verification ? ' · Saved' : ' (optional)'}</summary>
+            {b.owner_verification && (
+              <p>
+                Owner verified on {format(b.owner_verification.at)} with{' '}
+                {b.owner_verification.matches} of {b.owner_verification.total} follow-up visits.{' '}
+                {b.owner_verification.note}
+              </p>
+            )}
+            {trend.status === 'less' && !b.owner_verification && (
+              <form action={act}>
+                <label>
+                  Owner observation (optional)
+                  <textarea maxLength={1400} name="observation" />
+                </label>
+                <button name="action" value="verify">
+                  I observed real corrective work and improvement
+                </button>
+              </form>
+            )}
+          </details>
+        </section>
+      )}
     </main>
   )
 }

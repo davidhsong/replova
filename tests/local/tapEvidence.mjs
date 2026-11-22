@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto'
 import { mkdtempSync, readFileSync, mkdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { seedTrend } from '../helpers/tapTrendFixture.mjs'
 import { chromium } from 'playwright-core'
 
 export async function evidenceRehearsal({
@@ -276,7 +277,7 @@ export async function evidenceRehearsal({
           'Simulation · Quote decision',
           'Simulation · Appointment',
           'Simulation · Simulated service completed',
-          'Verification',
+          'Feedback comparison',
         ]) {
           const summary = p.locator('summary').filter({ hasText: 'View details · ' + title })
           await summary.click()
@@ -290,7 +291,7 @@ export async function evidenceRehearsal({
           if (width === 390) await p.waitForTimeout(1000)
           await summary.click()
         }
-        assert.ok(await p.getByText('Awaiting evidence', { exact: true }).count())
+        assert.ok(await p.getByText('Awaiting more feedback', { exact: true }).count())
         assert.ok(await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1))
         console.log(
           'Inspected evidence, written terms, appointment and verification at ' + width + 'px',
@@ -353,6 +354,30 @@ export async function evidenceRehearsal({
           await video.saveAs(process.env.TAP_EVIDENCE_VIDEO)
         }
       }
+    }
+    // Open an aged, completed task on a phone. No owner form or worker tick advances the comparison.
+    const example = await seedTrend(sql, m.id)
+    const phone = await context(session, 390)
+    try {
+      await select(phone, m)
+      const page = await phone.newPage()
+      await page.goto(origin + '/dashboard/playbooks/' + example.id)
+      const panel = page.getByRole('region', { name: 'Playbook follow-up' })
+      await panel.getByText('Reported less often', { exact: true }).waitFor()
+      assert.match(await panel.innerText(), /1 of 6 visits .* mentioned this issue.*3 of 5 visits/)
+      assert.match(await panel.innerText(), /owner task was marked complete/)
+      assert.equal(await panel.locator('form').count(), 0)
+      if (process.env.TAP_TREND_SCREENSHOT) {
+        await page.evaluate(() => document.fonts.ready)
+        await page.locator('main').scrollIntoViewIfNeeded()
+        await page.evaluate(() => window.scrollTo(0, 0))
+        await page.screenshot({ path: process.env.TAP_TREND_SCREENSHOT })
+      }
+      await panel.locator('summary').click()
+      await panel.getByText(/Evaluated .*Asia\/Tokyo/).waitFor()
+      console.log('Mobile follow-up:', await panel.innerText())
+    } finally {
+      await phone.close()
     }
     for (const role of ['anon', 'authenticated']) {
       await sql('set role ' + role)

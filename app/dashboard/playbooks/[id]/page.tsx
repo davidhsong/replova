@@ -4,7 +4,7 @@ import RunRefresh from '../RunRefresh'
 import { notFound } from 'next/navigation'
 import { checked, pilotContext } from '@/lib/pilot/access'
 import { localDay, rankedQuotes, statusText, stepIndex, type Book } from '@/lib/pilot/workflow'
-import { period } from '@/lib/pilot/feedback'
+import FeedbackTrend from './FeedbackTrend'
 import { changeRun } from '../../pilot-actions'
 import { BookmarkLocation } from '../../BookmarkLocation'
 import { isUuid } from '@/lib/playbook'
@@ -48,13 +48,10 @@ export default async function Issue({
       .eq('run_id', id)
       .order('revision', { ascending: false }),
   )
-  const since = localDay(snap.timezone, new Date(s.startedAt ?? snap.captured))
-  const after = await period(ctx, {
-    start: since,
-    end: today,
-    theme: b.theme,
-    test: b.is_test ? '1' : '',
-  })
+  const trend = checked(await ctx.admin.rpc('tap_feedback_trend', {p_location:l.id,p_run:id}))
+  const action = b.is_test && s.appointment ? 'A simulated appointment was booked.'
+    : s.appointment ? 'An appointment was booked. Service completion is unconfirmed.'
+    : s.internalDone ? 'The owner marked the task complete.' : 'No completed corrective action is recorded.'
   const best = rankedQuotes(s, today)[0],
     notice = (await searchParams).notice
   const act = changeRun.bind(null, l.id, id)
@@ -186,6 +183,7 @@ export default async function Issue({
           {snap.evidence.length} of {snap.total} submissions mentioned this issue. {statusText(s)}.
         </p>
       </header>
+      <FeedbackTrend trend={trend} zone={snap.timezone} action={action} preview={b.is_test} />
       {notice && <p role="alert">{notice}</p>}
       <details>
         <summary>View supporting evidence</summary>
@@ -330,11 +328,6 @@ export default async function Issue({
                   )}
                   {index === 4 && (
                     <>
-                      <p>
-                        Since {since}, {after.data.matches} of {after.data.total} submissions
-                        mention this issue. The saved quarter had {snap.evidence.length} of{' '}
-                        {snap.total}.
-                      </p>
                       {s.verified && (
                         <p>
                           {s.verified} {s.followUp && 'Follow up ' + s.followUp}
@@ -346,8 +339,8 @@ export default async function Issue({
                         <form action={act}>
                           {revision}
                           <label>
-                            What did you observe?
-                            <textarea name="outcome" required maxLength={1400} />
+                            What did you observe? (optional)
+                            <textarea name="outcome" maxLength={1400} />
                           </label>
                           <label>
                             Result

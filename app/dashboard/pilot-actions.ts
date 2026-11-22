@@ -301,9 +301,9 @@ export async function changeRun(locationId: string, id: string, f: FormData) {
   } else if (action === 'verify' && (s.internalDone || s.appointment) && !s.change) {
     const follow = field(f, 'follow', 10)
     if (follow && !isoDay(follow)) fail(path, 'Enter a valid follow-up date.')
-    next.verified = field(f, 'outcome', 1400)
-    if (!next.verified) fail(path, 'Record what you observed.')
     next.resolved = f.get('resolved') === 'yes'
+    next.verified = field(f, 'outcome', 1400) ||
+      (next.resolved ? 'Owner marked the issue resolved.' : 'Owner marked the issue for further work.')
     next.followUp = follow || undefined
     reason = next.resolved ? 'Owner verified the fix' : 'Further work needed'
   } else if (action === 'reopen' && s.resolved) {
