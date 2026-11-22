@@ -292,6 +292,16 @@ async function run() {
     const guard=path.join(lab,'loopback.cjs')
     writeFileSync(blockedFile,'')
     writeFileSync(guard,`const net=require('node:net'),original=net.Socket.prototype.connect
+// Next checks npm for version metadata during the build. Give that exact read
+// a local offline response. Every socket still passes through the guard below.
+const actualFetch=globalThis.fetch
+globalThis.fetch=async function(input,init){
+ const url=new URL(typeof input==='string'||input instanceof URL?input:input.url)
+ if(url.origin==='https://registry.npmjs.org' && ['/-/package/next/dist-tags','/next','/next/latest','/next/canary'].includes(url.pathname)){
+   return new Response(null,{status:503})
+ }
+ return actualFetch(input,init)
+}
 net.Socket.prototype.connect=function(...args){
  const opts=Array.isArray(args[0]) ? args[0][0] : net._normalizeArgs(args)[0], host=opts.host
  if(host && !['127.0.0.1','::1','localhost','0.0.0.0'].includes(host)){
@@ -307,11 +317,17 @@ net.Socket.prototype.connect=function(...args){
     env.PILOT_PROVIDER_TOKEN='fixture-only'
   }
   if(evidenceRun) {
-    const builder=spawn(process.execPath,[path.join(site,'node_modules/next/dist/bin/next'),'build'],{cwd:site,env,windowsHide:true,stdio:['ignore',fd,fd]})
+    const buildAudit=path.join(lab,'build-egress.log')
+    writeFileSync(buildAudit,'')
+    const builder=spawn(process.execPath,[path.join(site,'node_modules/next/dist/bin/next'),'build'],{cwd:site,env:{...env,EVIDENCE_EGRESS_LOG:buildAudit},windowsHide:true,stdio:['ignore',fd,fd]})
     children.push(builder)
     const code=await new Promise((resolve,reject)=>{builder.once('error',reject);builder.once('exit',resolve)})
     children.pop() // Readiness monitors the long-lived services. The build has finished.
     if(code!==0)throw Error('Local production build failed: '+readFileSync(path.join(lab,'services.log'),'utf8').slice(-1600))
+    const blockedBuildHosts=readFileSync(buildAudit,'utf8').trim().split('\n').filter(Boolean)
+    if(blockedBuildHosts.some(line=>line!=='registry.npmjs.org blocked'))throw Error('Unexpected build egress: '+blockedBuildHosts.join(', '))
+    console.log('Isolated build complete. Blocked npm metadata connections: '+blockedBuildHosts.length)
+
   }
   children.push(
     spawn(
