@@ -58,6 +58,11 @@
     font-size: 14px;
   }
 }
+/* Keep server-rendered stages from flashing before hydration. Without scripting
+   or with reduced motion, the full chart is readable on the first paint. */
+@media (scripting: enabled) and (prefers-reduced-motion: no-preference) {
+  .card:not([data-motion]) .stage { opacity: 0; }
+}
 @media (prefers-reduced-motion: no-preference) {
   .card[data-motion='waiting'] .stage {
     opacity: 0;

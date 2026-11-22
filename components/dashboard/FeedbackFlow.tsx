@@ -32,6 +32,7 @@ export default function FeedbackFlow({ leaves, base }: { leaves: LeafCounts; bas
     const el = card.current
     if (!el || !counts.total) return
     // Record the reveal per tab. Returning from a visit or refreshing keeps the chart settled.
+    el.dataset.motion = 'settled'
     const key = 'tap.flow.revealed.v1'
     try {
       if (sessionStorage.getItem(key)) return

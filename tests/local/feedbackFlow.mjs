@@ -103,10 +103,13 @@ export async function rehearseFlow({ origin, session, client, scopedCalls, block
         if (mobile) {
           const pt = await urgent.evaluate((path) => {
             const box = path.getBoundingClientRect()
-            for (let y = box.top + 3; y < box.bottom - 2; y += 2)
-              for (let x = box.left + 2; x < box.right - 2; x += 2) {
+            for (const vertical of [0.5, 0.4, 0.6, 0.3, 0.7]) {
+              for (const horizontal of [0.5, 0.4, 0.6, 0.3, 0.7, 0.2, 0.8]) {
+                const x = box.left + box.width * horizontal
+                const y = box.top + box.height * vertical
                 if (document.elementFromPoint(x, y) === path) return { x, y }
               }
+            }
             throw Error('No tappable urgent ribbon')
           })
           await p.touchscreen.tap(pt.x, pt.y)
