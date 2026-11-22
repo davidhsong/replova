@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { getPlanLimits } from '@/lib/planLimits'
 import { checked, pilotContext } from '@/lib/pilot/access'
 import { period, filterUrl, type Query } from '@/lib/pilot/feedback'
-import { editFeedback, saveQuarter } from '../pilot-actions'
+import { editFeedback, openIssue } from '../pilot-actions'
 import { Setup } from '../PilotSetup'
 import { notFound } from 'next/navigation'
 import { BookmarkLocation } from '../BookmarkLocation'
@@ -24,13 +24,25 @@ export default async function Feedback({ searchParams }: { searchParams: Promise
       .select('id,placement')
       .eq('location_id', l.id)
       .order('created_at'),
-    ctx.admin.from('tap_analysis_locations').select('enabled_from,remaining_claims').eq('location_id', l.id).maybeSingle(),
+    ctx.admin
+      .from('tap_analysis_locations')
+      .select('enabled_from,remaining_claims')
+      .eq('location_id', l.id)
+      .maybeSingle(),
   ])
   const scope = checked(activation)
   const scheduled = (createdAt: string) =>
     scope && scope.remaining_claims !== 0 && Date.parse(createdAt) >= Date.parse(scope.enabled_from)
   const issueUrl = (theme: string) =>
-    filterUrl({ ...q, location: l.id, start, end }, { theme, page: undefined }) + '#evidence'
+    filterUrl({ ...q, location: l.id, start, end }, { theme, page: undefined, entry: undefined }) +
+    '#evidence'
+  const label = data.ranked.find((r) => r.category === data.category)?.theme ?? q.theme
+  const quarter =
+    end.slice(0, 4) +
+    '-' +
+    String(1 + 3 * Math.floor((Number(end.slice(5, 7)) - 1) / 3)).padStart(2, '0') +
+    '-01'
+  const existing = data.related.find((b) => b.category === data.category && b.quarter === quarter)
   return (
     <main id="main-content" className="pilot">
       <header>
@@ -76,11 +88,17 @@ export default async function Feedback({ searchParams }: { searchParams: Promise
         </label>
         <label>
           Theme
-          <input name="theme" defaultValue={q.theme} list="themes" />
+          <input
+            name="theme"
+            defaultValue={label?.startsWith('Other ? ') ? q.theme : label}
+            list="themes"
+          />
         </label>
         <datalist id="themes">
           {data.ranked.map((t) => (
-            <option key={t.theme}>{t.theme}</option>
+            <option key={t.category} value={t.category}>
+              {t.theme}
+            </option>
           ))}
         </datalist>
         <label>
@@ -95,14 +113,15 @@ export default async function Feedback({ searchParams }: { searchParams: Promise
       <section>
         <h2>Ranked issues</h2>
         <p>
-          {data.total} submissions in this period. Each visit counts once per theme and may mention
-          several themes.
+          {data.total} submissions in this period. Each visit counts once per issue and may mention
+          several issues.
         </p>
-        {data.ranked.map(({ theme, n }) => (
-          <Link className="issue-bar" key={theme} href={issueUrl(theme)}>
+        {data.ranked.map(({ theme, category, n, urgent }) => (
+          <Link className="issue-bar" key={theme} href={issueUrl(category)}>
             <span>
               {theme} · {n} of {data.total} submissions
             </span>
+            {urgent > 0 && <small>{urgent} urgent</small>}
             <meter aria-label={theme} value={n} max={data.total} />
           </Link>
         ))}
@@ -116,24 +135,49 @@ export default async function Feedback({ searchParams }: { searchParams: Promise
         )}
       </section>
       <section id="evidence">
-        <h2>{q.theme || 'Feedback inbox'}</h2>
+        <h2>{label || 'Feedback inbox'}</h2>
         <p>
           {data.matches} matching submissions · {start} to {end} · {l.name}
         </p>
-        {q.theme && (
-          <form action={saveQuarter.bind(null, l.id)}>
-            <input type="hidden" name="test" value={q.test ?? ''} />
-            <input type="hidden" name="theme" value={q.theme} />
-            <input type="hidden" name="day" value={end} />
-            <small>Uses this location’s feedback for the quarter containing {end}.</small>
-            <button>Open Playbook for this issue</button>
-          </form>
+        {q.theme &&
+          data.matches > 0 &&
+          (existing ? (
+            <Link className="pilot-button" href={'/dashboard/playbooks/' + existing.id}>
+              Open Playbook
+            </Link>
+          ) : (
+            <form action={openIssue.bind(null, l.id)}>
+              {Object.entries({
+                category: data.category,
+                start,
+                end,
+                source: q.source,
+                rating: q.rating,
+                test: q.test,
+              }).map(([k, v]) => (
+                <input key={k} type="hidden" name={k} value={v ?? ''} />
+              ))}
+              <button>Create Playbook</button>
+            </form>
+          ))}
+        {data.related.some((b) => b.id !== existing?.id) && (
+          <details>
+            <summary>Related saved Playbooks</summary>
+            {data.related
+              .filter((b) => b.id !== existing?.id)
+              .map((b) => (
+                <Link className="pilot-list-link" key={b.id} href={'/dashboard/playbooks/' + b.id}>
+                  {b.theme} ? Quarter starting {b.quarter}
+                </Link>
+              ))}
+          </details>
         )}
         {data.rows.map((r) => (
           <article className="pilot-row" key={r.id} id={'entry-' + r.id}>
             <small>
-              {new Date(r.created_at).toLocaleString('en-US', { timeZone: l.pilot_timezone })} ·{' '}
-              {r.placement || 'Location placard'}
+              Submitted at{' '}
+              {new Date(r.created_at).toLocaleString('en-US', { timeZone: l.pilot_timezone })} · Tap
+              placard ? {r.placement || 'Location placard'}
             </small>
             <h3>
               {r.rating} / 5 {r.urgent ? ' · Urgent' : ''}
@@ -149,13 +193,15 @@ export default async function Feedback({ searchParams }: { searchParams: Promise
                   ]
                     .filter(Boolean)
                     .join(' · ')
-                : r.analysis_status === 'working' && scope && Date.parse(r.created_at) >= Date.parse(scope.enabled_from)
+                : r.analysis_status === 'working' &&
+                    scope &&
+                    Date.parse(r.created_at) >= Date.parse(scope.enabled_from)
                   ? 'Saved · analysis in progress'
                   : !scheduled(r.created_at)
-                  ? 'Saved · analysis not scheduled'
-                  : r.analysis_status === 'failed'
-                  ? 'Analysis failed'
-                  : 'Analysis pending'}
+                    ? 'Saved · analysis not scheduled'
+                    : r.analysis_status === 'failed'
+                      ? 'Analysis failed'
+                      : 'Analysis pending'}
             </small>
             {r.analysis_status === 'ready' && r.comment && (
               <details>

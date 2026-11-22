@@ -1,4 +1,7 @@
 'use server'
+import { after } from 'next/server'
+import { advanceSimulation } from '@/lib/pilot/evidenceRun'
+import { isUuid } from '@/lib/playbook'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { revalidatePath } from 'next/cache'
@@ -103,9 +106,7 @@ export async function editFeedback(locationId: string, id: string, f: FormData) 
   )
   if (!row) fail('/dashboard/feedback', 'Submission unavailable.')
   if (f.get('action') === 'retry' && row.analysis_status !== 'ready') {
-    checked(
-      await admin.rpc('tap_retry_analysis', { p_location: locationId, p_id: id }),
-    )
+    checked(await admin.rpc('tap_retry_analysis', { p_location: locationId, p_id: id }))
   } else if (row.analysis_status === 'ready') {
     const names = [
       ...new Set(
@@ -115,10 +116,10 @@ export async function editFeedback(locationId: string, id: string, f: FormData) 
           .filter(Boolean),
       ),
     ].slice(0, 8)
-    const themes = names.map((name) => ({
-      name: name.slice(0, 80),
-      excerpt: row.themes.find((t: { name: string }) => t.name === name)?.excerpt ?? row.comment,
-    }))
+    const themes = names.flatMap((name) => {
+      const original = row.themes.filter((t: { name: string }) => t.name === name)
+      return original.length ? original : [{ name: name.slice(0, 80), excerpt: row.comment }]
+    })
     checked(
       await admin
         .from('tap_feedback')
@@ -132,10 +133,9 @@ export async function editFeedback(locationId: string, id: string, f: FormData) 
 export async function saveQuarter(locationId: string, f: FormData) {
   const { admin } = await pilotContext(locationId)
   const id = checked(
-    await admin.rpc('tap_quarter', {
+    await admin.rpc('tap_issue_quarter', {
       p_location: locationId,
       p_previous: f.get('previous') === '1',
-      p_theme: field(f, 'theme', 80) || null,
       p_day: isoDay(f.get('day')) ? f.get('day') : null,
       p_test: f.get('test') === '1',
     }),
@@ -146,6 +146,61 @@ export async function saveQuarter(locationId: string, f: FormData) {
       'There is too little feedback. A recurring issue needs two distinct submissions in the same quarter.',
     )
   redirect('/dashboard/playbooks/' + id)
+}
+export async function openIssue(locationId: string, f: FormData) {
+  const { admin } = await pilotContext(locationId)
+  const start = field(f, 'start', 10),
+    end = field(f, 'end', 10)
+  if (!isoDay(start) || !isoDay(end)) fail('/dashboard/feedback', 'Select a valid date range.')
+  const source = field(f, 'source', 36),
+    rating = field(f, 'rating', 1)
+  const id = checked(
+    await admin.rpc('tap_create_issue', {
+      p_location: locationId,
+      p_start: start,
+      p_end: end,
+      p_source: isUuid(source) ? source : null,
+      p_rating: /^[1-5]$/.test(rating) ? Number(rating) : null,
+      p_test: f.get('test') === '1',
+      p_category: field(f, 'category', 100),
+    }),
+  )
+  if (!id)
+    fail('/dashboard/feedback', 'This issue has no matching submissions in the selected period.')
+  after(() => advanceSimulation(id, locationId))
+  redirect('/dashboard/playbooks/' + id)
+}
+export async function updateEvidencePlan(locationId: string, id: string, f: FormData) {
+  const { admin } = await pilotContext(locationId)
+  const path = '/dashboard/playbooks/' + id
+  if (f.get('action') === 'verify') {
+    const ok = checked(
+      await admin.rpc('tap_verify_issue', {
+        p_run: id,
+        p_location: locationId,
+        p_note: field(f, 'observation', 1400),
+      }),
+    )
+    if (!ok)
+      fail(path, 'Review the evidence and verification criteria before confirming improvement.')
+  } else if (f.get('action') === 'attach') {
+    checked(await admin.rpc('tap_attach_evidence', { p_run: id, p_location: locationId }))
+  } else {
+    const saved = checked(
+      await admin
+        .from('issue_playbooks')
+        .update({ owner_context: field(f, 'context', 2000) })
+        .eq('location_id', locationId)
+        .eq('id', id)
+        .not('category_id', 'is', null)
+        .eq('owner_context', field(f, 'previous', 2000))
+        .select('id')
+        .maybeSingle(),
+    )
+    if (!saved) fail(path, 'The context changed. Review the latest version before saving.')
+  }
+  revalidatePath(path)
+  redirect(path)
 }
 export async function changeRun(locationId: string, id: string, f: FormData) {
   const { admin, location } = await pilotContext(locationId)
@@ -158,7 +213,7 @@ export async function changeRun(locationId: string, id: string, f: FormData) {
       .eq('id', id)
       .maybeSingle<Book>(),
   )
-  if (!b) fail('/dashboard/playbooks', 'Playbook unavailable.')
+  if (!b || b.category_id) fail('/dashboard/playbooks', 'Playbook unavailable.')
   if (b.revision !== Number(f.get('revision')))
     fail(path, 'The Playbook changed. Review the latest activity and try again.')
   const action = field(f, 'action', 20)

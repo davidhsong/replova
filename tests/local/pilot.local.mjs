@@ -2,6 +2,7 @@ import { createServer } from 'node:http'
 import { createServer as createSocketServer } from 'node:net'
 import { setTimeout as delay } from 'node:timers/promises'
 import { rehearse } from './pilotBrowser.mjs'
+import { evidenceRehearsal } from './tapEvidence.mjs'
 import { benchmark } from './pilotVolume.mjs'
 import { sentimentReplay } from './pilotSentimentReplay.mjs'
 import { commentSentimentCheck } from './pilotCommentSentiment.mjs'
@@ -14,6 +15,7 @@ import {
   cpSync,
   symlinkSync,
   openSync,
+  writeFileSync,
   closeSync,
   rmSync,
 } from 'node:fs'
@@ -75,7 +77,7 @@ async function close() {
     rmSync(lab, { recursive: true, force: true, maxRetries: 4, retryDelay: 200 })
   }
 }
-try {
+async function run() {
   await pg.initialise()
   await pg.start()
   client = pg.getPgClient()
@@ -89,6 +91,7 @@ try {
         '',
       ),
     )
+  if(process.argv.includes('--evidence-volume')) return benchmark({origin,cron,client})
   const email = 'owner@example.invalid',
     stamp = new Date().toISOString()
   await client.query('insert into auth.users(id,email,email_confirmed_at) values($1,$2,now())', [
@@ -163,8 +166,19 @@ try {
   const sentiment = process.argv.includes('--comment-sentiment') ? commentSentimentCheck() : null
   const failedOnce = new Set()
   const scopedCalls = []
+  const evidenceRun=process.argv.includes('--evidence')
+  const secondUser={...actor,id:randomUUID(),email:'second@example.invalid'}
+  const secondSession={...session,user:secondUser,access_token:jwt('authenticated',secondUser.id)}
+  if (evidenceRun) {
+    await client.query('insert into auth.users(id,email,email_confirmed_at) values($1,$2,now())',[secondUser.id,secondUser.email])
+    await client.query("select * from provision_replova_account_workspace($1,$2,'Second business','growth')",[secondUser.id,secondUser.email])
+  }
   proxy = createServer(async (req, res) => {
     try {
+      if (evidenceRun && req.url === '/auth/v1/user' && req.headers.authorization === 'Bearer '+secondSession.access_token) {
+        res.setHeader('content-type','application/json')
+        return res.end(JSON.stringify(secondUser))
+      }
       if (req.url === '/auth/v1/user' && req.headers.authorization === 'Bearer ' + token) {
         res.setHeader('content-type', 'application/json')
         return res.end(JSON.stringify(actor))
@@ -174,7 +188,7 @@ try {
         for await (const c of req) body += c
         const request = JSON.parse(body)
         const input = JSON.parse(request.input)
-        if (process.argv.includes('--scoped-analysis')) scopedCalls.push(input.comment)
+        if (evidenceRun || process.argv.includes('--scoped-analysis')) scopedCalls.push(input.comment)
         if (volume) await delay(100)
         const inject = volume && /visit (0|17|34)$/.test(input.comment) && !failedOnce.has(input.comment)
         if (inject || (input.comment.includes('by the window') && !failedAnalysis)) {
@@ -250,7 +264,8 @@ try {
     'postcss.config.mjs',
   ])
     cpSync(f, path.join(site, f), { recursive: true })
-  symlinkSync(path.join(root, 'node_modules'), path.join(site, 'node_modules'), 'junction')
+  if (evidenceRun) cpSync(path.join(root,'node_modules'),path.join(site,'node_modules'),{recursive:true})
+  else symlinkSync(path.join(root, 'node_modules'), path.join(site, 'node_modules'), 'junction')
   const env = {
     ...process.env,
     NEXT_PUBLIC_SUPABASE_URL: 'http://127.0.0.1:3674',
@@ -270,13 +285,39 @@ try {
     'NEXT_PUBLIC_GA_ID',
   ])
     env[key] = ''
+  const blockedFile=path.join(lab,'external-attempts.log')
+  if (evidenceRun) {
+    // Preload in the real Next server and its workers. Count TCP egress (including SMTP)
+    // before a connection is opened. Only hostnames are recorded on failure.
+    const guard=path.join(lab,'loopback.cjs')
+    writeFileSync(blockedFile,'')
+    writeFileSync(guard,`const net=require('node:net'),original=net.Socket.prototype.connect
+net.Socket.prototype.connect=function(...args){
+ const opts=Array.isArray(args[0]) ? args[0][0] : net._normalizeArgs(args)[0], host=opts.host
+ if(host && !['127.0.0.1','::1','localhost','0.0.0.0'].includes(host)){
+   require('node:fs').appendFileSync(process.env.EVIDENCE_EGRESS_LOG,String(host)+' blocked\\n')
+   throw Error('Rehearsal permits loopback only')
+ }
+ return original.apply(this,args)
+}`)
+    env.NODE_OPTIONS=(env.NODE_OPTIONS || '')+' --require "'+guard.split(path.sep).join('/')+'"'
+    env.EVIDENCE_EGRESS_LOG=blockedFile
+    env.PILOT_PROVIDER_LIVE='true'
+    env.PILOT_PROVIDER_URL='https://provider.example.invalid'
+    env.PILOT_PROVIDER_TOKEN='fixture-only'
+  }
+  if(evidenceRun) {
+    const builder=spawn(process.execPath,[path.join(site,'node_modules/next/dist/bin/next'),'build'],{cwd:site,env,windowsHide:true,stdio:['ignore',fd,fd]})
+    children.push(builder)
+    const code=await new Promise((resolve,reject)=>{builder.once('error',reject);builder.once('exit',resolve)})
+    if(code!==0)throw Error('Local production build failed: '+readFileSync(path.join(lab,'services.log'),'utf8').slice(-1600))
+  }
   children.push(
     spawn(
       process.execPath,
       [
-        path.join(root, 'node_modules/next/dist/bin/next'),
-        'dev',
-        '--webpack',
+        path.join(site, 'node_modules/next/dist/bin/next'),
+        ...(evidenceRun ? ['start'] : ['dev','--webpack']),
         '--hostname',
         '127.0.0.1',
         '--port',
@@ -287,18 +328,22 @@ try {
   )
   for (let i = 0; i < 90; i++) {
     if (children.some((child) => child.exitCode !== null))
-      throw Error('A local rehearsal service exited')
+      throw Error('A local rehearsal service exited: '+readFileSync(path.join(lab,'services.log'),'utf8').slice(-2400))
     try {
       const r = await fetch(origin + '/robots.txt')
       if (r.ok) break
     } catch {}
     await delay(500)
   }
-  if (process.argv.includes('--scoped-analysis')) await scopedAnalysis({ origin, cron, client, session, scopedCalls })
+  if (evidenceRun) await evidenceRehearsal({origin,cron,client,session,secondSession,newClient:()=>pg.getPgClient(),scopedCalls,blockedFile})
+  else if (process.argv.includes('--scoped-analysis')) await scopedAnalysis({ origin, cron, client, session, scopedCalls })
   else if (sentiment) await sentiment.run({ origin, cron, client })
   else if (replay) await replay.run({ origin, cron, client })
   else if (volume) await benchmark({ origin, cron, client })
   else await rehearse({ origin, cron, session, service, client })
+}
+try {
+  await run()
 } catch (e) {
   console.error(e)
   process.exitCode = 1

@@ -71,7 +71,7 @@ export default async function PilotOverview() {
             )
           })}
           {top && (
-            <Link className="issue-bar" href={filterUrl({ location: l.id, theme: top.theme })}>
+            <Link className="issue-bar" href={filterUrl({ location: l.id, theme: top.category })}>
               <strong>{top.theme}</strong>
               {top.n} of {data.total} submissions
               <meter max={data.total} value={top.n} />

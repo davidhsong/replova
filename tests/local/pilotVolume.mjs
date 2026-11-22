@@ -48,6 +48,33 @@ export async function benchmark({ origin, cron, client }) {
     '[{"name":"Wait times","excerpt":"wait"}]' from generate_series(1,100000) g join sites s on s.n=g%60`)
   await sql('analyze tap_feedback')
   const [hot, quiet] = sites
+  if (process.argv.includes('--evidence-volume')) {
+    const samples={ranking:[],drilldown:[],evidence:[]}
+    let count
+    for(let i=0;i<20;i++) {
+      for(const [key,query] of Object.entries({
+        ranking:"select tap_issue_period($1,current_date-30,current_date,null,null,false,null,0) r",
+        drilldown:"select tap_issue_period($1,current_date-30,current_date,null,null,false,'wait-times',0) r",
+        evidence:"select count(*)::int n from tap_issue_evidence($1,current_date-30,current_date,null,null,false,'wait-times')",
+      })){
+        const start=now()
+        const [row]=await sql(query,[hot.location])
+        samples[key].push(now()-start)
+        if(key==='ranking')count=row.r.ranked[0].n
+        else assert.equal(row.r?.matches ?? row.n,count)
+      }
+    }
+    const [plan]=await sql("select tap_create_issue($1,current_date-30,current_date,null,null,false,'wait-times') id",[hot.location])
+    const [saved]=await sql("select jsonb_array_length(snapshot->'evidence') n from issue_playbooks where id=$1",[plan.id])
+    assert.equal(saved.n,count)
+    await sql(`insert into tap_feedback(id,location_id,placard_id,rating,comment,is_test,analysis_status,themes)
+      values(gen_random_uuid(),$1,$2,2,'Rude interaction',true,'ready','[{"name":"Staff conduct","excerpt":"Rude interaction"}]')`,[hot.location,hot.placard])
+    const [preview]=await sql("select tap_create_issue($1,current_date-1,current_date+1,null,null,true,'staff-conduct') id",[hot.location])
+    assert.ok(preview.id)
+    assert.equal((await sql("select count(*)::int n from playbook_tasks where title like 'Staff conduct%'"))[0].n,0)
+    console.log('VOLUME',JSON.stringify({businesses:20,locations:60,submissions:100000,count,msP50P95:Object.fromEntries(Object.entries(samples).map(([key,times])=>[key,percentiles(times)]))}))
+    return
+  }
   const url = (p) => origin + '/t/' + p
   async function open(p) {
     const res = await fetch(url(p))
@@ -196,7 +223,7 @@ export async function benchmark({ origin, cron, client }) {
   const queryTimes = {}
   async function period(site, page, theme = null, start = null, end = null) {
     return (
-      await sql('select tap_period($1,$2,$3,null,null,false,$4,$5) as result', [
+      await sql('select tap_issue_period($1,$2,$3,null,null,false,$4,$5) as result', [
         site.location,
         start,
         end,
@@ -215,6 +242,14 @@ export async function benchmark({ origin, cron, client }) {
     }
     queryTimes[theme ? 'themeFiltered' : 'inboxAndChart'] = percentiles(times)
   }
+  const evidenceTimes=[]
+  for(let i=0;i<10;i++){
+    const t=now()
+    const [result]=await sql("select count(*)::int n from tap_issue_evidence($1,null,null,null,null,false,'wait-times')",[hot.location])
+    assert.equal(result.n,(await period(hot,0,'Wait times')).matches)
+    evidenceTimes.push(now()-t)
+  }
+  queryTimes.evidenceAndDrilldown=percentiles(evidenceTimes)
   const first = await period(hot, 0),
     second = await period(hot, 1)
   assert.equal(new Set([...first.rows, ...second.rows].map((r) => r.id)).size, 50)
@@ -261,7 +296,7 @@ export async function benchmark({ origin, cron, client }) {
   }
   // EXPLAIN on a scalar SQL function can hide its body behind a Result node.
   // Plan the installed RPC body with the identical parameters as a separate check.
-  const [rpc] = await sql("select prosrc from pg_proc where oid='public.tap_period(uuid,date,date,uuid,integer,boolean,text,integer,uuid)'::regprocedure")
+  const [rpc] = await sql("select prosrc from pg_proc where oid='public.tap_issue_period(uuid,date,date,uuid,integer,boolean,text,integer,uuid)'::regprocedure")
   const args = ['p_location','p_start','p_end','p_source','p_rating','p_test','p_theme','p_page','p_entry']
   const types = ['uuid','date','date','uuid','integer','boolean','text','integer','uuid']
   const body = rpc.prosrc.replace(/\bp_\w+\b/g, name => {

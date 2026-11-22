@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import EvidencePlan, {usesEvidenceWorkflow, type EvidencePlanRecord} from './EvidencePlan'
 import RunRefresh from '../RunRefresh'
 import { notFound } from 'next/navigation'
 import { checked, pilotContext } from '@/lib/pilot/access'
@@ -27,7 +28,7 @@ export default async function Issue({
       .select('*')
       .eq('id', id)
       .in('location_id', ctx.locations.map((row) => row.id))
-      .maybeSingle<Book>(),
+      .maybeSingle<Book | EvidencePlanRecord>(),
   )
   if (!b) notFound()
   if (b.location_id !== l.id) {
@@ -35,6 +36,7 @@ export default async function Issue({
     if (!target) notFound()
     return <BookmarkLocation id={target.id} name={target.name} />
   }
+  if (usesEvidenceWorkflow(b)) return <EvidencePlan ctx={ctx} book={b} notice={(await searchParams).notice} />
   const s = b.state,
     snap = b.snapshot,
     step = stepIndex(s),

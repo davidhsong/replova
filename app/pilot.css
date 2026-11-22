@@ -352,3 +352,7 @@
     content: ' ';
   }
 }
+
+.evidence-plan .evidence-decision + .evidence-decision { border-top: 1px solid #d7d9dc; }
+.evidence-plan blockquote { margin: 6px 0 14px; padding-inline-start: 12px; border-inline-start: 2px solid #bbc5cc; overflow-wrap: anywhere; }
+.evidence-plan details, .evidence-plan header { overflow-wrap: anywhere; }

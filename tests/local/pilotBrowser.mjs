@@ -134,7 +134,11 @@ export async function rehearse({ origin, cron, session, service, client }) {
     await page.goto(origin + '/dashboard/feedback?test=1')
     await see('Pests and hygiene · 2 of 2 submissions')
     await page.getByRole('link', { name: 'Pests and hygiene · 2 of 2 submissions' }).click()
-    await click('Open Playbook for this issue')
+    // Exercise the existing saved-Playbook editor on a legacy snapshot.
+    const [legacy] = (await client.query("select tap_quarter(location_id,false,true,'Pests and hygiene') id from tap_placards where id=$1",[placard])).rows
+    await page.reload()
+    await page.getByText('Related saved Playbooks',{exact:true}).click()
+    await page.locator('a[href="/dashboard/playbooks/'+legacy.id+'"]').click()
     await see('Test Playbook')
     await page.getByLabel('What happened and where?').fill('Insects observed near the entry')
     await click('Save incident')

@@ -16,7 +16,9 @@ type Feedback = {
 type Period = {
   total: number
   matches: number
-  ranked: { theme: string; n: number }[]
+  category: string | null
+  related: { id: string; theme: string; quarter: string; category: string | null }[]
+  ranked: { category: string; theme: string; urgent: number; n: number }[]
   rows: Feedback[]
 }
 export async function period(ctx: Awaited<ReturnType<typeof pilotContext>>, q: Query) {
@@ -27,7 +29,7 @@ export async function period(ctx: Awaited<ReturnType<typeof pilotContext>>, q: Q
     : new Date(Date.parse(end) - 29 * 86400000).toISOString().slice(0, 10)
   const page = Math.max(0, Math.min(100000, parseInt(q.page ?? '0') || 0))
   const data: Period = checked(
-    await ctx.admin.rpc('tap_period', {
+    await ctx.admin.rpc('tap_issue_period', {
       p_location: l.id,
       p_start: start,
       p_end: end,

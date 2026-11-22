@@ -61,6 +61,7 @@ export type RunState = {
 }
 export type Book = {
   id: string
+  category_id?: string | null
   location_id: string
   theme: string
   is_test: boolean
@@ -136,7 +137,8 @@ export function stepIndex(s: RunState) {
   if (!s.quotesComplete) return 2
   return s.appointment && !s.change ? 4 : 3
 }
-export function statusText(s: RunState) {
+export function statusText(s: RunState & { nextAction?: string }) {
+  if (s.nextAction) return s.nextAction
   if (s.pending && s.paused) return 'Paused · checking the last provider action'
   if (s.paused) return 'Paused by owner'
   if (s.issue) return s.issue

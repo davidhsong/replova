@@ -3,6 +3,7 @@ import { isAuthorizedCron } from '@/lib/cronAuth'
 import { getOpenAI, OPENAI_MODEL } from '@/lib/openai'
 import { getSupabaseAdmin } from '@/lib/supabase'
 import { analyzeNext } from '@/lib/pilot/analysis'
+import { advanceSimulation } from '@/lib/pilot/evidenceRun'
 import { advance } from '@/lib/pilot/worker'
 import { checked } from '@/lib/pilot/access'
 import type { Book } from '@/lib/pilot/workflow'
@@ -15,7 +16,9 @@ export async function GET(req: NextRequest) {
       databaseOrigin: new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).origin,
       model: OPENAI_MODEL,
       modelConfigured: Boolean(process.env.OPENAI_API_KEY && process.env.OPENAI_MODEL),
-      officialOrigin: Boolean(process.env.OPENAI_API_KEY) && getOpenAI().baseURL.replace(/\/$/, '') === 'https://api.openai.com/v1',
+      officialOrigin:
+        Boolean(process.env.OPENAI_API_KEY) &&
+        getOpenAI().baseURL.replace(/\/$/, '') === 'https://api.openai.com/v1',
       providerDisabled: process.env.PILOT_PROVIDER_LIVE !== 'true',
     })
   }
@@ -52,6 +55,20 @@ export async function GET(req: NextRequest) {
     }
     return claimed
   }
-  const [, claimed] = await Promise.all([Promise.all(due.map(advance)), drain()])
+  const simulations =
+    checked(
+      await admin
+        .from('issue_playbooks')
+        .select('id,location_id,restaurants!inner(active)')
+        .eq('restaurants.active', true)
+        .lte('simulation_due', new Date().toISOString())
+        .order('simulation_due')
+        .limit(6),
+    ) ?? []
+  const [, claimed] = await Promise.all([
+    Promise.all(due.map(advance)),
+    drain(),
+    Promise.all(simulations.map((row) => advanceSimulation(row.id, row.location_id))),
+  ])
   return Response.json({ due: due.length, claimed })
 }

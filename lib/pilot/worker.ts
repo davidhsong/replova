@@ -31,5 +31,6 @@ async function read(id: string) {
   )
 }
 export async function advance(book: Book) {
+  if (book.category_id) return
   return executeRun(book, book.is_test ? testAdapter : liveAdapter, read, transition)
 }

@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
     const rows = checked(await query) ?? []
     for (const row of rows)
       checked(
-        await admin.rpc('tap_quarter', { p_location: row.id, p_previous: true, p_test: false }),
+        await admin.rpc('tap_issue_quarter', { p_location: row.id, p_previous: true, p_test: false }),
       )
     if (rows.length < 100) break
     cursor = rows[rows.length - 1].id
