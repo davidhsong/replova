@@ -11,10 +11,10 @@ export const BRAND_ORIGIN = process.env.VERCEL_ENV === 'preview' && process.env.
   ? `https://${process.env.VERCEL_URL}` : SITE_URL
 
 export const SITE_SHARE_IMAGE = {
-  url: `${BRAND_ORIGIN}/tap-showcase/social.png?v=arrow2`,
-  width: 1200,
-  height: 630,
-  alt: 'Replova Tap with a sample location feedback inbox',
+  url: `${BRAND_ORIGIN}/brand/social/logo-social.png?v=arrow2`,
+  width: 1024,
+  height: 1024,
+  alt: 'Replova',
 }
 
 type PageMetadataOptions = {

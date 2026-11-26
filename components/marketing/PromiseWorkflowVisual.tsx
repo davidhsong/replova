@@ -1,5 +1,6 @@
 'use client'
 
+import { task, visits } from './VisitSample'
 import { useEffect, useRef } from 'react'
 
 export function PromiseWorkflowVisual() {
@@ -30,8 +31,8 @@ export function PromiseWorkflowVisual() {
       aria-hidden="true"
     >
       <div className="promise-node promise-customer-review">
-        <small>Sample visit · Market Lane</small>
-        <p>&ldquo;The tea was great, but I couldn’t tell which shelf was for pickup.&rdquo;</p>
+        <small>Sample data · Downtown</small>
+        <p>&ldquo;{visits[0].comment}&rdquo;</p>
       </div>
 
       <div className="promise-draft-stage">
@@ -42,8 +43,8 @@ export function PromiseWorkflowVisual() {
         </div>
 
         <div className="promise-node promise-replova-draft">
-          <small>Owner’s Playbook · Pickup shelves</small>
-          <p>Label the shelves “Pickup” and “Order here” before the next shift.</p>
+          <small>Owner’s Playbook · Arrival</small>
+          <p>{task}</p>
         </div>
       </div>
     </div>

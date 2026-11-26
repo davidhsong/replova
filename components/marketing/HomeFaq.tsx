@@ -1,5 +1,6 @@
 'use client'
 
+import { Eyebrow } from './Eyebrow'
 import { useId, useState } from 'react'
 import styles from './HomeFaq.module.css'
 
@@ -38,7 +39,7 @@ export function HomeFaq() {
     <section id="faq" className={styles.section} aria-labelledby={`${componentId}-title`}>
       <div className={styles.inner}>
         <div className={styles.heading}>
-          <div className={styles.eyebrow}>FAQ</div>
+          <Eyebrow>FAQ</Eyebrow>
           <h2 id={`${componentId}-title`}>A few things worth knowing.</h2>
           <p>What customers send and what the owner sees.</p>
         </div>

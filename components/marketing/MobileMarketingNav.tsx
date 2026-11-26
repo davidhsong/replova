@@ -1,5 +1,7 @@
 'use client'
 
+import { platformLinks, industryLinks } from '@/lib/marketingNavigation'
+import { FeatureIcon } from './VisitSample'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 
@@ -7,7 +9,7 @@ type MobileNavItem = {
   label: string
   detail: string
   href: string
-  icon: 'review' | 'reply' | 'analytics' | 'playbook' | 'health' | 'home' | 'car' | 'briefcase' | 'shop' | 'pin' | 'guide' | 'research'
+  icon: 'tap' | 'review' | 'reply' | 'analytics' | 'playbook' | 'health' | 'home' | 'car' | 'briefcase' | 'shop' | 'pin' | 'guide' | 'research'
 }
 
 type MobileNavGroup = {
@@ -18,23 +20,13 @@ type MobileNavGroup = {
 const menuGroups: readonly MobileNavGroup[] = [
   {
     label: 'Platform',
-    items: [
-      { label: 'Replova Tap', detail: 'Collect private ratings with a tap or scan.', href: '/#platform', icon: 'review' },
-      { label: 'Feedback inbox', detail: 'Read a visit for the selected location.', href: '/#sample-feedback', icon: 'reply' },
-      { label: 'Recurring issues', detail: 'See the comments behind each count.', href: '/#sample-issue', icon: 'analytics' },
-      { label: 'Playbooks', detail: 'See how the owner tracks a fix.', href: '/#sample-playbook', icon: 'playbook' },
-    ],
+    items: platformLinks.map(([label, detail, href, icon]) => ({ label, detail, href, icon })),
   },
   {
-    label: 'Solutions',
+    label: 'Industries',
     items: [
-      { label: 'All solutions', detail: 'Explore all six business categories.', href: '/industries', icon: 'guide' },
-      { label: 'Healthcare & wellness', detail: 'Check-in and communication at each location.', href: '/industries/healthcare-wellness', icon: 'health' },
-      { label: 'Home services', detail: 'Communication, punctuality, and service quality.', href: '/industries/home-services', icon: 'home' },
-      { label: 'Automotive', detail: 'Trust, estimates, wait times, and repair quality.', href: '/industries/automotive', icon: 'car' },
-      { label: 'Professional services', detail: 'Specific improvements across every office.', href: '/industries/professional-services', icon: 'briefcase' },
-      { label: 'Retail & hospitality', detail: 'Location-level service and product trends.', href: '/industries/retail-hospitality', icon: 'shop' },
-      { label: 'Other local businesses', detail: 'Collect private feedback at your location.', href: '/industries/local-businesses', icon: 'pin' },
+      { label: 'All industries', detail: 'Explore industry examples.', href: '/industries', icon: 'guide' },
+      ...industryLinks.map(([label, detail, href, icon]) => ({ label, detail, href, icon: ({ retail: 'shop', healthcare: 'health', local: 'pin' } as const)[icon] })),
     ],
   },
   {
@@ -48,7 +40,8 @@ const menuGroups: readonly MobileNavGroup[] = [
 ] as const
 
 function MobileNavGlyph({ name }: { name: MobileNavItem['icon'] }) {
-  const paths: Record<MobileNavItem['icon'], React.ReactNode> = {
+  if (name === 'tap') return <FeatureIcon id="tap" />
+  const paths: Record<typeof name, React.ReactNode> = {
     review: <><path d="M5 4h14v12H9l-4 4V4Z" /><path d="M8 8h8M8 11h5" /></>,
     reply: <><path d="m9 8-4 4 4 4" /><path d="M6 12h7a5 5 0 0 1 5 5" /></>,
     analytics: <><path d="M4 19V9M10 19V5M16 19v-7M22 19V3" /><path d="M2 19h20" /></>,
@@ -180,7 +173,7 @@ export function MobileMarketingNav({ tapHome = false }: { tapHome?: boolean }) {
                   <div className="mobile-marketing-submenu" id={submenuId} data-open={expanded} aria-hidden={!expanded}>
                     <div>
                       {group.items.map(item => (
-                        <Link href={tapHome && item.href.startsWith('/#') ? item.href.slice(1) : item.href} key={item.label} tabIndex={open && expanded ? 0 : -1} onClick={() => closeMenu()}>
+                        <Link data-specialty={item.href.endsWith("/boba-tea-shops")} href={tapHome && item.href.startsWith('/#') ? item.href.slice(1) : item.href} key={item.label} tabIndex={open && expanded ? 0 : -1} onClick={() => closeMenu()}>
                           <MobileNavGlyph name={item.icon} />
                           <span><strong>{item.label}</strong><small>{item.detail}</small></span>
                         </Link>

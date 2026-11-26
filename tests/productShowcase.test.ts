@@ -28,27 +28,27 @@ test('showcase copy accurately covers the four requested Replova features', asyn
     'utf8',
   )
 
+  const samples = await readFile(path.join(repoRoot, 'components/marketing/VisitSample.tsx'), 'utf8')
   for (const label of ['Replova Tap', 'Feedback inbox', 'Recurring issues', 'Playbooks']) {
-    assert.ok(component.includes(`label: '${label}'`))
+    assert.ok(samples.includes(`label: '${label}'`))
   }
-  assert.match(component, /Sample data/)
+  assert.match(samples, /Sample data/)
   assert.match(component, /href="\/demo"/)
   assert.doesNotMatch(component, /setInterval|setTimeout/)
 })
 
-test('each showcase feature has a desktop and narrow capture', async () => {
-  for (const id of ['tap', 'inbox', 'issues', 'playbook']) {
-    for (const suffix of ['', '-mobile']) {
-      const png = await readFile(path.join(repoRoot, 'public/tap-showcase', id + suffix + '.png'))
-      assert.equal(png.toString('ascii', 1, 4), 'PNG')
-      assert.ok(png.readUInt32BE(16) >= 500)
-    }
-  }
+test('the local illustrations preserve the rating, comments, issue and owner across tabs', async () => {
+  const sample = await readFile(path.join(repoRoot, 'components/marketing/VisitSample.tsx'), 'utf8')
+  assert.match(sample, /rating: 3, comment: 'I couldn’t tell where to go when I arrived/)
+  assert.match(sample, /I had to ask where the line starts/)
+  assert.match(sample, /2 of 6 visits/)
+  assert.match(sample, /Put a ‘Start here’ sign at the entrance/)
+  assert.match(sample, /Shift lead/)
 })
 
 test('screenshot stage preserves product colors and accessible tab states', async () => {
   const stylesheet = await readFile(path.join(repoRoot, 'components/marketing/ProductShowcase.module.css'), 'utf8')
-  assert.match(stylesheet, /\.visualStage \{[^}]*linear-gradient\(145deg, #061737/)
+  assert.match(stylesheet, /\.visualStage \{[^}]*linear-gradient\(90deg, #000000 0%, #061737/)
   assert.doesNotMatch(stylesheet, /(?:^|[;{\s])filter:\s*(blur|saturate|contrast)/)
   assert.match(stylesheet, /overflow-x: auto/)
   assert.match(stylesheet, /@media \(max-width: 820px\)/)

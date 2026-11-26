@@ -23,6 +23,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     ...staticRoutes,
+    ...['replova-tap', 'how-tap-works'].map(slug => ({
+      url: `${base}/platform/${slug}`, lastModified: now, priority: 0.8,
+    })),
     ...careerRoles.map(role => ({
       url: `${base}/careers/${role.slug}`,
       lastModified: now,

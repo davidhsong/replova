@@ -19,7 +19,7 @@ test('marketing header exposes an accessible animated mobile menu', async () => 
   assert.match(mobileMenu, /event\.key === 'Tab'/)
   assert.match(mobileMenu, /document\.body\.style\.overflow = 'hidden'/)
   assert.match(mobileMenu, /Platform/)
-  assert.match(mobileMenu, /Solutions/)
+  assert.match(mobileMenu, /Industries/)
   assert.match(mobileMenu, /Resources/)
   assert.match(mobileMenu, /Sign in/)
   assert.match(mobileMenu, /Request a demo/)

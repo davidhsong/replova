@@ -11,7 +11,7 @@ test('standalone dashboard preview is interactive and covers the product workspa
     readFile(path.join(repoRoot, 'components', 'marketing', 'InteractiveDashboardPreview.tsx'), 'utf8'),
   ])
 
-  assert.match(page, /href="#sample-feedback"/)
+  assert.match(page, /id="sample-feedback"/)
   assert.doesNotMatch(page, /<InteractiveDashboardPreview/)
   assert.match(component, /defaultAssistantOpen = false/)
   assert.match(component, /entry\.contentRect\.width <= 690/)

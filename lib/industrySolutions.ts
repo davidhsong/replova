@@ -16,11 +16,11 @@ export type IndustrySolution = {
   }
 }
 
-export const industrySolutions: readonly IndustrySolution[] = [
+const existingIndustries: readonly IndustrySolution[] = [
   {
     slug: 'healthcare-wellness',
-    name: 'Healthcare & wellness',
-    navName: 'Healthcare & wellness',
+    name: 'Health & wellness',
+    navName: 'Health & wellness',
     eyebrow: 'For care-centered businesses',
     headline: 'Make check-in clear for every visitor.',
     lede: 'Use private visit feedback to see where check-in, scheduling, and follow-up instructions are working for patients and studio members.',
@@ -168,6 +168,40 @@ export const industrySolutions: readonly IndustrySolution[] = [
     },
   },
 ] as const
+
+const retail = existingIndustries.find(item => item.slug === 'retail-hospitality')!
+const local = existingIndustries.find(item => item.slug === 'local-businesses')!
+export const serviceExamples = existingIndustries.filter(item =>
+  ['home-services', 'automotive', 'professional-services', 'local-businesses'].includes(item.slug)
+)
+
+export const industrySolutions: readonly IndustrySolution[] = [
+  retail,
+  {
+    ...retail, slug: 'boba-tea-shops', name: 'Boba & tea shops', navName: 'Boba & tea shops',
+    eyebrow: 'For boba & tea shops', headline: 'Make the last step of a drink order easy.',
+    lede: 'Find out what happens between ordering a drink and picking it up. Give the shift lead a specific change to try before the next rush.',
+    businesses: ['Tea houses', 'Boba counters', 'Multi-location shops'],
+    moments: [
+      { title: 'At the counter', detail: 'Was it clear where to order and how to choose toppings?' },
+      { title: 'During the wait', detail: 'Could customers hear their name or see their order number?' },
+      { title: 'At pickup', detail: 'Could they identify their drink and find the right shelf?' },
+    ],
+    workflow: [
+      { title: 'Invite a tap at pickup', detail: 'Set the placard beside the collection area where customers can reach it with one hand.' },
+      { title: 'Read both sides of the visit', detail: 'A customer may love the tea and still struggle to find the finished order.' },
+      { title: 'Test a shelf label', detail: 'Have the shift lead label the pickup point and review the next shift’s comments.' },
+    ],
+    signals: ['Pickup mix-ups', 'Queue clarity', 'Drink consistency'],
+    example: { comment: 'The tea was great, but I couldn’t tell which shelf was for pickup.', issue: 'Finished drinks are hard to identify.', action: 'Label the pickup shelf and check the next six comments.' },
+  },
+  existingIndustries.find(item => item.slug === 'healthcare-wellness')!,
+  { ...local, slug: 'local-services', name: 'Local services', navName: 'Local services',
+    eyebrow: 'For local service teams', headline: 'Help customers arrive ready for their appointment.',
+    lede: 'See where directions, estimates, and updates leave customers guessing. Track what the team changes across service calls and office visits.',
+    businesses: serviceExamples.map(item => item.name),
+  },
+]
 
 export function getIndustrySolution(slug: string) {
   return industrySolutions.find(solution => solution.slug === slug)

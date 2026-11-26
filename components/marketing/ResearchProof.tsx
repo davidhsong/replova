@@ -1,3 +1,4 @@
+import { Eyebrow } from './Eyebrow'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -85,14 +86,15 @@ const studies: Study[] = [
   },
 ]
 
-export function ResearchProof() {
+export function ResearchProof({ institutions }: { institutions?: string[] }) {
   return (
     <section className="research-proof" aria-labelledby="research-proof-title">
       <div className="research-proof-inner">
+        <Eyebrow>Research</Eyebrow>
         <h2 className="research-proof-heading" id="research-proof-title">Published research on customer reviews</h2>
 
         <div className="research-proof-grid">
-          {studies.map(study => (
+          {studies.filter(study => !institutions || institutions.includes(study.institution)).map(study => (
             <article className="research-study-card" key={study.institution}>
               <div className="research-study-meta">
                 {study.sourceLogo ? (

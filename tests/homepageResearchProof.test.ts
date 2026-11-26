@@ -12,7 +12,7 @@ test('resources retain scoped published findings and real evidence links', async
     readFile(path.join(root, 'app/resources/customer-review-research/page.tsx'), 'utf8'),
   ])
 
-  assert.doesNotMatch(home, /<ResearchProof \/>/)
+  assert.match(home, /<ResearchProof \/>/)
   assert.match(component, /REVIEWS\.io/)
   assert.match(component, /94%/)
   assert.match(component, /2,631/)

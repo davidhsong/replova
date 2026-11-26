@@ -1,8 +1,12 @@
+import { TapFilm } from '@/components/marketing/TapFilm'
+import { HomeFaq } from '@/components/marketing/HomeFaq'
+import { ResearchProof } from '@/components/marketing/ResearchProof'
+import { FeatureIcon } from '@/components/marketing/VisitSample'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowIcon, MarketingFooter, MarketingHeader } from '@/components/MarketingChrome'
-import { getIndustrySolution, industrySolutions } from '@/lib/industrySolutions'
+import { getIndustrySolution, industrySolutions, serviceExamples } from '@/lib/industrySolutions'
 import { createPageMetadata } from '@/lib/seo'
 
 type SolutionPageProps = {
@@ -20,7 +24,7 @@ export async function generateMetadata({ params }: SolutionPageProps): Promise<M
   if (!solution) return { robots: { index: false, follow: false } }
 
   return createPageMetadata({
-    title: `${solution.name} Solutions`,
+    title: `Replova Tap for ${solution.name}`,
     description: solution.lede,
     path: `/industries/${solution.slug}`,
   })
@@ -38,17 +42,36 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
     <div className="marketing-page">
       <MarketingHeader />
       <main id="main-content" className="marketing-page-main solution-detail-page">
-        <Link href="/industries" className="solution-back-link">All solutions <ArrowIcon /></Link>
+        <Link href="/industries" className="solution-back-link">All industries <ArrowIcon /></Link>
 
-        <section className="solution-hero">
-          <div className="t-eyebrow c-accent">{solution.eyebrow}</div>
+        <section className="solution-hero internal-hero">
+          <span className="hero-category">{solution.eyebrow}</span>
           <h1>{solution.headline}</h1>
           <p>{solution.lede}</p>
           <div className="subpage-hero-actions">
             <Link href="/demo" className="btn btn-primary btn-lg">Request a demo <ArrowIcon /></Link>
-            <Link href="/#platform" className="btn btn-ghost btn-lg">See the platform</Link>
           </div>
         </section>
+
+        {slug === 'boba-tea-shops' ? <TapFilm /> : (
+          <section className="solution-section solution-example">
+          <div className="solution-example-review">
+            <small>Sample data</small><div><FeatureIcon id="inbox" /> Feedback inbox · 4 / 5</div>
+            <blockquote>“{solution.example.comment}”</blockquote>
+            <div className="solution-review-rating" aria-label="Four out of five stars">★★★★<span>★</span></div>
+          </div>
+          <div className="solution-example-analysis">
+            <div>
+              <div className="t-eyebrow c-accent"><FeatureIcon id="issues" /> Recurring issue</div>
+              <p>{solution.example.issue}</p>
+            </div>
+            <div>
+              <div className="t-eyebrow c-accent"><FeatureIcon id="playbook" /> Owner action</div>
+              <p>{solution.example.action}</p>
+            </div>
+          </div>
+        </section>
+        )}
 
         <section className="solution-audience" aria-label={`Example businesses in ${solution.name}`}>
           <span>Built for</span>
@@ -90,24 +113,6 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
           </div>
         </section>
 
-        <section className="solution-section solution-example">
-          <div className="solution-example-review">
-            <div className="t-eyebrow">Fictional private visit · 4 of 5</div>
-            <blockquote>“{solution.example.comment}”</blockquote>
-            <div className="solution-review-rating" aria-label="Four out of five stars">★★★★<span>★</span></div>
-          </div>
-          <div className="solution-example-analysis">
-            <div>
-              <div className="t-eyebrow c-accent">Reported issue</div>
-              <p>{solution.example.issue}</p>
-            </div>
-            <div>
-              <div className="t-eyebrow c-accent">Owner action</div>
-              <p>{solution.example.action}</p>
-            </div>
-          </div>
-        </section>
-
         <section className="solution-section solution-signal-layout">
           <div>
             <div className="t-eyebrow c-accent">Common signals</div>
@@ -120,9 +125,12 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
           </ul>
         </section>
 
+        {slug === 'local-services' && <section className="solution-section"><h2>Across service teams</h2><div className="service-examples">{serviceExamples.map(item => <article key={item.slug}><h3>{item.name}</h3><p>{item.lede}</p><blockquote>“{item.example.comment}”</blockquote><p>{item.example.action}</p></article>)}</div></section>}
+        <ResearchProof institutions={slug === 'retail-hospitality' || slug === 'boba-tea-shops' ? ['Marketing Science', 'Medill Spiegel Research Center'] : ['REVIEWS.io', 'Pew Research Center']} />
+        <HomeFaq />
         <section className="solution-section solution-related">
           <div className="solution-section-heading">
-            <div className="t-eyebrow c-accent">More solutions</div>
+            <div className="t-eyebrow c-accent">More industries</div>
             <h2>Explore another customer journey.</h2>
           </div>
           <div className="solution-related-list">

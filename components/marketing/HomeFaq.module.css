@@ -6,9 +6,9 @@
 
 .inner {
   display: grid;
-  width: min(900px, 100%);
+  width: min(1200px, 100%);
   margin: 0 auto;
-  grid-template-columns: minmax(210px, 0.72fr) minmax(0, 1.28fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 60px;
   align-items: start;
 }
@@ -18,16 +18,8 @@
   top: 80px;
 }
 
-.eyebrow {
-  color: #6756df;
-  font-size: 0.7rem;
-  font-weight: 760;
-  letter-spacing: 0.13em;
-  text-transform: uppercase;
-}
-
 .heading h2 {
-  max-width: 340px;
+  max-width: 600px;
   margin: 11px 0 15px;
   font-size: var(--home-display-size);
   font-weight: var(--home-display-weight);
@@ -193,7 +185,7 @@
 
 @media (max-width: 560px) {
   .section {
-    padding: 72px 16px;
+    padding: 72px 24px;
   }
 
   .heading h2 {

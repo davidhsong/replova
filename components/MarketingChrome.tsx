@@ -1,3 +1,6 @@
+import { platformLinks, industryLinks } from '@/lib/marketingNavigation'
+import { FeatureIcon } from './marketing/VisitSample'
+import './marketing/marketing.css'
 import { DropdownInteraction } from './marketing/DropdownInteraction'
 import Link from 'next/link'
 import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
@@ -19,32 +22,17 @@ function ChevronDown() {
   )
 }
 
-const platformLinks = [
-  ['Replova Tap', 'Collect private ratings with a tap or scan.', '/#platform', 'reply'],
-  ['Feedback inbox', 'Read a rating and comment for one location.', '/#sample-feedback', 'insights'],
-  ['Recurring issues', 'Read the comments behind each count.', '/#sample-issue', 'insights'],
-  ['Playbooks', 'See how the owner tracks a fix.', '/#sample-playbook', 'benchmark'],
-] as const
-
-const industryLinks = [
-  ['Healthcare & wellness', 'Understand check-in and communication at each location.', '/industries/healthcare-wellness', 'healthcare'],
-  ['Home services', 'Track communication, punctuality, and service quality.', '/industries/home-services', 'home'],
-  ['Automotive', 'Understand trust, estimates, wait times, and repair quality.', '/industries/automotive', 'automotive'],
-  ['Professional services', 'Turn client feedback into clear operational signals.', '/industries/professional-services', 'professional'],
-  ['Retail & hospitality', 'Compare service, products, atmosphere, and value.', '/industries/retail-hospitality', 'retail'],
-  ['Other local businesses', 'A flexible workflow for any local business.', '/industries/local-businesses', 'local'],
-] as const
-
 type NavDropdownProps = {
   label: string
   href: string
   links: ReadonlyArray<readonly [label: string, description: string, href: string, icon: NavIconName]>
 }
 
-export type NavIconName = 'reply' | 'insights' | 'benchmark' | 'healthcare' | 'home' | 'automotive' | 'professional' | 'retail' | 'local'
+export type NavIconName = 'tap' | 'guide' | 'reply' | 'insights' | 'benchmark' | 'healthcare' | 'home' | 'automotive' | 'professional' | 'retail' | 'local'
 
 export function NavItemIcon({ name }: { name: NavIconName }) {
-  const paths: Record<NavIconName, React.ReactNode> = {
+  if (name === 'tap' || name === 'guide') return <FeatureIcon id={name === 'tap' ? 'tap' : 'playbook'} />
+  const paths: Record<typeof name, React.ReactNode> = {
     reply: <><path d="M4 5.5h16v10H9l-5 4v-14Z" /><path d="M8 9h8M8 12h5" /></>,
     insights: <><path d="M4 19V9M10 19V5M16 19v-7M22 19V3" /><path d="M2 19h22" /></>,
     benchmark: <><path d="m4 17 5-5 4 3 7-9" /><path d="M15 6h5v5" /></>,
@@ -66,7 +54,7 @@ function NavDropdown({ label, href, links }: NavDropdownProps) {
       <div className="nav-popover" aria-label={`${label} menu`}>
         <div className="nav-popover-links">
           {links.map(([itemLabel, description, itemHref, icon]) => (
-            <Link href={itemHref} key={itemLabel}>
+            <Link data-specialty={itemHref.endsWith("/boba-tea-shops")} href={itemHref} key={itemLabel}>
               <NavItemIcon name={icon} />
               <span><strong>{itemLabel}</strong><small>{description}</small></span>
             </Link>
@@ -110,11 +98,11 @@ export function MarketingHeader({ tapHome = false }: { tapHome?: boolean }) {
         <nav className="lp-menu" aria-label="Main navigation">
           <NavDropdown
             label="Platform"
-            href="/#platform"
+            href="/platform/replova-tap"
             links={platformLinks}
           />
           <NavDropdown
-            label="Solutions"
+            label="Industries"
             href="/industries"
             links={industryLinks}
           />
@@ -137,24 +125,11 @@ export function MarketingHeader({ tapHome = false }: { tapHome?: boolean }) {
 const footerGroups = [
   {
     title: 'Platform',
-    links: [
-      ['Replova Tap', '/#platform'],
-      ['Feedback inbox', '/#sample-feedback'],
-      ['Recurring issues', '/#sample-issue'],
-      ['Playbooks', '/#sample-playbook'],
-      ['Sample dashboard', '/dashboard-preview'],
-    ],
+    links: platformLinks.map(([label, , href]) => [label, href] as const),
   },
   {
-    title: 'Solutions',
-    links: [
-      ['Healthcare & wellness', '/industries/healthcare-wellness'],
-      ['Home services', '/industries/home-services'],
-      ['Automotive', '/industries/automotive'],
-      ['Professional services', '/industries/professional-services'],
-      ['Retail & hospitality', '/industries/retail-hospitality'],
-      ['Other local businesses', '/industries/local-businesses'],
-    ],
+    title: 'Industries',
+    links: [['All industries', '/industries'], ...industryLinks.map(([label, , href]) => [label, href] as const)],
   },
   {
     title: 'Company',

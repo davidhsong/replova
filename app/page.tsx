@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
-import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowIcon, MarketingFooter, MarketingHeader, NavItemIcon } from '@/components/MarketingChrome'
 import { HomeFaq } from '@/components/marketing/HomeFaq'
-import { TapFilm } from '@/components/marketing/TapFilm'
+import { FeedbackDashboard } from '@/components/marketing/FeedbackDashboard'
+import { ResearchProof } from '@/components/marketing/ResearchProof'
+import { VisitSample, issue, task, visits } from '@/components/marketing/VisitSample'
+import { Eyebrow } from '@/components/marketing/Eyebrow'
 import { ProductShowcase } from '@/components/marketing/ProductShowcase'
 import { PromiseWorkflowVisual } from '@/components/marketing/PromiseWorkflowVisual'
-import finalCtaPreview from '@/public/tap-showcase/inbox.png'
 import './tap-home.css'
 import { createPageMetadata, SITE_TITLE, SITE_URL, BRAND_ORIGIN } from '@/lib/seo'
 
@@ -48,12 +49,9 @@ const structuredData = {
 }
 
 const industries = [
-  { name: 'Healthcare & wellness', note: 'See whether first-time visitors know where to check in for a class or appointment.', href: '/industries/healthcare-wellness', icon: 'healthcare' },
-  { name: 'Home services', note: 'Track communication, punctuality, craftsmanship, and recurring service gaps.', href: '/industries/home-services', icon: 'home' },
-  { name: 'Automotive', note: 'Find out whether drivers can follow your after-hours drop-off instructions.', href: '/industries/automotive', icon: 'automotive' },
-  { name: 'Professional services', note: 'Turn client feedback into specific improvements across every office.', href: '/industries/professional-services', icon: 'professional' },
-  { name: 'Retail & hospitality', note: 'Learn where shoppers look for the returns desk and what would make it easier to find.', href: '/industries/retail-hospitality', icon: 'retail' },
-  { name: 'Other local businesses', note: 'Give customers a way to tell you what worked and what could be clearer.', href: '/industries/local-businesses', icon: 'local' },
+  { name: 'Retail & hospitality', note: 'Find the places where shoppers and guests need a hand.', href: '/industries/retail-hospitality', icon: 'retail' },
+  { name: 'Health & wellness', note: 'Help first-time visitors find reception and understand their next steps.', href: '/industries/healthcare-wellness', icon: 'healthcare' },
+  { name: 'Local services', note: 'Make arrival instructions, estimates, and follow-up clearer.', href: '/industries/local-services', icon: 'local' },
 ] as const
 
 function SessionAccessIcon() {
@@ -93,39 +91,25 @@ function DataControlIcon() {
   )
 }
 
-const visit = 'The tea was great, but I couldn’t tell which shelf was for pickup.'
-
 function VisitStory() {
   return (
     <section id="platform" className="lp-container story-section">
       <div className="section-intro" id="sample-feedback">
-        <div className="t-eyebrow c-accent">How Replova works</div>
+        <Eyebrow>How Replova works</Eyebrow>
         <h2>What the customer sends. What the owner sees.</h2>
-        <p>Follow a sample visit at Alder &amp; Loom’s Market Lane location.</p>
+        <p>Follow a sample visit at a fictional Downtown location.</p>
       </div>
       <div className="story-grid">
         <article className="story-card story-card-violet">
           <div className="story-visual">
-            <div className="visit-sample">
-              <small>Alder &amp; Loom · Market Lane</small>
-              <strong>How was your visit?</strong>
-              <div className="sample-ratings" aria-label="4 out of 5">{[1, 2, 3, 4, 5].map(n => <b key={n} data-selected={n === 4}>{n}</b>)}</div>
-              <small>Comment (optional)</small>
-              <p>{visit}</p>
-            </div>
+            <VisitSample feature="tap" />
           </div>
           <h3>How was your visit?</h3>
           <p>A tap or scan opens the form on the customer’s phone. A rating is enough. No sign-in required.</p>
         </article>
         <article className="story-card story-card-blue">
           <div className="story-visual">
-            <div className="visit-sample">
-              <small>Market Lane · Feedback inbox</small>
-              <strong>4 / 5</strong>
-              <p>{visit}</p>
-              <p>Comment sentiment: mixed</p>
-              <a href="#sample-issue">Pickup shelves · 2 of 6 submissions</a>
-            </div>
+            <VisitSample feature="inbox" />
           </div>
           <h3>See what needs attention.</h3>
           <p>Select a location to read its feedback. Open a recurring issue to see which visits mention it.</p>
@@ -148,26 +132,28 @@ export default function Home() {
       <main id="main-content">
         <section className="lp-hero-centered">
 
+          <div className="hero-category">Private feedback for local businesses</div>
           <h1><span>Turn feedback</span>{' '}<span>into action.</span></h1>
-          <p>Customers tap or scan a Replova Tap placard to leave private feedback. See what’s working, spot recurring issues, and track improvements at each location.</p>
+          <p>Customers tap or scan to share how their visit went. See what keeps coming up and give someone a clear next step.</p>
           <div className="hero-actions hero-actions-centered">
             <Link href="/demo" className="btn btn-primary btn-lg">Request a demo</Link>
-            <Link href="#sample-feedback" className="btn btn-quiet btn-lg">Preview sample feedback</Link>
           </div>
-          <TapFilm />
+          <FeedbackDashboard />
         </section>
 
+        <ResearchProof />
         <VisitStory />
 
         <section id="tap-workflow" className="proof-section" aria-labelledby="sample-issue">
           <div className="lp-inner">
-            <h2 className="proof-title" id="sample-issue">Pickup shelves · 2 of 6 submissions</h2>
+            <Eyebrow>Recurring issues</Eyebrow>
+            <h2 className="proof-title" id="sample-issue">{issue}</h2>
             <div className="proof-cards pilot-story">
-              <article><strong>First visit · 4 / 5</strong><p>“{visit}”</p></article>
-              <article><strong>Second visit · 3 / 5</strong><p>“I checked both shelves before I found my order.”</p></article>
-              <article id="sample-playbook"><strong>Owner’s Playbook</strong><p>Label the shelves “Pickup” and “Order here” before the next shift.</p></article>
+              <article><strong>First visit · 3 / 5</strong><p>“{visits[0].comment}”</p></article>
+              <article><strong>Second visit · 3 / 5</strong><p>“{visits[1].comment}”</p></article>
+              <article id="sample-playbook"><strong>Owner’s Playbook</strong><p>{task}</p></article>
             </div>
-            <p className="sample-caption">Sample data · Alder &amp; Loom · Market Lane</p>
+            <p className="sample-caption">Sample data · Downtown</p>
           </div>
         </section>
 
@@ -176,7 +162,7 @@ export default function Home() {
         <section className="promise-section">
           <div className="lp-inner promise-card">
             <div>
-              <div className="t-eyebrow">Our promise</div>
+              <Eyebrow>Our promise</Eyebrow>
               <h2>You set the limits.</h2>
               <p>Read the visits behind an issue. Record the action your team will take, then come back to check the result.</p>
               <span>Your team decides what happens next.</span>
@@ -187,7 +173,7 @@ export default function Home() {
 
         <section className="lp-container industries-section">
           <div className="section-intro">
-            <div className="t-eyebrow c-accent">Solutions</div>
+            <Eyebrow>Industries</Eyebrow>
             <h2>What customers notice at your location.</h2>
           </div>
           <div className="industry-grid">
@@ -205,7 +191,7 @@ export default function Home() {
 
         <section className="security-section">
           <div className="lp-inner security-card">
-            <div className="section-intro"><div className="t-eyebrow">Security by design</div><h2>Your customer feedback stays protected.</h2><p>Customers can send a rating from their phone. Your team signs in to read it.</p></div>
+            <div className="section-intro"><Eyebrow>Security by design</Eyebrow><h2>Your customer feedback stays protected.</h2><p>Customers can send a rating from their phone. Your team signs in to read it.</p></div>
             <div className="security-grid">
               <article><span className="security-icon security-icon-stroke"><SessionAccessIcon /></span><strong>Session-based access</strong><p>Passwordless sign-in and server-side authorization checks.</p></article>
               <article><span className="security-icon security-icon-brand"><GoogleIcon /></span><strong>Optional Google connection</strong><p>Connect a Business Profile separately if you use Google review tools.</p></article>
@@ -220,22 +206,13 @@ export default function Home() {
         <section className="final-cta">
           <div className="final-cta-inner">
             <div className="final-cta-copy">
+              <Eyebrow>Demo</Eyebrow>
               <h2>See Replova in action.</h2>
               <p>Walk through a location’s feedback inbox and see how to track a fix in a Playbook.</p>
               <Link href="/demo" className="btn btn-primary btn-lg">Request a demo</Link>
             </div>
             <div className="final-cta-visual">
-              <div className="final-cta-preview">
-                <picture>
-                  <source media="(max-width: 620px)" srcSet="/tap-showcase/inbox-mobile.png" width={648} height={820} />
-                  <Image
-                    src={finalCtaPreview}
-                    alt="Sample Market Lane feedback inbox showing the pickup-shelf comment and its mixed sentiment."
-                    sizes="(max-width: 900px) calc(100vw - 56px), 660px"
-                  />
-                </picture>
-              </div>
-              <small className="cta-sample">Sample data · Market Lane</small>
+              <VisitSample feature="inbox" />
             </div>
           </div>
         </section>

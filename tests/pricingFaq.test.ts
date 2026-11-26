@@ -205,7 +205,7 @@ test('homepage replacement leaves its established non-pricing sections in place'
   assert.match(page, /function OpenAIIcon\(\)/)
   assert.match(page, /<NavItemIcon name=\{industry\.icon\} \/>/)
   assert.match(marketingChrome, /export function NavItemIcon/)
-  for (const icon of ['healthcare', 'home', 'automotive', 'professional', 'retail', 'local']) {
+  for (const icon of ['healthcare', 'retail', 'local']) {
     assert.match(page, new RegExp(`icon: '${icon}'`))
   }
   assert.match(page, /<MarketingFooter tapHome \/>/)
