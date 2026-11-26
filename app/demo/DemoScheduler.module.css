@@ -402,7 +402,11 @@
   background-image: repeating-linear-gradient(135deg, transparent 0 3px, #e8eaed 3px 5px);
 }
 
-.openHour { background: #fff; }
+.openHour { display: flex; align-items: center; justify-content: center; gap: 3px; background: #fff; }
+.openHour button { padding: 6px 3px; background: #f3f4f5; border: 1px solid #cfd4dc; border-radius: 4px; color: #30343c; font-size: 11px; cursor: pointer; }
+.monthDays button:disabled, .miniDays button:disabled { background: transparent; color: #92959a; cursor: default; }
+.eventDetails select { max-width: 100%; color: inherit; background: transparent; border: 0; font: inherit; }
+
 
 .currentTimeLine {
   position: absolute;

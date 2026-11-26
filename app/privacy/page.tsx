@@ -18,9 +18,10 @@ const sections: LegalSection[] = [
           'Tap feedback includes the rating, optional comment, time, location, and placard. The form does not ask for contact details or use marketing analytics.',
           'Playbooks store issue evidence, owner notes, service limits, written quotes and provider confirmations.',
           'Your email address (used to sign in and send weekly digests)',
-          'Your business name and Google Place ID (to fetch reviews)',
+          'Your business name and, if you select a Google listing, its Google Place ID',
           'Optional profile information: display name, phone number, profile picture',
-          'Google reviews fetched via the Google Places API (publicly available data)',
+          'Public Google reviews when you use the optional review integration',
+          'If you connect YouTube, channel, video, playlist and comment data are used for the Studio and its reply queue.',
           'Payment information (processed by Stripe, we never see your card details)',
           'Demo scheduling details: name, email address, business name, and requested meeting time',
           'Career application details and an optional résumé when you apply for an internship',
@@ -65,14 +66,14 @@ const sections: LegalSection[] = [
             { name: 'Supabase',           role: 'Database and authentication' },
             { name: 'Stripe',             role: 'Payment processing'          },
             { name: 'OpenAI', role: 'Reply drafting, Google review analysis, and Tap comment analysis' },
-            { name: 'Google Places API',  role: 'Fetching public reviews'     },
+            { name: 'Google Places API',  role: 'Optional public review lookup'     },
             { name: 'Resend',             role: 'Email delivery'              },
             { name: 'Zoho Mail',          role: 'Demo calendar invitations'   },
             { name: 'Vercel',             role: 'Hosting and infrastructure'  },
           ].map(({ name, role }) => (
             <div key={name} style={{ padding: '10px 14px', background: 'var(--surface-2)', border: '1px solid var(--line)', borderRadius: 8 }}>
               <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--t1)', marginBottom: 2 }}>{name}</p>
-              <p style={{ fontSize: 12, color: 'var(--t3)' }}>{role}</p>
+              <p style={{ fontSize: 12, color: 'var(--t2)' }}>{role}</p>
             </div>
           ))}
         </div>

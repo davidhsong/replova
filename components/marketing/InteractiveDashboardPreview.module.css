@@ -11,7 +11,7 @@
   --preview-line-strong: #cfd3d8;
   --preview-text: #17191d;
   --preview-muted: #68707b;
-  --preview-faint: #9298a1;
+  --preview-faint: #626971;
   --preview-positive: #16825c;
   --preview-positive-sub: #edf8f3;
   --preview-attention: #b24c52;
@@ -747,3 +747,5 @@
     transition-duration: .01ms !important;
   }
 }
+
+.workspaceCard small, .featureSwitcher > small, .featureButton small, .nav > small, .accountButton small { color: var(--preview-faint); }

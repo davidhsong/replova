@@ -1,6 +1,8 @@
 import { createServer } from 'node:http'
 import { createServer as createSocketServer } from 'node:net'
 import { setTimeout as delay } from 'node:timers/promises'
+import { checkPublicNavigation } from './publicNavigation.mjs'
+import { checkDemoBooking } from './websiteAuditBooking.mjs'
 import { rehearse } from './pilotBrowser.mjs'
 import { rehearseFlow } from './feedbackFlow.mjs'
 import { evidenceRehearsal } from './tapEvidence.mjs'
@@ -168,7 +170,7 @@ async function run() {
   const failedOnce = new Set()
   const scopedCalls = []
   const flowRun=process.argv.includes('--flow')
-  const evidenceRun=flowRun || process.argv.includes('--evidence')
+  const evidenceRun=flowRun || process.argv.includes('--evidence') || process.argv.includes('--website-audit')
   const secondUser={...actor,id:randomUUID(),email:'second@example.invalid'}
   const secondSession={...session,user:secondUser,access_token:jwt('authenticated',secondUser.id)}
   if (evidenceRun) {
@@ -287,6 +289,12 @@ async function run() {
     'NEXT_PUBLIC_GA_ID',
   ])
     env[key] = ''
+  const demoAudit = process.argv.includes('--website-audit')
+  if (demoAudit) Object.assign(env, {
+    ZOHO_SMTP_HOST: '127.0.0.1', ZOHO_SMTP_PORT: '3688',
+    ZOHO_SMTP_USER: 'fixture', ZOHO_SMTP_PASSWORD: 'fixture',
+    DEMO_FROM_EMAIL: 'organizer@example.invalid', DEMO_OWNER_EMAIL: 'owner@example.invalid',
+  })
   const blockedFile=path.join(lab,'external-attempts.log')
   if (evidenceRun) {
     // Preload in the real Next server and its workers. Count TCP egress (including SMTP)
@@ -354,7 +362,11 @@ net.Socket.prototype.connect=function(...args){
     } catch {}
     await delay(500)
   }
-  if (flowRun) await rehearseFlow({origin,session,client,scopedCalls,blockedFile})
+  if (demoAudit) {
+    await checkDemoBooking(origin)
+    await checkPublicNavigation(origin)
+  }
+  else if (flowRun) await rehearseFlow({origin,session,client,scopedCalls,blockedFile})
   else if (evidenceRun) await evidenceRehearsal({origin,cron,client,session,secondSession,newClient:()=>pg.getPgClient(),scopedCalls,blockedFile})
   else if (process.argv.includes('--scoped-analysis')) await scopedAnalysis({ origin, cron, client, session, scopedCalls })
   else if (sentiment) await sentiment.run({ origin, cron, client })

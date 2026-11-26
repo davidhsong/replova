@@ -13,13 +13,18 @@ type ApplicationFormProps = {
 
 export default function ApplicationForm({ roleKey, roleTitle, roleQuestion }: ApplicationFormProps) {
   const [state, setState] = useState<FormState>({ kind: 'idle' })
+  const [resumeError, setResumeError] = useState('')
   const [resumeName, setResumeName] = useState('')
   const [isDragging, setIsDragging] = useState(false)
   const resumeInput = useRef<HTMLInputElement>(null)
 
   function updateResume(files: FileList | null) {
     const file = files?.[0]
-    if (!file) return
+    const message = file && (!/\.(pdf|docx?)$/i.test(file.name) || file.size > 4 * 1024 * 1024)
+      ? 'Choose a PDF, DOC or DOCX file up to 4 MB.' : ''
+    resumeInput.current?.setCustomValidity(message)
+    setResumeError(message)
+    if (!file) { setResumeName(''); return }
 
     if (resumeInput.current && resumeInput.current.files !== files) {
       const transfer = new DataTransfer()
@@ -121,10 +126,11 @@ export default function ApplicationForm({ roleKey, roleTitle, roleQuestion }: Ap
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleResumeDrop}
           >
-            <input ref={resumeInput} id="resume" name="resume" type="file" className="resume-input" onChange={handleResumeChange} accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+            <input aria-label="Resume (optional)" aria-invalid={Boolean(resumeError)} aria-describedby="resume-help" ref={resumeInput} id="resume" name="resume" type="file" className="resume-input" onChange={handleResumeChange} accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
             <strong>{resumeName || 'Drop your resume here, or click to browse'}</strong>
-            <span>PDF, DOC, or DOCX - maximum 4 MB</span>
+            <span id="resume-help">PDF, DOC, or DOCX - maximum 4 MB</span>
           </label>
+          {resumeError && <p role="alert">{resumeError}</p>}
         </div>
         <label className="form-consent"><input type="checkbox" name="eligibilityConfirmed" required /><span>I confirm I am at least 18, currently enrolled in an educational program, and understand this is a limited, unpaid learning internship with no promise of a paid role. *</span></label>
         <label className="form-consent"><input type="checkbox" name="privacyAccepted" required /><span>I agree that Replova may use my application information to evaluate and contact me about this role, as described in the <a href="/privacy" className="text-link">Privacy Policy</a>. *</span></label>

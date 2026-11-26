@@ -42,7 +42,7 @@ export async function rehearse({ origin, cron, session, service, client }) {
       )
   }
   async function see(text) {
-    await page.getByText(text, { exact: false }).first().waitFor()
+    await page.getByText(text, { exact: false }).filter({ visible: true }).first().waitFor()
   }
   try {
     await page.goto(origin + '/dashboard', { waitUntil: 'domcontentloaded' })

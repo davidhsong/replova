@@ -18,6 +18,7 @@ export default function ResourcesPage() {
           <div className="t-eyebrow c-accent">Resource center</div>
           <h1>Make customer feedback useful.</h1>
           <p>Short, practical playbooks for answering reviews well, spotting patterns without overreacting, and asking customers for honest feedback at the right moment.</p>
+          <nav className="resource-guide-links" aria-label="Field guides"><a href="#insights">Private feedback</a><a href="#replying">Public review replies</a><a href="#requests">Review requests</a><a href="#research">Published research</a></nav>
         </section>
 
         <div className="page-rule-heading"><h2>Field guides</h2><span>Practical · no gate · built for operators</span></div>
@@ -58,7 +59,7 @@ export default function ResourcesPage() {
           </article>
         </div>
 
-        <section className="final-cta" style={{ marginTop: 92 }}><div className="final-cta-inner"><div className="t-eyebrow">Put the playbook into practice.</div><h2>Run the whole loop in Replova.</h2><p>Monitor, reply, learn, request, and report from the same workspace.</p><Link href="/demo" className="btn btn-primary btn-lg">Request a demo <ArrowIcon /></Link></div></section>
+        <section className="final-cta" style={{ marginTop: 92 }}><div className="final-cta-inner"><div className="t-eyebrow">Put the playbook into practice.</div><h2>Follow a private rating to an owner action.</h2><p>Read a location’s Tap comments, see which visits mention the same issue, and track the fix in a Playbook.</p><Link href="/dashboard-preview" className="btn btn-primary btn-lg">Explore the sample dashboard <ArrowIcon /></Link></div></section>
       </main>
       <MarketingFooter />
     </div>

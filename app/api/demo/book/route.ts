@@ -1,7 +1,8 @@
-import { randomUUID } from 'node:crypto'
+import { getSupabaseAdmin } from '@/lib/supabase'
 import nodemailer from 'nodemailer'
 import { NextRequest, NextResponse } from 'next/server'
 import {
+  demoAvailability,
   createDemoCalendarInvite,
   DEMO_TIME_ZONE,
   formatDemoSlot,
@@ -58,6 +59,15 @@ function acceptedRecipient(recipient: unknown, expectedEmail: string) {
   return accepted.trim().toLowerCase() === expectedEmail.toLowerCase()
 }
 
+export async function GET() {
+  const now = new Date()
+  const { data, error } = await getSupabaseAdmin().from('demo_reservations')
+    .select('starts_at').gte('starts_at', now.toISOString()).lte('starts_at', new Date(now.getTime() + 46 * 86400000).toISOString())
+  if (error) return NextResponse.json({ error: 'Availability could not be loaded.' }, { status: 503 })
+  const reserved = new Set<number>(data.map(row => Date.parse(row.starts_at)))
+  return NextResponse.json({ slots: demoAvailability(now, reserved) }, { headers: { 'Cache-Control': 'no-store' } })
+}
+
 export async function POST(request: NextRequest) {
   if (request.headers.get('origin') !== request.nextUrl.origin) {
     return NextResponse.json({ error: 'Invalid request origin.' }, { status: 403 })
@@ -101,7 +111,7 @@ export async function POST(request: NextRequest) {
   try {
     slot = validateDemoSlot(date, time)
   } catch {
-    return NextResponse.json({ error: 'That time is no longer available. Choose another time.' }, { status: 400 })
+    return NextResponse.json({ error: 'That time is no longer available. Choose another time.' }, { status: 409 })
   }
 
   const host = process.env.ZOHO_SMTP_HOST?.trim() || 'smtppro.zoho.com'
@@ -126,7 +136,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Calendar delivery is temporarily unavailable. Please try again later.' }, { status: 503 })
   }
 
-  const bookingId = `${randomUUID()}@replova.app`
+  const requestId = cleanText(body.requestId, 36)
+  if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(requestId)) {
+    return NextResponse.json({ error: 'Refresh the calendar and choose a time.' }, { status: 400 })
+  }
+  const reservations = getSupabaseAdmin().from('demo_reservations')
+  const startsAt = slot.start.toISOString()
+  const { error: claimError } = await reservations.insert({ starts_at: startsAt, request_id: requestId })
+  if (claimError) {
+    if (claimError.code !== '23505') return NextResponse.json({ error: 'Booking is temporarily unavailable.' }, { status: 503 })
+    const { data: prior } = await reservations.select('delivered').eq('starts_at', startsAt).eq('request_id', requestId).maybeSingle()
+    if (prior?.delivered) return NextResponse.json({ success: true, slotLabel: formatDemoSlot(slot.start) })
+    return NextResponse.json({ error: prior ? 'Your invitation is being confirmed. Check your inbox.' : 'This time was taken. Choose another time.' }, { status: prior ? 503 : 409 })
+  }
+  const bookingId = `${requestId}@replova.app`
   const slotLabel = formatDemoSlot(slot.start)
   const calendar = createDemoCalendarInvite({
     uid: bookingId,
@@ -163,7 +186,7 @@ export async function POST(request: NextRequest) {
       text: [
         `Hello ${name},`,
         '',
-        `Your Replova introduction is confirmed for ${slotLabel}.`,
+        `Your Replova Tap demo is confirmed for ${slotLabel}.`,
         `The meeting is ${45} minutes and uses the ${DEMO_TIME_ZONE} time zone.`,
         company ? `Business: ${company}` : null,
         meetingUrl ? `Join Google Meet: ${meetingUrl}` : null,
@@ -177,7 +200,7 @@ export async function POST(request: NextRequest) {
           <p style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#7a756d">Replova demo</p>
           <h1 style="font-size:25px;margin:8px 0 18px">Demo confirmed</h1>
           <p style="font-size:15px;line-height:1.65">Hello ${safeName},</p>
-          <p style="font-size:15px;line-height:1.65">The Replova introduction is confirmed for <strong>${safeSlot}</strong>.</p>
+          <p style="font-size:15px;line-height:1.65">The Replova Tap demo is confirmed for <strong>${safeSlot}</strong>.</p>
           <table style="border-collapse:collapse;width:100%;margin:22px 0;font-size:14px">
             <tr><td style="padding:8px 14px 8px 0;color:#746f67">Duration</td><td style="padding:8px 0">45 minutes</td></tr>
             <tr><td style="padding:8px 14px 8px 0;color:#746f67">Time zone</td><td style="padding:8px 0">America/Los Angeles</td></tr>
@@ -195,15 +218,28 @@ export async function POST(request: NextRequest) {
       },
     })
     if (!delivery.accepted.some(recipient => acceptedRecipient(recipient, email))) {
+      if (delivery.accepted.length > 0) {
+        console.error('[demo/book] Partial delivery needs reconciliation', bookingId)
+        return NextResponse.json({ error: 'Your invitation needs assistance. Contact support before booking another time.' }, { status: 503 })
+      }
+      await reservations.delete().eq('request_id', requestId)
       console.error('[demo/book] Zoho did not accept the customer recipient')
       return NextResponse.json({ error: 'The calendar invitation could not be sent. Check the email address and try again.' }, { status: 502 })
     }
+    const { error: recordError } = await reservations.update({ delivered: true }).eq('request_id', requestId)
+    if (recordError) console.error('[demo/book] Accepted invitation needs reconciliation', bookingId)
     if (!delivery.accepted.some(recipient => acceptedRecipient(recipient, ownerEmail))) {
       console.error('[demo/book] Zoho did not accept the owner notification recipient')
     }
   } catch (error) {
-    console.error('[demo/book] Zoho delivery failed:', error instanceof Error ? error.name : 'Unknown error')
-    return NextResponse.json({ error: 'The calendar invitation could not be sent. Please try again.' }, { status: 502 })
+    const failure = error as { code?: string; command?: string }
+    // Before SMTP DATA the message cannot have been accepted by the server.
+    if (['CONN', 'EHLO', 'HELO', 'STARTTLS', 'AUTH', 'MAIL FROM', 'RCPT TO'].includes(failure.command ?? '') || failure.code === 'EAUTH') {
+      await reservations.delete().eq('request_id', requestId)
+      return NextResponse.json({ error: 'Invitation delivery failed. Please try again.' }, { status: 502 })
+    }
+    console.error('[demo/book] Check SMTP delivery before releasing reservation', bookingId)
+    return NextResponse.json({ error: 'Delivery is unconfirmed. Check your inbox or contact support before booking another time.' }, { status: 503 })
   }
 
   return NextResponse.json({ success: true, slotLabel })

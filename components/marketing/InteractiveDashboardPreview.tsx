@@ -18,10 +18,12 @@ import {
   IconStar,
   IconUsers,
 } from '@/components/icons'
+import { sampleCampaign, deliveredRate } from '@/lib/sampleCampaign'
 import styles from './InteractiveDashboardPreview.module.css'
 
 type PreviewFeature = 'feedback' | 'playbook' | 'integrations'
 type PreviewView =
+  | 'tap'
   | 'reviews'
   | 'insights'
   | 'competitors'
@@ -50,13 +52,14 @@ const FEATURES: Array<{
   Icon: IconComponent
   defaultView: PreviewView
 }> = [
-  { id: 'feedback', label: 'Customer Feedback', description: 'Reviews and insights', Icon: IconMessage, defaultView: 'reviews' },
+  { id: 'feedback', label: 'Customer Feedback', description: 'Reviews and insights', Icon: IconMessage, defaultView: 'tap' },
   { id: 'playbook', label: 'Business Playbook', description: 'Procedures and tasks', Icon: IconBook, defaultView: 'procedures' },
   { id: 'integrations', label: 'Integrations', description: 'Connected services', Icon: IconCog, defaultView: 'google' },
 ]
 
 const NAV_ITEMS: Record<PreviewFeature, NavItem[]> = {
   feedback: [
+    { view: 'tap', label: 'Private feedback', Icon: IconMessage },
     { view: 'reviews', label: 'Reviews', Icon: IconMessage, count: 3 },
     { view: 'insights', label: 'Feedback insights', Icon: IconAlert },
     { view: 'competitors', label: 'Competitors', Icon: IconUsers },
@@ -74,6 +77,7 @@ const NAV_ITEMS: Record<PreviewFeature, NavItem[]> = {
 }
 
 const VIEW_LABELS: Record<PreviewView, string> = {
+  tap: 'Private feedback',
   reviews: 'Review center',
   insights: 'Feedback insights',
   competitors: 'Competitor tracking',
@@ -254,7 +258,7 @@ function InsightsView() {
     <div className={styles.viewPage}>
       <ViewHeader eyebrow="Customer feedback intelligence" title="What customers are telling you" description="See patterns, evidence, and operational opportunities across synthetic feedback." />
       <section className={styles.statsGrid} aria-label="Synthetic feedback metrics">
-        <StatCard label="Feedback records" value="72" detail="Across six weeks" />
+        <StatCard label="Feedback records" value="92" detail="Across six weeks" />
         <StatCard label="Positive sentiment" value="82%" detail="Up 6 points" tone="positive" />
         <StatCard label="Needs recovery" value="4" detail="Owner follow-up" tone="attention" />
         <StatCard label="Open tasks" value="5" detail="2 due this week" />
@@ -310,10 +314,10 @@ function ReviewRequestsView() {
     <div className={styles.viewPage}>
       <ViewHeader eyebrow="Customer outreach" title="Review requests" description="Track permission-based request campaigns. Sending is disabled in this public preview." action={<button type="button" className={styles.primaryButton} disabled>Send all (12)</button>} />
       <section className={styles.statsGrid} aria-label="Synthetic request metrics">
-        <StatCard label="Sent" value="148" detail="132 delivered" />
-        <StatCard label="Opened" value="96" detail="64.9% open rate" tone="positive" />
-        <StatCard label="Clicked" value="41" detail="Customer action" />
-        <StatCard label="Click rate" value="27.7%" detail="Of delivered" />
+        <StatCard label="Sent" value={String(sampleCampaign.sent)} detail={sampleCampaign.delivered + ' delivered'} />
+        <StatCard label="Opened" value={String(sampleCampaign.opened)} detail={deliveredRate(sampleCampaign.opened, sampleCampaign.delivered) + ' of delivered'} tone="positive" />
+        <StatCard label="Clicked" value={String(sampleCampaign.clicked)} detail="Customer action" />
+        <StatCard label="Click rate" value={deliveredRate(sampleCampaign.clicked, sampleCampaign.delivered)} detail="Of delivered" />
       </section>
       <div className={styles.requestGrid}>
         <section className={styles.panel}><header className={styles.panelHeader}><div><span>Upload contacts</span><h3>CSV import</h3></div></header><div className={styles.dropZone}><IconSend s={18} /><strong>Drop a CSV here</strong><p>Columns: name, email. Preview controls never upload a file.</p><button type="button">Choose sample file</button></div></section>
@@ -368,7 +372,7 @@ function ProposalReviewView({ state, onApprove, onApply }: { state: 'pending' | 
 function TasksView({ completed, toggleTask }: { completed: boolean[]; toggleTask: (index: number) => void }) {
   const tasks = [
     ['Train advisors on next-update times', 'Service advisor · Due Nov 18', 'High'],
-    ['Add status field to the intake checklist', 'Operations lead · Due Nov 20', 'Medium'],
+    ['Mark overnight parking spaces and update the key-box instructions', 'Riverside operations lead · Due Nov 20', 'Medium'],
     ['Review pickup handoff after two weeks', 'Owner · Due Dec 2', 'Medium'],
   ]
   const percent = Math.round((completed.filter(Boolean).length / tasks.length) * 100)
@@ -377,7 +381,7 @@ function TasksView({ completed, toggleTask }: { completed: boolean[]; toggleTask
       <ViewHeader eyebrow="Business Playbook" title="Tasks" description="Track the work that turns an approved procedure into a repeatable team habit." action={<button type="button" className={styles.primaryButton}>New task</button>} />
       <div className={styles.taskProgress}><div><span>Implementation progress</span><strong>{percent}%</strong></div><i><b style={{ width: `${percent}%` }} /></i><small>{completed.filter(Boolean).length} of {tasks.length} synthetic tasks complete</small></div>
       <section className={styles.panel}>
-        <header className={styles.panelHeader}><div><span>Open work</span><h3>Customer communication rollout</h3></div><small>3 tasks</small></header>
+        <header className={styles.panelHeader}><div><span>Open work</span><h3>Riverside handoff improvements</h3></div><small>3 tasks</small></header>
         <div className={styles.taskList}>{tasks.map((task, index) => <button key={task[0]} type="button" onClick={() => toggleTask(index)} data-complete={completed[index]}><span className={styles.taskCheck}>{completed[index] ? <IconCheck s={12} /> : null}</span><div><strong>{task[0]}</strong><small>{task[1]}</small></div><em>{task[2]}</em></button>)}</div>
       </section>
     </div>
@@ -477,7 +481,16 @@ export default function InteractiveDashboardPreview({
   defaultAssistantOpen = false,
 }: InteractiveDashboardPreviewProps) {
   const previewRef = useRef<HTMLElement>(null)
-  const [view, setView] = useState<PreviewView>('reviews')
+  const [view, setView] = useState<PreviewView>('tap')
+  useEffect(() => {
+    function readView() {
+      const value = new URLSearchParams(window.location.search).get('view')
+      setView(value && Object.hasOwn(VIEW_LABELS, value) ? value as PreviewView : 'tap')
+    }
+    readView()
+    window.addEventListener('popstate', readView)
+    return () => window.removeEventListener('popstate', readView)
+  }, [])
   const [featureMenuOpen, setFeatureMenuOpen] = useState(false)
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const [assistantOpen, setAssistantOpen] = useState(defaultAssistantOpen)
@@ -504,12 +517,25 @@ export default function InteractiveDashboardPreview({
   }, [defaultAssistantOpen])
 
   function navigate(nextView: PreviewView) {
+    if (variant === 'page') {
+      const url = new URL(window.location.href)
+      url.searchParams.set('view', nextView)
+      window.history.pushState(null, '', url)
+    }
     setView(nextView)
     setFeatureMenuOpen(false)
     setAccountMenuOpen(false)
   }
 
   function renderView() {
+    if (view === 'tap') return <div className={styles.viewPage}>
+      <ViewHeader eyebrow="Northstar Auto Care · Riverside · July to September" title="Private visit feedback" description="Two of the twelve submissions mention overnight parking." />
+      <article className={styles.panel}><header className={styles.panelHeader}><h3>After-hours drop-off</h3></header>
+        <div className={styles.proposalBody}><p>“I found the key box, but I couldn’t tell where to leave my car.”</p><p>“I circled the lot looking for the overnight spaces.”</p>
+          <button className={styles.secondaryButton} type="button" onClick={() => navigate('tasks')}>Open the parking Playbook action</button>
+        </div>
+      </article>
+    </div>
     if (view === 'reviews') return <ReviewsView tone={tone} setTone={setTone} filter={filter} setFilter={setFilter} refreshed={refreshed} onRefresh={() => setRefreshed(true)} />
     if (view === 'insights') return <InsightsView />
     if (view === 'competitors') return <CompetitorsView />
@@ -540,10 +566,10 @@ export default function InteractiveDashboardPreview({
         <div className={styles.workspaceCard}><span>N</span><div><strong>Northstar Auto Care</strong><small>1 location · Growth</small></div></div>
         <div className={styles.featureSwitcher}>
           <small>Feature</small>
-          <button type="button" className={styles.featureButton} aria-haspopup="menu" aria-expanded={featureMenuOpen} onClick={() => setFeatureMenuOpen(open => !open)}><span className={styles.featureIcon}><feature.Icon s={14} /></span><span><strong>{feature.label}</strong><small>{feature.description}</small></span><IconChevDown s={12} /></button>
+          <button type="button" className={styles.featureButton} aria-label={'Switch feature: ' + feature.label} aria-haspopup="menu" aria-expanded={featureMenuOpen} onClick={() => setFeatureMenuOpen(open => !open)}><span className={styles.featureIcon}><feature.Icon s={14} /></span><span><strong>{feature.label}</strong><small>{feature.description}</small></span><IconChevDown s={12} /></button>
           {featureMenuOpen ? <div className={styles.featureMenu} role="menu">{FEATURES.map(item => <button type="button" role="menuitem" key={item.id} aria-current={item.id === activeFeature ? 'true' : undefined} onClick={() => navigate(item.defaultView)}><span><strong>{item.label}</strong><small>{item.description}</small></span>{item.id === activeFeature ? <i /> : null}</button>)}</div> : null}
         </div>
-        <nav className={styles.nav}><small>{feature.label}</small>{NAV_ITEMS[activeFeature].map(item => <button type="button" key={item.view} aria-current={view === item.view ? 'page' : undefined} title={item.label} onClick={() => navigate(item.view)}><span><item.Icon s={14} /></span><strong>{item.label}</strong>{item.count ? <em>{item.count}</em> : null}</button>)}</nav>
+        <nav className={styles.nav}><small>{feature.label}</small>{NAV_ITEMS[activeFeature].map(item => <button type="button" key={item.view} aria-current={view === item.view ? 'page' : undefined} aria-label={item.label} title={item.label} onClick={() => navigate(item.view)}><span><item.Icon s={14} /></span><strong>{item.label}</strong>{item.count ? <em>{item.count}</em> : null}</button>)}</nav>
         <div className={styles.accountArea}>
           {accountMenuOpen ? <div className={styles.accountMenu} role="menu"><button type="button" role="menuitem" onClick={() => navigate('billing')}><IconCard s={13} />Billing</button><button type="button" role="menuitem" onClick={() => navigate('settings')}><IconCog s={13} />Settings</button></div> : null}
           <button type="button" className={styles.accountButton} aria-haspopup="menu" aria-expanded={accountMenuOpen} onClick={() => setAccountMenuOpen(open => !open)}><span>DE</span><span><strong>Demo workspace</strong><small>Synthetic data</small></span><IconChevDown s={12} /></button>
@@ -553,9 +579,9 @@ export default function InteractiveDashboardPreview({
       <section className={styles.workspace}>
         <header className={styles.topbar}>
           <div><button type="button" className={styles.collapseButton} aria-label={navigationCollapsed ? 'Expand navigation' : 'Collapse navigation'} aria-pressed={navigationCollapsed} onClick={() => setNavigationCollapsed(collapsed => !collapsed)}><CollapseIcon collapsed={navigationCollapsed} /></button><nav aria-label="Preview breadcrumb"><span>Northstar Auto Care</span><b>›</b><strong>{VIEW_LABELS[view]}</strong></nav></div>
-          <div><span className={styles.planLabel}>Growth</span><button type="button" className={styles.assistantToggle} aria-controls="preview-ask-replova" aria-expanded={assistantOpen} onClick={() => setAssistantOpen(open => !open)}><span><AssistantIcon /></span><strong>Ask Replova</strong></button></div>
+          <div><span className={styles.planLabel}>Growth</span><button type="button" className={styles.assistantToggle} aria-label="Ask Replova" aria-controls="preview-ask-replova" aria-expanded={assistantOpen} onClick={() => setAssistantOpen(open => !open)}><span><AssistantIcon /></span><strong>Ask Replova</strong></button></div>
         </header>
-        <main className={styles.content} id="preview-dashboard-content">{renderView()}</main>
+        <section aria-label={VIEW_LABELS[view]} className={styles.content} id="preview-dashboard-content">{renderView()}</section>
       </section>
 
       {assistantOpen ? <div id="preview-ask-replova" className={styles.assistantSlot}><AssistantPanel view={view} onClose={() => setAssistantOpen(false)} onNavigate={navigate} /></div> : null}

@@ -9,6 +9,7 @@ import type { Plan } from '@/lib/planLimits'
 import { isCareerAdminEmail } from '@/lib/careersAdmin'
 import { getAccountForAuthUser } from '@/lib/accountAccess'
 import DashboardAppShell from '@/components/dashboard/shell/DashboardAppShell'
+import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
 import DashboardSidebar from './DashboardSidebar'
 import TermsModal from './TermsModal'
 
@@ -141,14 +142,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     return (
       <div style={{ minHeight: '100dvh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
         <header style={{ borderBottom: '1px solid var(--line)', background: 'var(--surface)', padding: '0 32px', height: 56, display: 'flex', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 26, height: 26, background: 'var(--accent)', borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-              </svg>
-            </div>
-            <span style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--t1)' }}>Replova</span>
-          </div>
+          <ReplovaLogo height={26} variant="primary" surface="light" eager />
         </header>
         <main id="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48, maxWidth: 480 }}>

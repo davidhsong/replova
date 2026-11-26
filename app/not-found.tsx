@@ -20,7 +20,7 @@ export default function NotFound() {
 
       <main id="main-content" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
         <div className="fade-up" style={{ textAlign: 'center', maxWidth: 400 }}>
-          <p className="t-mono c-t4" style={{ fontSize: 13, marginBottom: 8 }}>Error 404</p>
+          <p className="t-mono c-t2" style={{ fontSize: 13, marginBottom: 8 }}>Error 404</p>
           <h1 className="t-serif" style={{ fontSize: 44, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: 14 }}>
             We couldn&apos;t find<br />that page.
           </h1>
@@ -35,7 +35,7 @@ export default function NotFound() {
 
       <footer style={{ borderTop: '1px solid var(--line)', background: 'var(--surface)' }}>
         <div style={{ maxWidth: 1140, margin: '0 auto', padding: '20px 32px', textAlign: 'center' }}>
-          <span className="t-xs c-t4">© {new Date().getFullYear()} Replova</span>
+          <span className="t-xs c-t2">© {new Date().getFullYear()} Replova</span>
         </div>
       </footer>
     </div>

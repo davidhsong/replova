@@ -341,7 +341,7 @@ test('UI exposes only working Playbook actions, labels demo data, and includes r
   assert.doesNotMatch(client, />Real workspace</)
   assert.match(layout, /pathname\.startsWith\('\/dashboard\/playbook'\)/)
   assert.match(
-    css,
+    readFileSync('app/globals.css', 'utf8'),
     /body\[data-playbook-drawer-open='true'\] \.chatbot-launcher/,
   )
   assert.match(css, /position: sticky/)

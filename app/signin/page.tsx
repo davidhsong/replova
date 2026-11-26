@@ -158,7 +158,7 @@ export default function SignInPage() {
       </section>
 
       <Link className="signin-preview-link" href="/dashboard-preview">
-        Explore the dashboard with sample data <span aria-hidden="true">&#8599;</span>
+        Explore the dashboard with sample data <span aria-hidden="true">&#8594;</span>
       </Link>
 
       <p className="signin-legal">

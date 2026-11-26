@@ -1,13 +1,15 @@
 export const DEMO_TIME_ZONE = 'America/Los_Angeles'
 export const DEMO_DURATION_MINUTES = 45
 
-const ALLOWED_DEMO_TIMES = new Set([
-  '7:30am', '8:15am', '8:30am', '9:00am', '9:15am', '9:45am',
-  '10:00am', '10:30am', '10:45am', '11:15am', '11:30am', '12:00pm',
-  '12:15pm', '12:45pm', '1:00pm', '1:30pm', '1:45pm', '2:15pm',
-  '3:00pm', '3:15pm', '3:30pm', '3:45pm', '4:00pm', '4:15pm',
-  '4:45pm', '5:00pm', '5:30pm', '5:45pm', '6:15pm',
-])
+const WEEKLY_TIMES: Record<number, readonly string[]> = {
+  0: ['9:00am', '9:45am', '10:30am', '11:15am', '12:00pm', '12:45pm', '1:30pm', '2:15pm', '3:00pm', '3:45pm'],
+  1: ['7:30am', '8:15am', '9:00am', '9:45am', '10:30am', '11:15am', '12:00pm', '12:45pm', '1:30pm', '2:15pm', '3:15pm', '4:00pm', '4:45pm'],
+  2: ['7:30am', '8:15am', '10:00am', '12:00pm', '12:45pm', '3:15pm', '4:00pm', '4:45pm'],
+  3: ['7:30am', '8:30am', '9:15am', '10:00am', '10:45am', '11:30am', '12:15pm', '1:00pm', '1:45pm', '3:15pm', '4:00pm', '4:45pm', '5:30pm', '6:15pm'],
+  4: [],
+  5: ['7:30am', '8:15am', '9:00am', '9:45am', '10:30am', '11:15am', '12:00pm', '12:45pm', '1:30pm', '3:30pm', '4:15pm', '5:00pm', '5:45pm'],
+  6: ['9:00am', '9:45am', '10:30am', '11:15am', '12:00pm', '12:45pm', '1:30pm', '2:15pm', '3:00pm', '3:45pm'],
+}
 
 type CalendarInviteInput = {
   uid: string
@@ -47,7 +49,6 @@ function parseDate(value: string) {
 }
 
 function parseTime(value: string) {
-  if (!ALLOWED_DEMO_TIMES.has(value)) throw new Error('Invalid time')
   const match = value.match(/^(\d{1,2}):(\d{2})(am|pm)$/)
   if (!match) throw new Error('Invalid time')
   let hour = Number(match[1])
@@ -58,17 +59,18 @@ function parseTime(value: string) {
   return { hour, minute }
 }
 
+const formatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: DEMO_TIME_ZONE,
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+})
+
 function zonedParts(date: Date) {
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: DEMO_TIME_ZONE,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hourCycle: 'h23',
-  })
   const parts = Object.fromEntries(
     formatter.formatToParts(date)
       .filter(part => part.type !== 'literal')
@@ -107,17 +109,44 @@ export function demoSlotToUtc(dateValue: string, timeValue: string) {
   return result
 }
 
+export const DEMO_LEAD_MS = 5 * 60 * 1000
+const DAY_MS = 86400000
+
+function businessDay(now: Date) {
+  const { year, month, day } = zonedParts(now)
+  return Date.UTC(year, month - 1, day)
+}
+
+function scheduledTimes(day: Date, today: number) {
+  const offset = (day.getTime() - today) / DAY_MS
+  return offset >= 0 && offset <= 45 && offset !== 2 ? WEEKLY_TIMES[day.getUTCDay()] : []
+}
+
+function withinBookingWindow(start: number, now: number) {
+  return start >= now + DEMO_LEAD_MS && start <= now + 46 * DAY_MS
+}
+
 export function validateDemoSlot(dateValue: string, timeValue: string, now = new Date()) {
   const start = demoSlotToUtc(dateValue, timeValue)
-  const earliest = now.getTime() + 5 * 60 * 1000
-  const latest = now.getTime() + 46 * 24 * 60 * 60 * 1000
-  if (start.getTime() < earliest || start.getTime() > latest) {
-    throw new Error('Demo time is outside the booking window')
+  const day = new Date(dateValue + 'T00:00:00Z')
+  if (!scheduledTimes(day, businessDay(now)).includes(timeValue) || !withinBookingWindow(start.getTime(), now.getTime())) {
+    throw new Error('Demo time is unavailable')
   }
-  return {
-    start,
-    end: new Date(start.getTime() + DEMO_DURATION_MINUTES * 60 * 1000),
+  return { start, end: new Date(start.getTime() + DEMO_DURATION_MINUTES * 60000) }
+}
+
+export function demoAvailability(now: Date, reserved: ReadonlySet<number>) {
+  const today = businessDay(now)
+  const slots: { date: string; time: string; start: number }[] = []
+  for (let offset = 0; offset <= 45; offset++) {
+    const calendarDay = new Date(today + offset * DAY_MS)
+    const date = calendarDay.toISOString().slice(0, 10)
+    for (const time of scheduledTimes(calendarDay, today)) {
+      const start = demoSlotToUtc(date, time).getTime()
+      if (withinBookingWindow(start, now.getTime()) && !reserved.has(start)) slots.push({ date, time, start })
+    }
   }
+  return slots
 }
 
 export function formatDemoSlot(start: Date) {
@@ -179,7 +208,7 @@ export function createDemoCalendarInvite({
     `DTSTAMP:${formatIcsDate(new Date())}`,
     `DTSTART:${formatIcsDate(start)}`,
     `DTEND:${formatIcsDate(end)}`,
-    'SUMMARY:Replova Introduction',
+    'SUMMARY:Replova Tap demo',
     `DESCRIPTION:${escapeIcs(description)}`,
     `LOCATION:${escapeIcs(meetingUrl || 'Online')}`,
     meetingUrl ? `URL:${escapeIcs(meetingUrl)}` : null,

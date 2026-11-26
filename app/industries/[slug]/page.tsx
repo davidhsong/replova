@@ -92,18 +92,18 @@ export default async function SolutionDetailPage({ params }: SolutionPageProps) 
 
         <section className="solution-section solution-example">
           <div className="solution-example-review">
-            <div className="t-eyebrow">Example Google review</div>
-            <blockquote>“{solution.example.review}”</blockquote>
+            <div className="t-eyebrow">Fictional private visit · 4 of 5</div>
+            <blockquote>“{solution.example.comment}”</blockquote>
             <div className="solution-review-rating" aria-label="Four out of five stars">★★★★<span>★</span></div>
           </div>
           <div className="solution-example-analysis">
             <div>
-              <div className="t-eyebrow c-accent">Example owner reply</div>
-              <p>{solution.example.response}</p>
+              <div className="t-eyebrow c-accent">Reported issue</div>
+              <p>{solution.example.issue}</p>
             </div>
             <div>
-              <div className="t-eyebrow c-accent">Signal for the team</div>
-              <p>{solution.example.insight}</p>
+              <div className="t-eyebrow c-accent">Owner action</div>
+              <p>{solution.example.action}</p>
             </div>
           </div>
         </section>

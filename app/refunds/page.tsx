@@ -14,7 +14,7 @@ const sections: LegalSection[] = [
     heading: 'Trial',
     content: (
       <p>
-        All Replova plans include a <strong style={{ color: 'var(--t1)' }}>30-day free trial</strong>. You will not
+        Eligible new customers receive a <strong style={{ color: 'var(--t1)' }}>30-day free trial</strong>. You will not
         be charged anything during the trial period. You can cancel at any time before the trial ends and owe
         nothing. Your first charge occurs only after the 30-day trial expires.
       </p>
@@ -24,30 +24,31 @@ const sections: LegalSection[] = [
     heading: 'Cancellations',
     content: (
       <p>
-        You may cancel at any time through the <strong style={{ color: 'var(--t1)' }}>Billing page</strong> in your
-        dashboard. Cancellation takes effect at the end of your current billing period. You retain full access to
-        all features until then. No cancellation fees.
+        To stop renewal and keep access through the end of your paid period, use the Billing page in your dashboard.
+        To end access early and receive a prorated refund, email{' '}
+        <a href="mailto:support@replova.app?subject=Prorated%20cancellation%20refund">support@replova.app</a>{' '}
+        from your account email and ask to cancel immediately. There is no cancellation fee.
       </p>
     ),
   },
   {
-    heading: 'Refunds on paid subscriptions',
+    heading: 'How we calculate your refund',
     content: (
       <>
         <p style={{ marginBottom: 12 }}>
-          Because Replova begins delivering value immediately upon activation,{' '}
-          <strong style={{ color: 'var(--t1)' }}>we do not issue refunds for partial billing periods</strong>{' '}
-          or for months already charged.
+          We refund the portion of your subscription payment that covers the time remaining in your paid billing period
+          when we receive your immediate cancellation request. We use the amount you actually paid after discounts.
+          For example, if you paid $39 for 30 days and exactly 10 days remain, your refund is $13.
         </p>
         <p>
-          If you are billed on the 1st of the month and cancel on the 15th, your subscription remains active
-          through the end of that month and no refund is issued for the unused days.
+          Support ends your access and issues the refund to your original payment method. You can request this at any
+          point during the paid period. If you keep access until the period ends, there is no unused time to refund.
         </p>
       </>
     ),
   },
   {
-    heading: 'Exceptions',
+    heading: 'Billing errors and service outages',
     content: (
       <>
         <p style={{ marginBottom: 10 }}>We will consider refunds on a case-by-case basis if:</p>
@@ -55,7 +56,6 @@ const sections: LegalSection[] = [
           {[
             'You were charged in error (e.g., a duplicate charge or billing system error)',
             'A verified service outage prevented you from using Replova for a substantial portion of a billing period and we were unable to resolve it in a reasonable time',
-            'You contacted us within 7 days of a charge and had not meaningfully used the service since the last billing cycle',
           ].map(item => (
             <li key={item} style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
               <span style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--t4)', flexShrink: 0, marginTop: 9 }} />
@@ -73,10 +73,12 @@ const sections: LegalSection[] = [
     ),
   },
   {
-    heading: 'Cancel by mistake',
+    heading: 'Earlier charges',
     content: (
       <p>
-        If you cancel within 7 days of being charged and email us, we&apos;ll refund the full month, no questions.
+        The prorated cancellation policy applies to charges made on or after November 26, 2026, Pacific time.
+        For earlier charges, we honor the terms in effect when you paid, including the full-month refund for
+        accidental cancellation within seven days of the charge. Email support with your account email and charge date.
       </p>
     ),
   },
@@ -84,8 +86,8 @@ const sections: LegalSection[] = [
     heading: 'Plan downgrades',
     content: (
       <p>
-        You can downgrade your plan at any time via the billing portal. The lower-tier pricing takes effect at
-        the start of your next billing cycle. We do not issue credits or refunds for the price difference mid-cycle.
+        You can change your plan through Billing. Review the effective date and any prorated charge or credit
+        shown before confirming the change.
       </p>
     ),
   },

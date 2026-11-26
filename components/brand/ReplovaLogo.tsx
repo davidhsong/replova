@@ -5,6 +5,7 @@ type FixedLightVariant = 'horizontal' | 'stacked'
 
 type CommonProps = {
   alt?: string
+  placement?: 'navbar' | 'footer'
   className?: string
   decorative?: boolean
   eager?: boolean
@@ -24,24 +25,24 @@ type ReplovaLogoProps = CommonProps & (
 
 const ASSETS = {
   primary: {
-    light: '/brand/logos/logo-primary-light.svg?v=arrow1',
-    dark: '/brand/logos/logo-primary-dark.svg?v=arrow1',
+    light: '/brand/logos/logo-primary-light.svg?v=arrow2',
+    dark: '/brand/logos/logo-primary-dark.svg?v=arrow2',
     width: 790,
     height: 220,
   },
   icon: {
-    light: '/brand/logos/logo-icon-light.svg?v=arrow1',
-    dark: '/brand/logos/logo-icon-dark.svg?v=arrow1',
+    light: '/brand/logos/logo-icon-light.svg?v=arrow2',
+    dark: '/brand/logos/logo-icon-dark.svg?v=arrow2',
     width: 220,
     height: 220,
   },
   horizontal: {
-    light: '/brand/logos/logo-horizontal.svg?v=arrow1',
+    light: '/brand/logos/logo-horizontal.svg?v=arrow2',
     width: 590,
     height: 135,
   },
   stacked: {
-    light: '/brand/logos/logo-stacked.svg?v=arrow1',
+    light: '/brand/logos/logo-stacked.svg?v=arrow2',
     width: 640,
     height: 500,
   },
@@ -56,6 +57,7 @@ const ASSETS = {
 export function ReplovaLogo({
   alt = 'Replova',
   className,
+  placement,
   decorative = false,
   eager = false,
   height,
@@ -63,7 +65,7 @@ export function ReplovaLogo({
   surface = 'light',
 }: ReplovaLogoProps) {
   const asset = ASSETS[variant]
-  const lightSrc = asset.light
+  const lightSrc = asset.light + (placement === 'footer' ? '#footer' : '')
   const darkSrc = 'dark' in asset ? asset.dark : undefined
   const src = surface === 'dark' && darkSrc ? darkSrc : lightSrc
   const style = {
@@ -75,6 +77,7 @@ export function ReplovaLogo({
       className={['replova-logo', className].filter(Boolean).join(' ')}
       style={style}
     >
+      {placement === 'navbar' && <source media="(max-width: 820px)" srcSet={lightSrc + '#mobile'} />}
       {surface === 'adaptive' && darkSrc ? (
         <source media="(prefers-color-scheme: dark)" srcSet={darkSrc} />
       ) : null}

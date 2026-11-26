@@ -75,7 +75,6 @@ export default function CustomerReviewResearchPage() {
         <div className="research-page-summary" aria-label="Evidence summary">
           <div><strong>4</strong><span>published research sources</span></div>
           <div><strong>4</strong><span>distinct study settings</span></div>
-          <div><strong>0</strong><span>invented Replova performance claims</span></div>
         </div>
 
         <div className="research-findings">
@@ -97,7 +96,7 @@ export default function CustomerReviewResearchPage() {
           <div>
             <p>Replova’s product model follows the part of the research that travels across categories: collect authentic feedback, respond with context, find repeated patterns, and give an owner control over what changes.</p>
             <ul><li>Keep ratings and review text together.</li><li>Separate one-off recovery work from recurring issues.</li><li>Draft replies without removing human approval.</li><li>Turn supported patterns into specific Playbook changes.</li></ul>
-            <Link href="/demo" className="btn btn-primary">See the workflow <ArrowIcon /></Link>
+            <Link href="/dashboard-preview" className="btn btn-primary">See the workflow <ArrowIcon /></Link>
           </div>
         </section>
       </main>

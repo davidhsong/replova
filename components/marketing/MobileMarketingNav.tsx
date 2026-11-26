@@ -22,18 +22,19 @@ const menuGroups: readonly MobileNavGroup[] = [
       { label: 'Replova Tap', detail: 'Collect private ratings with a tap or scan.', href: '/#platform', icon: 'review' },
       { label: 'Feedback inbox', detail: 'Read a visit for the selected location.', href: '/#sample-feedback', icon: 'reply' },
       { label: 'Recurring issues', detail: 'See the comments behind each count.', href: '/#sample-issue', icon: 'analytics' },
-      { label: 'Playbooks', detail: 'See how the owner tracks a fix.', href: '/#sample-issue', icon: 'playbook' },
+      { label: 'Playbooks', detail: 'See how the owner tracks a fix.', href: '/#sample-playbook', icon: 'playbook' },
     ],
   },
   {
     label: 'Solutions',
     items: [
+      { label: 'All solutions', detail: 'Explore all six business categories.', href: '/industries', icon: 'guide' },
       { label: 'Healthcare & wellness', detail: 'Check-in and communication at each location.', href: '/industries/healthcare-wellness', icon: 'health' },
       { label: 'Home services', detail: 'Communication, punctuality, and service quality.', href: '/industries/home-services', icon: 'home' },
       { label: 'Automotive', detail: 'Trust, estimates, wait times, and repair quality.', href: '/industries/automotive', icon: 'car' },
       { label: 'Professional services', detail: 'Specific improvements across every office.', href: '/industries/professional-services', icon: 'briefcase' },
       { label: 'Retail & hospitality', detail: 'Location-level service and product trends.', href: '/industries/retail-hospitality', icon: 'shop' },
-      { label: 'Any local business', detail: 'Collect private feedback at your location.', href: '/industries/local-businesses', icon: 'pin' },
+      { label: 'Other local businesses', detail: 'Collect private feedback at your location.', href: '/industries/local-businesses', icon: 'pin' },
     ],
   },
   {

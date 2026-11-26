@@ -34,6 +34,7 @@ export default function DashboardPreviewPage() {
             <meter min="0" max="12" value="2" />
           </summary>
           <p>Sample comment: “I found the key box, but I couldn’t tell where to leave my car.”</p>
+          <a href="?view=tasks#preview-dashboard-content">Open the parking Playbook action</a>
           <p>Next action: mark the overnight parking spaces and update the drop-off instructions.</p>
         </details>
       </section>

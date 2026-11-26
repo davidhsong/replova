@@ -65,8 +65,8 @@ export default function AccountSignup() {
           <ol className="account-onboarding-steps" aria-label="Account setup steps">
             <li data-state="current"><span>01</span><div><strong>Verify your email</strong><small>Use a secure, one-time link.</small></div></li>
             <li><span>02</span><div><strong>Name your workspace</strong><small>Enter the business name your team uses.</small></div></li>
-            <li><span>03</span><div><strong>Set up your first location</strong><small>Open Tap when your workspace has access.</small></div></li>
           </ol>
+          <p className="account-onboarding-lead">After account setup, add your first location when your workspace has access to Tap.</p>
         </section>
 
         <section className="account-onboarding-form-panel" aria-label="Email signup">

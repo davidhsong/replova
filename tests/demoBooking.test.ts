@@ -53,3 +53,15 @@ test('calendar invite is a confirmed request with one attendee and no owner addr
   assert.match(invite, /URL:https:\/\/meet\.google\.com\/abc-defg-hij/)
   assert.doesNotMatch(invite, /davidhsongg/)
 })
+
+test('late Pacific evening excludes past, closed, and reserved times in every availability view', async () => {
+  const { demoAvailability } = await import('../lib/demoBooking')
+  const now = new Date('2026-11-26T03:59:00Z')
+  const [first] = demoAvailability(now, new Set())
+  assert.equal(first.date, '2026-11-28')
+  for (const date of ['2026-11-24', '2026-11-25', '2026-11-26', '2026-11-27']) {
+    assert.throws(() => validateDemoSlot(date, '7:30am', now))
+  }
+  assert.equal(validateDemoSlot(first.date, first.time, now).start.getTime(), first.start)
+  assert.ok(demoAvailability(now, new Set([first.start])).every(slot => slot.start !== first.start))
+})

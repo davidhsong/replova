@@ -1,11 +1,12 @@
+import { DropdownInteraction } from './marketing/DropdownInteraction'
 import Link from 'next/link'
 import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
 import { MobileMarketingNav } from '@/components/marketing/MobileMarketingNav'
 
-export function BrandLogo({ height = 27, eager = false }: { height?: number; eager?: boolean }) {
+function BrandLogo({ height, placement, eager = false }: { height: number; placement: 'navbar' | 'footer'; eager?: boolean }) {
   return (
     <span className="brand-lockup">
-      <ReplovaLogo variant="primary" surface="light" height={height} decorative eager={eager} />
+      <ReplovaLogo variant="primary" surface="light" height={height} placement={placement} decorative eager={eager} />
     </span>
   )
 }
@@ -21,7 +22,8 @@ function ChevronDown() {
 const platformLinks = [
   ['Replova Tap', 'Collect private ratings with a tap or scan.', '/#platform', 'reply'],
   ['Feedback inbox', 'Read a rating and comment for one location.', '/#sample-feedback', 'insights'],
-  ['Playbooks', 'See how the owner tracks a fix.', '/#sample-issue', 'benchmark'],
+  ['Recurring issues', 'Read the comments behind each count.', '/#sample-issue', 'insights'],
+  ['Playbooks', 'See how the owner tracks a fix.', '/#sample-playbook', 'benchmark'],
 ] as const
 
 const industryLinks = [
@@ -59,7 +61,7 @@ export function NavItemIcon({ name }: { name: NavIconName }) {
 
 function NavDropdown({ label, href, links }: NavDropdownProps) {
   return (
-    <div className="nav-dropdown">
+    <DropdownInteraction>
       <Link href={href} className="nav-dropdown-trigger">{label} <ChevronDown /></Link>
       <div className="nav-popover" aria-label={`${label} menu`}>
         <div className="nav-popover-links">
@@ -71,7 +73,7 @@ function NavDropdown({ label, href, links }: NavDropdownProps) {
           ))}
         </div>
       </div>
-    </div>
+    </DropdownInteraction>
   )
 }
 
@@ -104,7 +106,7 @@ export function MarketingHeader({ tapHome = false }: { tapHome?: boolean }) {
     <header className="lp-header">
       <div className="lp-nav-inner">
         <MobileMarketingNav tapHome={tapHome} />
-        <Link href="/" aria-label="Replova home" className="lp-home-link"><BrandLogo height={28} eager /></Link>
+        <Link href="/" aria-label="Replova home" className="lp-home-link"><BrandLogo placement="navbar" height={28} eager /></Link>
         <nav className="lp-menu" aria-label="Main navigation">
           <NavDropdown
             label="Platform"
@@ -138,7 +140,8 @@ const footerGroups = [
     links: [
       ['Replova Tap', '/#platform'],
       ['Feedback inbox', '/#sample-feedback'],
-      ['Playbooks', '/#sample-issue'],
+      ['Recurring issues', '/#sample-issue'],
+      ['Playbooks', '/#sample-playbook'],
       ['Sample dashboard', '/dashboard-preview'],
     ],
   },
@@ -150,6 +153,7 @@ const footerGroups = [
       ['Automotive', '/industries/automotive'],
       ['Professional services', '/industries/professional-services'],
       ['Retail & hospitality', '/industries/retail-hospitality'],
+      ['Other local businesses', '/industries/local-businesses'],
     ],
   },
   {
@@ -179,7 +183,7 @@ export function MarketingFooter({ tapHome = false }: { tapHome?: boolean }) {
     <footer className="lp-footer">
       <div className="lp-footer-grid">
         <div className="lp-footer-brand">
-          <BrandLogo height={32} />
+          <BrandLogo placement="footer" height={32} />
           <div className="lp-footer-socials">
             <a
               href="https://x.com/Replova"

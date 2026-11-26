@@ -57,7 +57,7 @@ const sections: LegalSection[] = [
     content: (
       <>
         <p style={{ marginBottom: 12 }}>
-          Replova offers three monthly plans, each including a <strong style={{ color: 'var(--t1)' }}>30-day free trial</strong>:
+          Replova offers three monthly plans, with eligible new customers receiving a <strong style={{ color: 'var(--t1)' }}>30-day free trial</strong>:
         </p>
         <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6, paddingLeft: 0, marginBottom: 12 }}>
           {[
@@ -72,7 +72,7 @@ const sections: LegalSection[] = [
           ))}
         </ul>
         <p>
-          Plans renew monthly. After trial, your card is charged at the start of each month. You may cancel or
+          Plans renew monthly. After a trial, your card is charged at the start of each monthly billing period. You may cancel or
           change your plan at any time via the Billing page. For full details on refunds, see our{' '}
           <a href="/refunds" style={{ color: 'var(--t1)', textDecoration: 'underline' }}>Refund Policy</a>.
         </p>
@@ -106,8 +106,7 @@ const sections: LegalSection[] = [
     heading: 'Data and privacy',
     content: (
       <p>
-        We store only the data necessary to provide the Service: your email, business details, review content
-        fetched from Google, and generated reply drafts. We do not sell your data. See our{' '}
+        We store account and location details, private Tap ratings and comments, and Playbook evidence, authorizations and confirmations. Optional Google features use review content and reply drafts. We also process demo bookings, subscription details and internship applications when you use those services. We do not sell your data. See our{' '}
         <a href="/privacy" style={{ color: 'var(--t1)', textDecoration: 'underline' }}>Privacy Policy</a> for full details.
       </p>
     ),
@@ -116,8 +115,7 @@ const sections: LegalSection[] = [
     heading: 'Account termination',
     content: (
       <p>
-        You may delete your account at any time from the Danger zone section in Settings. Upon deletion, all associated data
-        including businesses, reviews, and reply drafts is permanently removed. This action cannot be undone.
+        You may delete your account at any time from the Danger zone section in Settings. Deletion removes your account and associated location records. The Privacy Policy describes retention obligations and the time it can take for deleted data to age out of encrypted backups.
         We may also terminate accounts for violation of these Terms.
       </p>
     ),

@@ -712,7 +712,7 @@ textarea.field { padding: 10px 12px; height: auto; min-height: 80px; resize: ver
 .signin-state strong { color: #151c2a; }
 .signin-preview-link { margin: 18px 0 12px; color: #4d5869; font-size: 11px; font-weight: 600; }
 .signin-preview-link:hover { color: #151c2a; }
-.signin-legal { margin: 0; color: #737d8d; font-size: 10px; text-align: center; }
+.signin-legal { margin: 0; color: #535c6b; font-size: 10px; text-align: center; }
 
 .demo-shell { min-height: 100dvh; padding: 0 28px 36px; background: #f5f5f5; }
 .demo-topbar { height: 72px; display: flex; align-items: center; justify-content: space-between; }
@@ -899,9 +899,8 @@ textarea.field { padding: 10px 12px; height: auto; min-height: 80px; resize: ver
   transition: opacity 130ms ease, transform 130ms ease, visibility 0s linear 130ms;
 }
 .nav-popover::before { content: ''; position: absolute; left: 0; right: 0; top: -10px; height: 11px; }
-.nav-dropdown:hover .nav-popover,
-.nav-dropdown:has(.nav-dropdown-trigger:focus-visible) .nav-popover,
-.nav-dropdown .nav-popover:focus-within {
+.nav-dropdown:not([data-dismissed="true"]):hover .nav-popover,
+.nav-dropdown:not([data-dismissed="true"]):focus-within .nav-popover {
   opacity: 1; visibility: visible; pointer-events: auto; transform: translate(-50%, 0); transition-delay: 0s;
 }
 .nav-popover-links { display: grid; gap: 0; }
@@ -1457,7 +1456,7 @@ textarea.field { padding: 10px 12px; height: auto; min-height: 80px; resize: ver
 .story-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 40px; }
 .story-card { min-width: 0; }
 .story-card h3 { margin: 15px 0 6px; font-size: 14px; letter-spacing: -.02em; }
-.story-card > p { margin: 0; color: var(--t3); font-size: 10px; line-height: 1.55; }
+.story-card > p { margin: 0; color: var(--t2); font-size: 10px; line-height: 1.55; }
 .story-visual { height: 220px; padding: 18px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; border: 1px solid rgba(26, 20, 40, .08); border-radius: 11px; }
 .story-card-violet .story-visual { background: #dedede; }
 .story-card-blue .story-visual { background: #e8e8e8; }
@@ -1887,7 +1886,7 @@ textarea.field { padding: 10px 12px; height: auto; min-height: 80px; resize: ver
 .resume-dropzone:hover, .resume-dropzone.is-dragging { border-color: var(--accent); background: var(--accent-sub); }
 .resume-dropzone:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-sub); }
 .resume-dropzone strong { color: var(--t1); font-size: 12px; font-weight: 600; overflow-wrap: anywhere; }
-.resume-dropzone span { color: var(--t4); font-size: 9px; }
+.resume-dropzone span { color: var(--t2); font-size: 9px; }
 .resume-dropzone .resume-input { position: absolute; inset: 0 auto auto 0; padding: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
 .form-consent { grid-column: 1 / -1; display: grid; grid-template-columns: 16px 1fr; gap: 9px; align-items: start; line-height: 1.55; font-weight: 450; }
 .form-consent input { margin-top: 2px; }
@@ -1918,14 +1917,14 @@ textarea.field { padding: 10px 12px; height: auto; min-height: 80px; resize: ver
 .research-page-kicker { display: block; margin-bottom: 15px; color: #6c675f; font: 600 9px/1 var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
 .research-page-hero h1 { margin: 0; max-width: 700px; font-size: clamp(46px, 6vw, 68px); line-height: .98; letter-spacing: -.055em; font-weight: 490; text-wrap: balance; }
 .research-page-hero > p { max-width: 620px; margin: 24px 0 0; color: #615d56; font-size: 14px; line-height: 1.65; text-wrap: pretty; }
-.research-page-summary { display: grid; grid-template-columns: repeat(3, 1fr); border-block: 1px solid #ddd9d0; }
+.research-page-summary { display: grid; grid-template-columns: repeat(2, 1fr); border-block: 1px solid #ddd9d0; }
 .research-page-summary > div { min-height: 106px; padding: 22px 24px; border-right: 1px solid #ddd9d0; display: flex; flex-direction: column; justify-content: center; }
 .research-page-summary > div:last-child { border-right: 0; }
 .research-page-summary strong { font-size: 28px; line-height: 1; font-weight: 500; font-variant-numeric: tabular-nums; }
 .research-page-summary span { margin-top: 7px; color: #777169; font-size: 9px; line-height: 1.35; }
 .research-findings { margin-top: 76px; border-top: 1px solid #d8d4cc; }
 .research-finding { padding: 58px 0 64px; border-bottom: 1px solid #d8d4cc; display: grid; grid-template-columns: 46px minmax(220px, .72fr) minmax(320px, 1.28fr); gap: 34px; scroll-margin-top: 76px; }
-.research-finding-index { padding-top: 3px; color: #8b857c; font: 550 9px var(--font-mono); }
+.research-finding-index { padding-top: 3px; color: #665f57; font: 550 9px var(--font-mono); }
 .research-finding-heading > span { display: block; margin-bottom: 12px; color: #777169; font: 600 8px var(--font-mono); letter-spacing: .06em; text-transform: uppercase; }
 .research-finding-heading h2 { margin: 0; font-size: 27px; line-height: 1.06; letter-spacing: -.04em; font-weight: 510; text-wrap: balance; }
 .research-finding-body { color: #5d5953; font-size: 12px; line-height: 1.65; }
@@ -3914,3 +3913,26 @@ textarea { touch-action: manipulation; }
 .workspace-onboarding-shell, .location-onboarding-shell, .dash-preview-page { --accent: var(--t1); }
 .dash-preview-page { container-type: inline-size; }
 .marketing-shell .btn-primary { background: var(--t1); color: white; }
+
+.nav-dropdown[data-dismissed="true"] .nav-popover { display: none; }
+#sample-playbook, #sample-issue, .resource-article, #research { scroll-margin-top: 85px; }
+.resource-guide-links { display: flex; flex-wrap: wrap; gap: 12px 20px; margin-top: 20px; }
+.resource-guide-links a { text-decoration: underline; text-underline-offset: 3px; }
+.account-onboarding-steps small, .account-onboarding-form-heading > p:last-child, .account-onboarding-terms, .account-onboarding-field small { color: var(--t2); }
+.resume-dropzone:focus-within { outline: 2px solid currentColor; outline-offset: 2px; }
+
+body[data-playbook-drawer-open='true'] .chatbot-launcher,
+body[data-playbook-drawer-open='true'] .chatbot-panel {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+.marketing-shell, .account-onboarding-shell, .career-flow-card, .career-flow-diagram, .marketing-page .final-cta {
+  --t3: #626262;
+  --t4: #686868;
+}
+.career-flow-direction, .research-finding-body a small, .research-application > div:first-child > span { color: #605b55; }
+
+
+.account-onboarding-steps li[data-state="current"] > span { color: #08724d; }

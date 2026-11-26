@@ -55,8 +55,8 @@ export const careerRoles = [
     key: 'data-review-intelligence',
     slug: 'data-review-intelligence-intern',
     title: 'Data & Review Intelligence Intern',
-    summary: 'Learn how customer review data becomes trustworthy themes, scores, reports, and product decisions.',
-    role: 'You will learn how Replova turns unstructured customer reviews into useful business intelligence. With guidance, you will review anonymized examples, test AI-generated classifications, spot inconsistencies, help improve reporting language, and document what makes an insight genuinely useful to a business owner.',
+    summary: 'Learn how private visit comments and public reviews support themes, reports, and product decisions.',
+    role: 'You will learn how Replova checks the evidence behind recurring issues in private feedback and public reviews. With guidance, you will review anonymized examples, test AI-generated classifications, spot inconsistencies, help improve reporting language, and document what makes an insight genuinely useful to a business owner.',
     learn: [
       'How qualitative feedback is organized into useful themes',
       'Basic data quality, sampling, and AI-output evaluation',

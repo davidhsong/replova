@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers'
+import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
 import { getSupabaseAdmin } from '@/lib/supabase'
@@ -369,6 +370,12 @@ export default async function BillingPage() {
             )
           })}
         </div>
+
+        {hasStripe && (
+          <p className="t-sm">
+            To end paid access early, <a href="mailto:support@replova.app?subject=Prorated%20cancellation%20refund">request a prorated refund</a>. See the <Link href="/refunds">refund policy</Link> for eligibility and calculation.
+          </p>
+        )}
 
         {/* Help row */}
         <div style={{

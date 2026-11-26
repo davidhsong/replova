@@ -29,7 +29,7 @@ const structuredData = {
       url: SITE_URL,
       logo: {
         '@type': 'ImageObject',
-        url: `${BRAND_ORIGIN}/brand/social/logo-social.png?v=arrow1`,
+        url: `${BRAND_ORIGIN}/brand/social/logo-social.png?v=arrow2`,
         width: 1024,
         height: 1024,
       },
@@ -53,7 +53,7 @@ const industries = [
   { name: 'Automotive', note: 'Find out whether drivers can follow your after-hours drop-off instructions.', href: '/industries/automotive', icon: 'automotive' },
   { name: 'Professional services', note: 'Turn client feedback into specific improvements across every office.', href: '/industries/professional-services', icon: 'professional' },
   { name: 'Retail & hospitality', note: 'Learn where shoppers look for the returns desk and what would make it easier to find.', href: '/industries/retail-hospitality', icon: 'retail' },
-  { name: 'Any local business', note: 'Give customers a way to tell you what worked and what could be clearer.', href: '/industries/local-businesses', icon: 'local' },
+  { name: 'Other local businesses', note: 'Give customers a way to tell you what worked and what could be clearer.', href: '/industries/local-businesses', icon: 'local' },
 ] as const
 
 function SessionAccessIcon() {
@@ -165,7 +165,7 @@ export default function Home() {
             <div className="proof-cards pilot-story">
               <article><strong>First visit · 4 / 5</strong><p>“{visit}”</p></article>
               <article><strong>Second visit · 3 / 5</strong><p>“I checked both shelves before I found my order.”</p></article>
-              <article><strong>Owner’s Playbook</strong><p>Label the shelves “Pickup” and “Order here” before the next shift.</p></article>
+              <article id="sample-playbook"><strong>Owner’s Playbook</strong><p>Label the shelves “Pickup” and “Order here” before the next shift.</p></article>
             </div>
             <p className="sample-caption">Sample data · Alder &amp; Loom · Market Lane</p>
           </div>

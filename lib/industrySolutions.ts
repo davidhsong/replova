@@ -10,9 +10,9 @@ export type IndustrySolution = {
   signals: readonly string[]
   workflow: readonly { title: string; detail: string }[]
   example: {
-    review: string
-    response: string
-    insight: string
+    comment: string
+    action: string
+    issue: string
   }
 }
 
@@ -22,24 +22,24 @@ export const industrySolutions: readonly IndustrySolution[] = [
     name: 'Healthcare & wellness',
     navName: 'Healthcare & wellness',
     eyebrow: 'For care-centered businesses',
-    headline: 'Protect trust at every point in the patient experience.',
+    headline: 'Make check-in clear for every visitor.',
     lede: 'Use private visit feedback to see where check-in, scheduling, and follow-up instructions are working for patients and studio members.',
     businesses: ['Dental practices', 'Med spas', 'Physical therapy', 'Wellness studios'],
     moments: [
       { title: 'Before the visit', detail: 'Appointment access, reminders, directions, and expectations.' },
       { title: 'During the experience', detail: 'Wait time, staff communication, comfort, and clarity.' },
-      { title: 'Aftercare', detail: 'Follow-up instructions, responsiveness, and continuity.' },
+      { title: 'After the visit', detail: 'Follow-up instructions, responsiveness, and continuity.' },
     ],
-    signals: ['Scheduling friction', 'Staff bedside manner', 'Wait-time patterns', 'Follow-up clarity'],
+    signals: ['Scheduling friction', 'Staff communication', 'Wait-time patterns', 'Follow-up clarity'],
     workflow: [
       { title: 'Ask at the end of a visit', detail: 'Place the Tap placard where people can rate their experience privately as they leave.' },
       { title: 'Read the check-in comments', detail: 'Select the location and see whether visitors mention finding the entrance or checking in for the first time.' },
       { title: 'Try clearer instructions', detail: 'Record the change in a Playbook and check later visits for the same concern.' },
     ],
     example: {
-      review: 'The team was kind, but I was not sure what to expect after my appointment and had trouble reaching someone.',
-      response: 'Thank you for sharing this. We are glad the team made you feel welcome, and we are sorry our follow-up guidance was not clear. We are reviewing that handoff with our team.',
-      insight: 'Positive care experience; follow-up communication is the recoverable gap.',
+      comment: 'I arrived for my first visit and could not tell where to check in.',
+      action: 'Place check-in instructions at the entrance. Ask the front desk to check later first-visit comments.',
+      issue: 'The entrance gives a first-time visitor no clear check-in point.',
     },
   },
   {
@@ -62,9 +62,9 @@ export const industrySolutions: readonly IndustrySolution[] = [
       { title: 'Agree on an update', detail: 'Use a Playbook to track a change to the way the dispatch team communicates a delay.' },
     ],
     example: {
-      review: 'The repair itself was solid, but the arrival window changed twice and nobody updated us.',
-      response: 'We are glad the repair met the mark, but you should not have had to chase us for an arrival update. We are tightening that communication step with our dispatch team.',
-      insight: 'Work quality is strong; dispatch communication is reducing overall trust.',
+      comment: 'My arrival window changed twice. I only found out when I called the office.',
+      action: 'Have the dispatcher text the revised window as soon as the technician reports a delay.',
+      issue: 'The homeowner had to chase the revised arrival time.',
     },
   },
   {
@@ -87,9 +87,9 @@ export const industrySolutions: readonly IndustrySolution[] = [
       { title: 'Track the change', detail: 'Record a clearer set of drop-off instructions in a Playbook and review later feedback.' },
     ],
     example: {
-      review: 'The work was done correctly, but pickup was nearly forty minutes late and I did not get an update.',
-      response: 'We are glad the repair was completed correctly, but we missed the mark on pickup timing and communication. You deserved an update before the promised time changed.',
-      insight: 'Repair quality is not the issue; proactive status updates would protect the rating.',
+      comment: 'I found the overnight key box, but I could not tell where to park.',
+      action: 'Mark the overnight spaces and post matching directions on the key box. Check the next week of drop-off comments.',
+      issue: 'The key box is visible. The overnight parking instructions are missing.',
     },
   },
   {
@@ -97,7 +97,7 @@ export const industrySolutions: readonly IndustrySolution[] = [
     name: 'Professional services',
     navName: 'Professional services',
     eyebrow: 'For expertise-led firms',
-    headline: 'Keep every client interaction clear, consistent, and accountable.',
+    headline: 'Give clients a clear next step.',
     lede: 'Find out whether clients at each office understood the advice they received and knew when they would hear from you again.',
     businesses: ['Accounting and tax firms', 'Real estate teams', 'Legal and consulting offices', 'Financial professionals'],
     moments: [
@@ -112,9 +112,9 @@ export const industrySolutions: readonly IndustrySolution[] = [
       { title: 'Clarify the follow-up', detail: 'Use a Playbook to track a change to the instructions clients take home.' },
     ],
     example: {
-      review: 'The advice was useful, but I often did not know when I would hear back or what happened next.',
-      response: 'Thank you for the candid feedback. We are glad the guidance was useful, and we are reviewing how we set communication timelines so the next step is always clear.',
-      insight: 'Expertise is valued; inconsistent expectation-setting is weakening the experience.',
+      comment: 'I left knowing my options, but I did not know who would call or when.',
+      action: 'Have the account lead write down the next step, the follow-up date and the name of the person responsible.',
+      issue: 'The client left without a named follow-up owner.',
     },
   },
   {
@@ -122,7 +122,7 @@ export const industrySolutions: readonly IndustrySolution[] = [
     name: 'Retail & hospitality',
     navName: 'Retail & hospitality',
     eyebrow: 'For high-volume customer experiences',
-    headline: 'See what changes across shifts, locations, and customer moments.',
+    headline: 'See where customers need a hand.',
     lede: 'Read private feedback on the welcome, the service, and how easily customers find what they need at each location.',
     businesses: ['Retail stores', 'Restaurants and cafés', 'Hotels and short stays', 'Entertainment venues'],
     moments: [
@@ -130,23 +130,23 @@ export const industrySolutions: readonly IndustrySolution[] = [
       { title: 'Service', detail: 'Attentiveness, product knowledge, order accuracy, and recovery.' },
       { title: 'Value', detail: 'Quality, pricing, convenience, and likelihood to return.' },
     ],
-    signals: ['Shift-level service', 'Cleanliness themes', 'Product consistency', 'Perceived value'],
+    signals: ['Service by time of visit', 'Cleanliness themes', 'Product consistency', 'Perceived value'],
     workflow: [
       { title: 'Invite feedback on the visit', detail: 'Put a Tap placard where customers can easily reach it on their way out.' },
       { title: 'Find the sticking point', detail: 'Read the original comments for the selected location. Several shoppers might describe looking for the same desk.' },
       { title: 'Track a practical fix', detail: 'Record a task to improve wayfinding in a Playbook, then check what later visitors say.' },
     ],
     example: {
-      review: 'The associate explained the return policy clearly. I walked around twice before I found the returns desk.',
-      response: 'Thanks for letting us know the explanation helped. We’ll check the signs from the entrance to the returns desk.',
-      insight: 'The return policy was clear. The route to the desk needs attention.',
+      comment: 'The associate explained the return policy clearly. I walked around twice before I found the returns desk.',
+      action: 'Have the floor lead walk the route from the entrance and add a sign at the first unclear turn.',
+      issue: 'The return policy was clear. The route to the desk needs attention.',
     },
   },
   {
     slug: 'local-businesses',
     name: 'Other local businesses',
     navName: 'Other local businesses',
-    eyebrow: 'For every business built on local trust',
+    eyebrow: 'Other local businesses',
     headline: 'Learn what makes a visit work.',
     lede: 'Give customers a way to rate their visit and tell you what stood out. Use their comments to choose an improvement for that location.',
     businesses: ['Fitness and education', 'Pet and personal services', 'Local attractions', 'Multi-location portfolios'],
@@ -155,16 +155,16 @@ export const industrySolutions: readonly IndustrySolution[] = [
       { title: 'Experience', detail: 'The service, product, people, and environment they encountered.' },
       { title: 'Return', detail: 'Whether the outcome, value, and follow-up earned another visit.' },
     ],
-    signals: ['Business-specific themes', 'Customer expectations', 'Staff recognition', 'Repeat friction points'],
+    signals: ['Unclear arrival instructions', 'Customer expectations', 'Staff recognition', 'Repeat friction points'],
     workflow: [
       { title: 'Offer a placard', detail: 'Customers tap or scan to send a private rating and an optional comment.' },
       { title: 'Choose a location', detail: 'Read that location’s feedback and the comments behind a recurring issue.' },
       { title: 'Follow up in a Playbook', detail: 'Record the change your team will try and return to review the result.' },
     ],
     example: {
-      review: 'Everyone was helpful and the experience was easy, but it took a few messages to understand what to bring.',
-      response: 'Thank you for sharing this. We are glad the experience itself felt easy, and we are improving the information customers receive beforehand so preparation is clearer.',
-      insight: 'The service experience is positive; pre-visit instructions are the clearest improvement opportunity.',
+      comment: 'I reached the building on time, but the entrance I tried was locked.',
+      action: 'Include the entrance name and a landmark in the arrival message. Check later comments for the same problem.',
+      issue: 'The arrival instructions did not identify the customer entrance.',
     },
   },
 ] as const

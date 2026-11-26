@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
+import { DEMO_LEAD_MS } from '@/lib/demoBooking'
 import type { FormEvent, ReactNode } from 'react'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
 import styles from './DemoScheduler.module.css'
 
@@ -18,18 +19,7 @@ type SchedulerProps = {
 
 const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'] as const
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] as const
-const MONTH_TIMES = ['7:30am', '8:15am', '10:00am', '12:00pm', '12:45pm', '3:15pm', '4:00pm', '4:45pm'] as const
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour)
-
-const COLUMN_TIMES: Record<number, readonly string[]> = {
-  0: ['9:00am', '9:45am', '10:30am', '11:15am', '12:00pm', '12:45pm', '1:30pm', '2:15pm', '3:00pm', '3:45pm'],
-  1: ['7:30am', '8:15am', '9:00am', '9:45am', '10:30am', '11:15am', '12:00pm', '12:45pm', '1:30pm', '2:15pm', '3:15pm', '4:00pm', '4:45pm'],
-  2: ['7:30am', '8:15am', '10:00am', '12:00pm', '12:45pm', '3:15pm', '4:00pm', '4:45pm'],
-  3: ['7:30am', '8:30am', '9:15am', '10:00am', '10:45am', '11:30am', '12:15pm', '1:00pm', '1:45pm', '3:15pm', '4:00pm', '4:45pm', '5:30pm', '6:15pm'],
-  4: [],
-  5: ['7:30am', '8:15am', '9:00am', '9:45am', '10:30am', '11:15am', '12:00pm', '12:45pm', '1:30pm', '3:30pm', '4:15pm', '5:00pm', '5:45pm'],
-  6: ['9:00am', '9:45am', '10:30am', '11:15am', '12:00pm', '12:45pm', '1:30pm', '2:15pm', '3:00pm', '3:45pm'],
-}
 
 function addDays(date: Date, amount: number) {
   const next = new Date(date)
@@ -43,16 +33,10 @@ function sameDate(left: Date, right: Date) {
     && left.getDate() === right.getDate()
 }
 
-function dayDifference(date: Date, baseline: Date) {
-  const value = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())
-  const start = Date.UTC(baseline.getFullYear(), baseline.getMonth(), baseline.getDate())
-  return Math.round((value - start) / 86_400_000)
-}
-
-function isAvailableDate(date: Date, baseline: Date) {
-  const difference = dayDifference(date, baseline)
-  return difference >= 0 && difference <= 45 && difference !== 2
-}
+type Slot = { date: string; time: string; start: number }
+type DaySlots = Record<string, Record<string, Slot>>
+const CalendarContext = createContext<{ days: DaySlots; zone: string; setZone: (zone: string) => void }>({ days: {}, zone: 'America/Los_Angeles', setZone() {} })
+const fullDate = (day: Date) => day.toLocaleDateString('en-US', { dateStyle: 'full' })
 
 function ordinal(day: number) {
   const remainder = day % 100
@@ -90,9 +74,10 @@ function formatHour(hour: number, clock: ClockMode) {
 }
 
 function getMonthWindow(selectedDate: Date) {
-  const selectedWeekStart = addDays(selectedDate, -selectedDate.getDay())
-  const start = addDays(selectedWeekStart, -7)
-  return Array.from({ length: 35 }, (_, index) => addDays(start, index))
+  const first = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
+  const start = addDays(first, -first.getDay())
+  const count = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate()
+  return Array.from({ length: 7 * Math.ceil((first.getDay() + count) / 7) }, (_, index) => addDays(start, index))
 }
 
 function getMiniCalendar(year: number, month: number) {
@@ -173,20 +158,22 @@ function ClockToggle({ clock, onChange }: { clock: ClockMode; onChange: (clock: 
 }
 
 function EventDetails() {
+  const { zone, setZone } = useContext(CalendarContext)
   return (
     <div className={styles.eventDetails}>
-      <ReplovaLogo variant="icon" surface="light" height={24} decorative eager />
+      <Link href="/" aria-label="Replova home"><ReplovaLogo variant="icon" surface="light" height={24} decorative eager /></Link>
       <span>Replova</span>
-      <h1>Replova Introduction</h1>
+      <h1>Replova Tap demo</h1>
       <p><ClockIcon /> 45m</p>
       <p><LinkIcon /> Calendar invite by email</p>
-      <p><GlobeIcon /> America/Los Angeles <span className={styles.chevron}><ChevronIcon /></span></p>
+      <p><GlobeIcon /> <select aria-label="Time zone" value={zone} onChange={event => setZone(event.target.value)}>{Array.from(new Set(['America/Los_Angeles', 'America/New_York', 'Europe/London', 'UTC', zone])).map(name => <option key={name}>{name}</option>)}</select></p>
     </div>
   )
 }
 
-function MiniCalendar({ selectedDate, baseline, onSelect }: { selectedDate: Date; baseline: Date; onSelect: (date: Date) => void }) {
+function MiniCalendar({ selectedDate, onSelect }: { selectedDate: Date; onSelect: (date: Date) => void }) {
   const [month, setMonth] = useState({ year: selectedDate.getFullYear(), month: selectedDate.getMonth() })
+  const { days } = useContext(CalendarContext)
   const calendar = useMemo(() => getMiniCalendar(month.year, month.month), [month.year, month.month])
 
   function changeMonth(amount: number) {
@@ -209,8 +196,8 @@ function MiniCalendar({ selectedDate, baseline, onSelect }: { selectedDate: Date
           <button
             type="button"
             key={dateKey(date)}
-            className={`${isAvailableDate(date, baseline) ? styles.available : ''} ${sameDate(date, selectedDate) ? styles.selected : ''}`}
-            aria-pressed={sameDate(date, selectedDate)}
+            className={`${Boolean(days[dateKey(date)]) ? styles.available : ''} ${sameDate(date, selectedDate) ? styles.selected : ''}`}
+            disabled={!days[dateKey(date)]} aria-label={fullDate(date)} aria-pressed={sameDate(date, selectedDate)}
             onClick={() => onSelect(date)}
           >
             {date.getDate()}
@@ -222,23 +209,23 @@ function MiniCalendar({ selectedDate, baseline, onSelect }: { selectedDate: Date
   )
 }
 
-function SchedulerSidebar({ selectedDate, baseline, onSelect }: { selectedDate: Date; baseline: Date; onSelect: (date: Date) => void }) {
+function SchedulerSidebar({ selectedDate, onSelect }: { selectedDate: Date; onSelect: (date: Date) => void }) {
   return (
     <aside className={styles.sidebar}>
       <EventDetails />
-      <MiniCalendar selectedDate={selectedDate} baseline={baseline} onSelect={onSelect} />
+      <MiniCalendar selectedDate={selectedDate} onSelect={onSelect} />
     </aside>
   )
 }
 
-function MonthCalendar({ selectedDate, baseline, visibleMonth, onMonthChange, onSelect }: {
+function MonthCalendar({ selectedDate, visibleMonth, onMonthChange, onSelect }: {
   selectedDate: Date
-  baseline: Date
   visibleMonth: { year: number; month: number }
   onMonthChange: (amount: number) => void
   onSelect: (date: Date) => void
 }) {
-  const anchor = new Date(visibleMonth.year, visibleMonth.month, selectedDate.getDate())
+  const { days } = useContext(CalendarContext)
+  const anchor = new Date(visibleMonth.year, visibleMonth.month, 1)
   const dates = getMonthWindow(anchor)
 
   return (
@@ -254,14 +241,14 @@ function MonthCalendar({ selectedDate, baseline, visibleMonth, onMonthChange, on
       <div className={styles.monthDays}>
         {dates.map(date => {
           const isSelected = sameDate(date, selectedDate)
-          const isAvailable = isAvailableDate(date, baseline)
+          const isAvailable = Boolean(days[dateKey(date)])
           const differentMonth = date.getMonth() !== visibleMonth.month
           return (
             <button
               type="button"
               key={dateKey(date)}
               className={`${isAvailable ? styles.available : ''} ${isSelected ? styles.selected : ''} ${differentMonth ? styles.differentMonth : ''}`}
-              aria-pressed={isSelected}
+              disabled={!isAvailable} aria-label={fullDate(date)} aria-pressed={isSelected}
               onClick={() => onSelect(date)}
             >
               {differentMonth && date.getDate() === 1 ? <small>{MONTHS[date.getMonth()].slice(0, 3).toUpperCase()}</small> : null}
@@ -288,10 +275,9 @@ function TimeButtons({ times, selectedTime, clock, onSelect }: { times: readonly
   )
 }
 
-function MonthView({ selectedDate, selectedTime, baseline, clock, visibleMonth, onClockChange, onMonthChange, onDateSelect, onTimeSelect }: {
+function MonthView({ selectedDate, selectedTime, clock, visibleMonth, onClockChange, onMonthChange, onDateSelect, onTimeSelect }: {
   selectedDate: Date
   selectedTime: string | null
-  baseline: Date
   clock: ClockMode
   visibleMonth: { year: number; month: number }
   onClockChange: (clock: ClockMode) => void
@@ -299,16 +285,17 @@ function MonthView({ selectedDate, selectedTime, baseline, clock, visibleMonth, 
   onDateSelect: (date: Date) => void
   onTimeSelect: (time: string) => void
 }) {
+  const { days } = useContext(CalendarContext)
   return (
     <section className={styles.monthCard} aria-label="Choose a Replova demo time">
       <aside className={styles.monthIntro}><EventDetails /></aside>
-      <MonthCalendar selectedDate={selectedDate} baseline={baseline} visibleMonth={visibleMonth} onMonthChange={onMonthChange} onSelect={onDateSelect} />
+      <MonthCalendar selectedDate={selectedDate} visibleMonth={visibleMonth} onMonthChange={onMonthChange} onSelect={onDateSelect} />
       <aside className={styles.monthTimes}>
         <div className={styles.monthTimesHead}>
           <strong>{new Intl.DateTimeFormat('en-US', { weekday: 'short' }).format(selectedDate)} {ordinal(selectedDate.getDate())}</strong>
           <ClockToggle clock={clock} onChange={onClockChange} />
         </div>
-        <TimeButtons times={MONTH_TIMES} selectedTime={selectedTime} clock={clock} onSelect={onTimeSelect} />
+        <TimeButtons times={Object.keys(days[dateKey(selectedDate)] ?? {})} selectedTime={selectedTime} clock={clock} onSelect={onTimeSelect} />
       </aside>
     </section>
   )
@@ -323,7 +310,7 @@ function WeekToolbar({ selectedDate, view, clock, onShift, onViewChange, onClock
   onClockChange: (clock: ClockMode) => void
 }) {
   const end = addDays(selectedDate, 6)
-  const range = `${MONTHS[selectedDate.getMonth()].slice(0, 3)} ${selectedDate.getDate()} - ${end.getDate()}, ${end.getFullYear()}`
+  const range = new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).formatRange(selectedDate, end)
   return (
     <header className={styles.weekToolbar}>
       <div className={styles.weekRange}>
@@ -346,15 +333,8 @@ function WeekDayHeading({ date, selectedDate }: { date: Date; selectedDate: Date
   )
 }
 
-function isGridHourAvailable(day: number, hour: number) {
-  if (day === 2) return hour === 5 || hour === 8 || hour === 10 || hour >= 12
-  if (day === 3) return hour >= 9
-  if (day === 5 || day === 1) return hour >= 8
-  if (day === 0 || day === 6) return hour >= 9
-  return false
-}
-
-function WeeklyGrid({ selectedDate, clock }: { selectedDate: Date; clock: ClockMode }) {
+function WeeklyGrid({ selectedDate, clock, onTimeSelect }: { selectedDate: Date; clock: ClockMode; onTimeSelect: (value: string) => void }) {
+  const { days } = useContext(CalendarContext)
   const week = Array.from({ length: 7 }, (_, index) => addDays(selectedDate, index))
   return (
     <div className={styles.weekGridView}>
@@ -365,12 +345,16 @@ function WeeklyGrid({ selectedDate, clock }: { selectedDate: Date; clock: ClockM
       <div className={styles.weekGridScroller}>
         <div className={styles.weekGridBody}>
           {HOURS.map(hour => (
-            <div className={`${styles.hourRow} ${hour === 5 ? styles.currentHourRow : ''}`} key={hour}>
+            <div className={styles.hourRow} key={hour}>
               <time>{formatHour(hour, clock)}</time>
-              {week.map(date => <span key={`${dateKey(date)}-${hour}`} className={isGridHourAvailable(date.getDay(), hour) ? styles.openHour : styles.closedHour} />)}
+              {week.map(date => {
+                const key = dateKey(date)
+                const times = Object.keys(days[key] ?? {}).filter(time => Number(formatTime(time, '24h').split(':')[0]) === hour)
+                return <span key={key} className={times.length ? styles.openHour : styles.closedHour}>{times.map(time => <button type="button" key={time} aria-label={fullDate(date) + ' ' + time} onClick={() => onTimeSelect(key + '|' + time)}>{formatTime(time, clock)}</button>)}</span>
+              })}
             </div>
           ))}
-          <div className={styles.currentTimeLine}><strong>{formatHour(5, clock)}</strong><span /></div>
+
         </div>
       </div>
     </div>
@@ -379,7 +363,8 @@ function WeeklyGrid({ selectedDate, clock }: { selectedDate: Date; clock: ClockM
 
 function WeeklyColumns({ selectedDate, selectedTime, clock, onTimeSelect }: { selectedDate: Date; selectedTime: string | null; clock: ClockMode; onTimeSelect: (time: string) => void }) {
   const week = Array.from({ length: 7 }, (_, index) => addDays(selectedDate, index))
-  const availableDays = week.filter(date => (COLUMN_TIMES[date.getDay()] ?? []).length > 0)
+  const { days } = useContext(CalendarContext)
+  const availableDays = week.filter(date => days[dateKey(date)])
   return (
     <div className={styles.weekColumns}>
       {availableDays.map(date => {
@@ -389,7 +374,7 @@ function WeeklyColumns({ selectedDate, selectedTime, clock, onTimeSelect }: { se
           <section key={dateKey(date)} aria-label={`${WEEKDAYS[date.getDay()]} ${date.getDate()}`}>
             <WeekDayHeading date={date} selectedDate={selectedDate} />
             <TimeButtons
-              times={COLUMN_TIMES[date.getDay()] ?? []}
+              times={Object.keys(days[dateKey(date)])}
               selectedTime={activeTime}
               clock={clock}
               onSelect={time => onTimeSelect(`${prefix}${time}`)}
@@ -405,8 +390,8 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
   const baseline = useMemo(() => new Date(initialYear, initialMonth, initialDay), [initialYear, initialMonth, initialDay])
   const [calendarView, setCalendarView] = useState<CalendarView>('month')
   const [clock, setClock] = useState<ClockMode>('12h')
-  const [selectedDate, setSelectedDate] = useState(baseline)
-  const [visibleMonth, setVisibleMonth] = useState({ year: initialYear, month: initialMonth })
+  const [requestedDate, setSelectedDate] = useState<Date | null>(null)
+  const [requestedMonth, setVisibleMonth] = useState<{ year: number; month: number } | null>(null)
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [bookingOpen, setBookingOpen] = useState(false)
@@ -415,26 +400,57 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
   const [bookingForm, setBookingForm] = useState({ name: '', email: '', company: '', website: '' })
   const firstFieldRef = useRef<HTMLInputElement>(null)
 
-  const bookingSlot = useMemo(() => {
-    if (!selectedTime) return null
-    const parts = selectedTime.split('|')
-    return parts.length === 2
-      ? { date: parts[0], time: parts[1] }
-      : { date: dateKey(selectedDate), time: selectedTime }
-  }, [selectedDate, selectedTime])
+  const [slots, setSlots] = useState<Slot[]>([])
+  const [zone, setDisplayZone] = useState('America/Los_Angeles')
+  const [loading, setLoading] = useState(true)
+  const [failed, setFailed] = useState(false)
+  const [revision, refresh] = useState(0)
+  const requestId = useRef('')
+  const [activeSlot, setActiveSlot] = useState<Slot | null>(null)
+  const bookingSlot = activeSlot
+  useEffect(() => {
+    const controller = new AbortController()
+    async function load() {
+      try {
+        const response = await fetch('/api/demo/book', { signal: controller.signal, cache: 'no-store' })
+        if (!response.ok) throw new Error()
+        const result = await response.json()
+        if (!controller.signal.aborted) { setSlots(result.slots.filter((slot: Slot) => slot.start >= Date.now() + DEMO_LEAD_MS)); setFailed(false) }
+      } catch { if (!controller.signal.aborted) { setFailed(true); setSlots([]) } }
+      finally { if (!controller.signal.aborted) setLoading(false) }
+    }
+    void load()
+    const timer = setTimeout(() => refresh(value => value + 1), 30000)
+    return () => { controller.abort(); clearTimeout(timer) }
+  }, [revision])
+  const days = useMemo(() => {
+    const result: DaySlots = {}
+    const dayFormat = new Intl.DateTimeFormat('en-CA', { timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit' })
+    const timeFormat = new Intl.DateTimeFormat('en-US', { timeZone: zone, hour: 'numeric', minute: '2-digit' })
+    for (const slot of slots) {
+      const key = dayFormat.format(slot.start)
+      const time = timeFormat.format(slot.start).replace(/\s/g, '').toLowerCase()
+      const times = result[key] ??= {}
+      times[time] = slot
+    }
+    return result
+  }, [slots, zone])
+  const first = Object.keys(days)[0]
+  const fallbackDate = first ? new Date(first + 'T12:00:00') : baseline
+  const selectedDate = requestedDate && days[dateKey(requestedDate)] ? requestedDate : fallbackDate
+  const visibleMonth = requestedMonth ?? { year: selectedDate.getFullYear(), month: selectedDate.getMonth() }
+
+  function setZone(nextZone: string) {
+    setDisplayZone(nextZone)
+    setVisibleMonth(null)
+    setSelectedTime(null)
+    setNotice(null)
+  }
 
   const bookingSlotLabel = useMemo(() => {
     if (!bookingSlot) return ''
-    const [year, month, day] = bookingSlot.date.split('-').map(Number)
-    const date = new Date(year, month - 1, day)
-    const dateLabel = new Intl.DateTimeFormat('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    }).format(date)
-    return `${dateLabel} at ${formatTime(bookingSlot.time, clock)}`
-  }, [bookingSlot, clock])
+    return new Intl.DateTimeFormat('en-US', { timeZone: zone, dateStyle: 'full', timeStyle: 'short', hour12: clock === '12h' }).format(bookingSlot.start)
+  }, [bookingSlot, clock, zone])
 
   useEffect(() => {
     if (!bookingOpen) return
@@ -467,7 +483,10 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
   }
 
   function shiftWeek(amount: number) {
-    selectDate(addDays(selectedDate, amount))
+    const target = addDays(selectedDate, amount)
+    const keys = Object.keys(days)
+    const next = amount > 0 ? keys.find(key => key >= dateKey(target)) : keys.filter(key => key <= dateKey(target)).at(-1)
+    if (next) selectDate(new Date(next + 'T12:00:00'))
   }
 
   function selectTime(value: string) {
@@ -478,6 +497,10 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
       const [year, month, day] = parts[0].split('-').map(Number)
       noticeDate = new Date(year, month - 1, day)
     }
+    const slot = days[dateKey(noticeDate)]?.[rawTime]
+    if (!slot || slot.start < Date.now() + DEMO_LEAD_MS) { refresh(value => value + 1); return }
+    setActiveSlot(slot)
+    requestId.current = crypto.randomUUID()
     setSelectedTime(value)
     const label = new Intl.DateTimeFormat('en-US', { weekday: 'short', month: 'short', day: 'numeric' }).format(noticeDate)
     setNotice(`${label} at ${formatTime(rawTime, clock)} selected. Add contact details to confirm the demo.`)
@@ -496,13 +519,20 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
       const response = await fetch('/api/demo/book', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...bookingForm, ...bookingSlot }),
+        body: JSON.stringify({ ...bookingForm, ...bookingSlot, requestId: requestId.current }),
       })
       const result = await response.json() as { success?: boolean; slotLabel?: string; error?: string }
       if (!response.ok || !result.success) {
+        if (response.status === 409) {
+          setBookingOpen(false)
+          setSlots(current => current.filter(slot => slot.start !== bookingSlot.start))
+          setNotice(result.error || 'Choose another time.')
+          refresh(value => value + 1)
+        }
         throw new Error(result.error || 'The calendar invitation could not be sent.')
       }
       const confirmedSlot = result.slotLabel || bookingSlotLabel
+      setSlots(current => current.filter(slot => slot.start !== bookingSlot.start))
       setBookingStatus('success')
       setNotice(`${confirmedSlot} scheduled successfully. A calendar invite was sent to ${bookingForm.email.trim()}.`)
     } catch (error) {
@@ -512,7 +542,8 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
   }
 
   return (
-    <main id="main-content" className={styles.shell}>
+    <CalendarContext.Provider value={{ days, zone, setZone }}><main id="main-content" className={styles.shell}>
+      {!first && <div role="status">{loading ? 'Loading available times…' : failed ? <>Availability could not be loaded. <button onClick={() => refresh(v => v + 1)}>Try again</button></> : 'No times are available in the booking window.'}</div>}
       {calendarView === 'month' ? (
         <div className={styles.monthStage}>
           <div className={styles.floatingControls}>
@@ -521,7 +552,7 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
           <MonthView
             selectedDate={selectedDate}
             selectedTime={selectedTime}
-            baseline={baseline}
+
             clock={clock}
             visibleMonth={visibleMonth}
             onClockChange={setClock}
@@ -532,11 +563,11 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
         </div>
       ) : (
         <div className={styles.weekLayout}>
-          <SchedulerSidebar selectedDate={selectedDate} baseline={baseline} onSelect={selectDate} />
+          <SchedulerSidebar selectedDate={selectedDate} onSelect={selectDate} />
           <section className={styles.weekMain} aria-label="Weekly demo availability">
             <WeekToolbar selectedDate={selectedDate} view={calendarView} clock={clock} onShift={shiftWeek} onViewChange={setCalendarView} onClockChange={setClock} />
             {calendarView === 'week-grid'
-              ? <WeeklyGrid selectedDate={selectedDate} clock={clock} />
+              ? <WeeklyGrid selectedDate={selectedDate} clock={clock} onTimeSelect={selectTime} />
               : <WeeklyColumns selectedDate={selectedDate} selectedTime={selectedTime} clock={clock} onTimeSelect={selectTime} />}
           </section>
         </div>
@@ -564,14 +595,14 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
               <>
                 <header className={styles.bookingHeader}>
                   <div>
-                    <span>Replova introduction</span>
+                    <span>Replova Tap demo</span>
                     <h2 id="booking-title">Confirm your demo</h2>
                   </div>
-                  <button type="button" aria-label="Close demo booking" onClick={() => setBookingOpen(false)}>×</button>
+                  <button type="button" disabled={bookingStatus === 'submitting'} aria-label="Close demo booking" onClick={() => setBookingOpen(false)}>×</button>
                 </header>
                 <div className={styles.bookingSummary}>
                   <strong>{bookingSlotLabel}</strong>
-                  <span>45 minutes · America/Los Angeles</span>
+                  <span>45 minutes · {zone}</span>
                 </div>
                 <form className={styles.bookingForm} onSubmit={submitBooking}>
                   <label>
@@ -635,6 +666,6 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
           </section>
         </div>
       ) : null}
-    </main>
+    </main></CalendarContext.Provider>
   )
 }

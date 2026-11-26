@@ -128,7 +128,7 @@ export default function CareersFlow() {
           type="button"
           className="career-flow-pause"
           onClick={() => setManualPaused(current => !current)}
-          aria-label={manualPaused ? 'Resume internship path animation' : 'Pause internship path animation'}
+          aria-label={reducedMotion ? 'Motion off' : manualPaused ? 'Resume internship path animation' : 'Pause internship path animation'}
           disabled={reducedMotion}
         >
           <PauseIcon paused={manualPaused} />

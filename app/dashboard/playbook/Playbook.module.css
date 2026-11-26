@@ -129,7 +129,7 @@
   color: #999994;
 }
 .safetyNote[open] summary::after {
-  content: "−";
+  content: "âˆ’";
 }
 .safetyNote p {
   max-width: 780px;
@@ -763,12 +763,6 @@
   border-left: 1px solid #d5d5d0;
   background: #fff;
   box-shadow: -16px 0 38px rgba(25, 25, 23, 0.11);
-}
-:global(body[data-playbook-drawer-open='true'] .chatbot-launcher),
-:global(body[data-playbook-drawer-open='true'] .chatbot-panel) {
-  opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
 }
 .drawer > header {
   min-height: 66px;
