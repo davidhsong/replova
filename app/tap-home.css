@@ -1,9 +1,9 @@
-/* Palette overrides belong to the public homepage; Tap uses its own product colors. */
+/* Homepage presentation reused by the product and industry pages. */
 .tap-home { --accent: #141414; }
 .tap-home .lp-hero-centered > p { text-wrap: balance; }
-.tap-home .btn-primary { background: var(--t1); color: white; }
-.tap-home .btn-primary:hover:not(:disabled) { background: #2a2a2a; }
-.tap-home .lp-demo-cta:hover:not(:disabled) { background: var(--t1); }
+.marketing-shell.tap-home .btn-primary { background: var(--t1); color: white; }
+.marketing-shell.tap-home .btn-primary:hover:not(:disabled) { background: #2a2a2a; }
+.marketing-shell.tap-home .lp-demo-cta:hover:not(:disabled) { background: var(--t1); }
 .tap-home :is(#platform, #sample-feedback, #sample-issue, #intelligence) { scroll-margin-top: 90px; }
 .tap-home .sample-caption { margin: 18px 0 0; color: #57534c; font-size: 12px; }
 .tap-home .story-visual {

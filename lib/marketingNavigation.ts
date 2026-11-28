@@ -1,11 +1,20 @@
-export const platformLinks = [
-  ['Replova Tap', 'Collect private feedback with a tap or scan.', '/platform/replova-tap', 'tap'],
-  ['How Tap works', 'Set up a placard and follow a visit through to a fix.', '/platform/how-tap-works', 'guide'],
+export const productLinks = [
+  ['Replova Dot', 'A flat NFC tag for private guest feedback.', '/products/replova-dot', 'dot'],
+  ['Replova Tap', 'A freestanding sign for private guest feedback.', '/products/replova-tap', 'tap'],
+  ['Replova AI', 'In progress · Reply drafts and trends for Google reviews.', '/products/replova-ai', 'reply'],
+] as const
+
+export const featuredIndustries = [
+  ['Tea brands', 'Guest feedback on drinks and pickup at boba cafés.', 'boba-tea-shops', 'cup'],
+  ['Hotels', 'Hear about room issues before checkout.', 'hotels-short-stays', 'bed'],
+  ['Multifamily', 'Hear what residents flag in shared spaces.', 'apartment-communities', 'building'],
+  ['Restaurants', 'Find out where service slows down.', 'restaurants-cafes', 'utensils'],
+  ['Retail', 'Spot confusing steps at checkout and returns.', 'specialty-retail-stores', 'bag'],
+  ['Fitness', 'See where first-time members need a hand.', 'fitness-studios', 'dumbbell'],
+  ['Auto service', 'Find gaps in updates from drop-off to pickup.', 'auto-repair-quick-lube', 'wrench'],
 ] as const
 
 export const industryLinks = [
-  ['Retail & hospitality', 'Follow the experience from arrival to checkout.', '/industries/retail-hospitality', 'retail'],
-  ['Boba & tea shops', 'See how a shop handles a pickup mix-up.', '/industries/boba-tea-shops', 'retail'],
-  ['Health & wellness', 'Understand reception and check-in.', '/industries/healthcare-wellness', 'healthcare'],
-  ['Local services', 'Improve arrival instructions, estimates, and follow-up.', '/industries/local-services', 'local'],
+  ...featuredIndustries.map(([name, description, slug, icon]) => [name, description, `/industries/${slug}`, icon] as const),
+  ['All industries', 'Explore feedback examples for your business.', '/industries', 'local'],
 ] as const

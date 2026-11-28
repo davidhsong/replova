@@ -1,6 +1,8 @@
-import { platformLinks, industryLinks } from '@/lib/marketingNavigation'
-import { FeatureIcon } from './marketing/VisitSample'
+import { productLinks, industryLinks } from '@/lib/marketingNavigation'
+import { IndustryDemoLink } from './marketing/IndustryBooking'
+import { NavItemIcon, type NavIconName } from './marketing/NavItemIcon'
 import './marketing/marketing.css'
+import { NavDestination } from './marketing/NavDestination'
 import { DropdownInteraction } from './marketing/DropdownInteraction'
 import Link from 'next/link'
 import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
@@ -14,52 +16,24 @@ function BrandLogo({ height, placement, eager = false }: { height: number; place
   )
 }
 
-function ChevronDown() {
-  return (
-    <svg className="nav-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  )
-}
-
 type NavDropdownProps = {
   label: string
-  href: string
   links: ReadonlyArray<readonly [label: string, description: string, href: string, icon: NavIconName]>
 }
 
-export type NavIconName = 'tap' | 'guide' | 'reply' | 'insights' | 'benchmark' | 'healthcare' | 'home' | 'automotive' | 'professional' | 'retail' | 'local'
+export { NavItemIcon }
+export type { NavIconName }
 
-export function NavItemIcon({ name }: { name: NavIconName }) {
-  if (name === 'tap' || name === 'guide') return <FeatureIcon id={name === 'tap' ? 'tap' : 'playbook'} />
-  const paths: Record<typeof name, React.ReactNode> = {
-    reply: <><path d="M4 5.5h16v10H9l-5 4v-14Z" /><path d="M8 9h8M8 12h5" /></>,
-    insights: <><path d="M4 19V9M10 19V5M16 19v-7M22 19V3" /><path d="M2 19h22" /></>,
-    benchmark: <><path d="m4 17 5-5 4 3 7-9" /><path d="M15 6h5v5" /></>,
-    healthcare: <><path d="M12 21s-7-4.35-7-10a4 4 0 0 1 7-2.65A4 4 0 0 1 19 11c0 5.65-7 10-7 10Z" /><path d="M9 12h6M12 9v6" /></>,
-    home: <><path d="m3 11 9-7 9 7" /><path d="M5.5 10v10h13V10M10 20v-6h4v6" /></>,
-    automotive: <><path d="m5 16-1.5-2 2-6h13l2 6-1.5 2" /><path d="M5 16h14v4h-2v-2H7v2H5v-4ZM7 12h10" /></>,
-    professional: <><path d="M4 7h16v13H4zM9 7V4h6v3" /><path d="M4 12h16M10 12v2h4v-2" /></>,
-    retail: <><path d="M5 9h14l-1 11H6L5 9Z" /><path d="M8 9a4 4 0 0 1 8 0" /></>,
-    local: <><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></>,
-  }
-
-  return <svg className="nav-item-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{paths[name]}</svg>
-}
-
-function NavDropdown({ label, href, links }: NavDropdownProps) {
+function NavDropdown({ label, links }: NavDropdownProps) {
   return (
-    <DropdownInteraction>
-      <Link href={href} className="nav-dropdown-trigger">{label} <ChevronDown /></Link>
-      <div className="nav-popover" aria-label={`${label} menu`}>
-        <div className="nav-popover-links">
-          {links.map(([itemLabel, description, itemHref, icon]) => (
-            <Link data-specialty={itemHref.endsWith("/boba-tea-shops")} href={itemHref} key={itemLabel}>
-              <NavItemIcon name={icon} />
-              <span><strong>{itemLabel}</strong><small>{description}</small></span>
-            </Link>
-          ))}
-        </div>
+    <DropdownInteraction label={label}>
+      <div className="nav-popover-links">
+        {links.map(([itemLabel, description, itemHref, icon]) => (
+          <NavDestination data-industry={itemHref.startsWith('/industries/') ? itemHref.split('/')[2] : undefined} href={itemHref} key={itemLabel}>
+            <NavItemIcon name={icon} />
+            <span><strong>{itemLabel}</strong><small>{description}</small></span>
+          </NavDestination>
+        ))}
       </div>
     </DropdownInteraction>
   )
@@ -89,33 +63,31 @@ function XIcon() {
   )
 }
 
-export function MarketingHeader({ tapHome = false }: { tapHome?: boolean }) {
+export function MarketingHeader({ tapHome = false, industry }: { tapHome?: boolean; industry?: string }) {
   return (
     <header className="lp-header">
       <div className="lp-nav-inner">
-        <MobileMarketingNav tapHome={tapHome} />
+        <MobileMarketingNav tapHome={tapHome} industry={industry} />
         <Link href="/" aria-label="Replova home" className="lp-home-link"><BrandLogo placement="navbar" height={28} eager /></Link>
         <nav className="lp-menu" aria-label="Main navigation">
           <NavDropdown
-            label="Platform"
-            href="/platform/replova-tap"
-            links={platformLinks}
+            label="Products"
+            links={productLinks}
           />
           <NavDropdown
             label="Industries"
-            href="/industries"
             links={industryLinks}
           />
-          <Link href="/resources">Resources</Link>
+          <NavDestination href="/resources">Resources</NavDestination>
         </nav>
         <nav className="lp-account" aria-label="Account">
           <Link href="/signin" target="_blank" rel="noopener noreferrer" className="btn btn-quiet lp-signin">Sign in</Link>
-          <Link href="/demo" className="btn btn-primary lp-demo-cta">
+          <IndustryDemoLink industry={industry} className="btn btn-primary lp-demo-cta">
             <span className="lp-demo-label">
               <span>Request a demo</span>
               <span aria-hidden="true">Request a demo</span>
             </span>
-          </Link>
+          </IndustryDemoLink>
         </nav>
       </div>
     </header>
@@ -124,12 +96,12 @@ export function MarketingHeader({ tapHome = false }: { tapHome?: boolean }) {
 
 const footerGroups = [
   {
-    title: 'Platform',
-    links: platformLinks.map(([label, , href]) => [label, href] as const),
+    title: 'Products',
+    links: productLinks.map(([label, , href]) => [label, href] as const),
   },
   {
     title: 'Industries',
-    links: [['All industries', '/industries'], ...industryLinks.map(([label, , href]) => [label, href] as const)],
+    links: industryLinks.map(([label, , href]) => [label, href] as const),
   },
   {
     title: 'Company',
@@ -153,7 +125,7 @@ const footerGroups = [
   },
 ] as const
 
-export function MarketingFooter({ tapHome = false }: { tapHome?: boolean }) {
+export function MarketingFooter({ tapHome = false, industry }: { tapHome?: boolean; industry?: string }) {
   return (
     <footer className="lp-footer">
       <div className="lp-footer-grid">
@@ -183,7 +155,7 @@ export function MarketingFooter({ tapHome = false }: { tapHome?: boolean }) {
         {footerGroups.map(group => (
           <div className="lp-footer-group" key={group.title}>
             <strong>{group.title}</strong>
-            {group.links.map(([label, href]) => <Link key={label} href={tapHome && href.startsWith('/#') ? href.slice(1) : href}>{label}</Link>)}
+            {group.links.map(([label, href]) => href === '/demo' ? <IndustryDemoLink key={label} industry={industry}>{label}</IndustryDemoLink> : <Link key={label} href={tapHome && href.startsWith('/#') ? href.slice(1) : href}>{label}</Link>)}
           </div>
         ))}
         <div className="lp-footer-bottom">

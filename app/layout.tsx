@@ -8,8 +8,11 @@ import {
   SITE_URL,
 } from "@/lib/seo";
 import OfflineStatus from "@/components/OfflineStatus";
+import "../public/replova-design.css";
 import "./globals.css";
 import "./pilot.css";
+import "./tap-home.css";
+import "./site-roles.css";
 
 export const metadata: Metadata = {
   title: {

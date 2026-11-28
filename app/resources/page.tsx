@@ -15,7 +15,7 @@ export default function ResourcesPage() {
       <MarketingHeader />
       <main id="main-content" className="marketing-page-main">
         <section className="subpage-hero">
-          <div className="t-eyebrow c-accent">Resource center</div>
+          <div className="hero-category">Resource center</div>
           <h1>Make customer feedback useful.</h1>
           <p>Short, practical playbooks for answering reviews well, spotting patterns without overreacting, and asking customers for honest feedback at the right moment.</p>
           <nav className="resource-guide-links" aria-label="Field guides"><a href="#insights">Private feedback</a><a href="#replying">Public review replies</a><a href="#requests">Review requests</a><a href="#research">Published research</a></nav>

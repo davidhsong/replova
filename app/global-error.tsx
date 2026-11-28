@@ -1,5 +1,7 @@
 'use client'
+import '../public/replova-design.css'
 import './globals.css'
+import './site-roles.css'
 export default function GlobalError({
   retry,
 }: {

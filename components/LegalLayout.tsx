@@ -24,7 +24,7 @@ export default function LegalLayout({ page, title, kicker, sections }: Props) {
       <MarketingHeader />
       <main id="main-content" className="legal-page-main">
         <header className="legal-page-header">
-          <div className="t-eyebrow">{kicker}</div>
+          <div className="hero-category">{kicker}</div>
           <h1>{title}</h1>
         </header>
 

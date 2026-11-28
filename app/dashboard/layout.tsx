@@ -147,7 +147,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <main id="main-content" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '64px 24px' }}>
           <div style={{ textAlign: 'center', marginBottom: 48, maxWidth: 480 }}>
             <div className="t-eyebrow" style={{ marginBottom: 12 }}>Start your free trial</div>
-            <h1 className="t-serif" style={{ fontSize: 40, lineHeight: 1.1, letterSpacing: '-0.02em', marginBottom: 14 }}>Choose your plan</h1>
+            <h1 className="t-serif" style={{ marginBottom: 14 }}>Choose your plan</h1>
             <p style={{ fontSize: 15, color: 'var(--t3)', lineHeight: 1.6 }}>30 days free. No charge until your trial ends. Cancel anytime.</p>
           </div>
           <div className="inactive-plan-grid" style={{ width: '100%', maxWidth: 860 }}>

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { careerRoles } from '@/lib/careerRoles'
 import { industrySolutions } from '@/lib/industrySolutions'
+import { productLinks } from '@/lib/marketingNavigation'
 import { SITE_URL } from '@/lib/seo'
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -23,8 +24,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   return [
     ...staticRoutes,
-    ...['replova-tap', 'how-tap-works'].map(slug => ({
-      url: `${base}/platform/${slug}`, lastModified: now, priority: 0.8,
+    ...productLinks.map(([, , href]) => ({
+      url: `${base}${href}`, lastModified: now, priority: 0.8,
     })),
     ...careerRoles.map(role => ({
       url: `${base}/careers/${role.slug}`,

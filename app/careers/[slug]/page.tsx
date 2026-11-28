@@ -40,7 +40,7 @@ export default async function CareerRolePage({ params }: CareerRolePageProps) {
           <Link href="/careers#open-roles" className="career-back-link">&larr; View all open roles</Link>
 
           <header className="career-job-header">
-            <div className="t-eyebrow c-accent">Student internship</div>
+            <div className="hero-category">Student internship</div>
             <h1>{role.title}</h1>
             <p>{role.summary}</p>
             <div className="career-job-facts" aria-label="Position details">
@@ -68,7 +68,7 @@ export default async function CareerRolePage({ params }: CareerRolePageProps) {
                 <div className="career-section-heading"><span>01 / Company</span><h2>Who we are</h2></div>
                 <p className="career-lead">Replova helps businesses learn from private customer feedback at each location.</p>
                 <p>With Tap, customers leave a rating and optional comment. The owner can read what happened and track a change in a Playbook.</p>
-                <p>Teams that manage public Google reviews can also draft and publish replies. The work spans product design, software, AI quality, customer research, operations, and the trust required to handle real customer feedback responsibly.</p>
+                <p>Replova AI is in development to help teams draft replies to public Google reviews. The work spans product design, software, AI quality, customer research, operations, and the trust required to handle real customer feedback responsibly.</p>
               </section>
 
               <section id="the-role" className="career-copy-section">

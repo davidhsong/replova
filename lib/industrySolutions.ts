@@ -1,208 +1,315 @@
-export type IndustrySolution = {
+import { featuredIndustries } from './marketingNavigation'
+
+type IndustryStory = {
   slug: string
-  name: string
-  navName: string
-  eyebrow: string
   headline: string
   lede: string
-  businesses: readonly string[]
-  moments: readonly { title: string; detail: string }[]
-  signals: readonly string[]
-  workflow: readonly { title: string; detail: string }[]
-  example: {
-    comment: string
-    action: string
-    issue: string
-  }
+  placement: string
+  comment: string
+  action: string
 }
 
-const existingIndustries: readonly IndustrySolution[] = [
-  {
-    slug: 'healthcare-wellness',
-    name: 'Health & wellness',
-    navName: 'Health & wellness',
-    eyebrow: 'For care-centered businesses',
-    headline: 'Make check-in clear for every visitor.',
-    lede: 'Use private visit feedback to see where check-in, scheduling, and follow-up instructions are working for patients and studio members.',
-    businesses: ['Dental practices', 'Med spas', 'Physical therapy', 'Wellness studios'],
-    moments: [
-      { title: 'Before the visit', detail: 'Appointment access, reminders, directions, and expectations.' },
-      { title: 'During the experience', detail: 'Wait time, staff communication, comfort, and clarity.' },
-      { title: 'After the visit', detail: 'Follow-up instructions, responsiveness, and continuity.' },
-    ],
-    signals: ['Scheduling friction', 'Staff communication', 'Wait-time patterns', 'Follow-up clarity'],
-    workflow: [
-      { title: 'Ask at the end of a visit', detail: 'Place the Tap placard where people can rate their experience privately as they leave.' },
-      { title: 'Read the check-in comments', detail: 'Select the location and see whether visitors mention finding the entrance or checking in for the first time.' },
-      { title: 'Try clearer instructions', detail: 'Record the change in a Playbook and check later visits for the same concern.' },
-    ],
-    example: {
-      comment: 'I arrived for my first visit and could not tell where to check in.',
-      action: 'Place check-in instructions at the entrance. Ask the front desk to check later first-visit comments.',
-      issue: 'The entrance gives a first-time visitor no clear check-in point.',
-    },
-  },
-  {
-    slug: 'home-services',
-    name: 'Home services',
-    navName: 'Home services',
-    eyebrow: 'For teams working in the home',
-    headline: 'Turn service-call feedback into a more dependable operation.',
-    lede: 'Invite homeowners to rate a service visit privately. Their comments can tell you about arrival windows, workmanship, cleanup, and follow-through.',
-    businesses: ['HVAC and plumbing', 'Electrical services', 'Roofing and restoration', 'Cleaning and landscaping'],
-    moments: [
-      { title: 'Booking', detail: 'Speed to answer, scheduling clarity, and arrival expectations.' },
-      { title: 'On site', detail: 'Professionalism, explanation, workmanship, and respect for the home.' },
-      { title: 'Closeout', detail: 'Cleanup, invoicing, warranty guidance, and promised follow-up.' },
-    ],
-    signals: ['Arrival-time accuracy', 'Estimate clarity', 'Technician communication', 'Cleanup and follow-through'],
-    workflow: [
-      { title: 'Ask after the service call', detail: 'Offer the placard when the work is complete so the homeowner can rate the visit.' },
-      { title: 'Look for repeated delays', detail: 'Read the comments for the service location. Check whether customers mention arrival estimates or missed updates.' },
-      { title: 'Agree on an update', detail: 'Use a Playbook to track a change to the way the dispatch team communicates a delay.' },
-    ],
-    example: {
-      comment: 'My arrival window changed twice. I only found out when I called the office.',
-      action: 'Have the dispatcher text the revised window as soon as the technician reports a delay.',
-      issue: 'The homeowner had to chase the revised arrival time.',
-    },
-  },
-  {
-    slug: 'automotive',
-    name: 'Automotive',
-    navName: 'Automotive',
-    eyebrow: 'For automotive service teams',
-    headline: 'Make trust visible from estimate to pickup.',
-    lede: 'See what drivers say privately about drop-off instructions, estimates, repair quality, and updates from their service advisor.',
-    businesses: ['Independent repair shops', 'Dealer service centers', 'Collision and tire centers', 'Detailing businesses'],
-    moments: [
-      { title: 'Estimate', detail: 'Price transparency, explanation, options, and approval.' },
-      { title: 'In service', detail: 'Status updates, changed timelines, and additional work.' },
-      { title: 'Pickup', detail: 'Final invoice clarity, repair confidence, and convenience.' },
-    ],
-    signals: ['Advisor communication', 'Estimate transparency', 'Turnaround time', 'Repair confidence'],
-    workflow: [
-      { title: 'Collect visit feedback', detail: 'Give drivers a place to tap or scan when they collect their vehicle.' },
-      { title: 'Check the handoff', detail: 'Open the location’s inbox to see whether comments describe an unclear estimate, a delay, or difficulty finding the key drop.' },
-      { title: 'Track the change', detail: 'Record a clearer set of drop-off instructions in a Playbook and review later feedback.' },
-    ],
-    example: {
-      comment: 'I found the overnight key box, but I could not tell where to park.',
-      action: 'Mark the overnight spaces and post matching directions on the key box. Check the next week of drop-off comments.',
-      issue: 'The key box is visible. The overnight parking instructions are missing.',
-    },
-  },
-  {
-    slug: 'professional-services',
-    name: 'Professional services',
-    navName: 'Professional services',
-    eyebrow: 'For expertise-led firms',
-    headline: 'Give clients a clear next step.',
-    lede: 'Find out whether clients at each office understood the advice they received and knew when they would hear from you again.',
-    businesses: ['Accounting and tax firms', 'Real estate teams', 'Legal and consulting offices', 'Financial professionals'],
-    moments: [
-      { title: 'First response', detail: 'Availability, intake clarity, and confidence in the next step.' },
-      { title: 'Engagement', detail: 'Communication cadence, expertise, transparency, and ownership.' },
-      { title: 'Completion', detail: 'Outcome explanation, documentation, and continued support.' },
-    ],
-    signals: ['Response time', 'Expectation-setting', 'Clarity of advice', 'Ownership and follow-through'],
-    workflow: [
-      { title: 'Invite a private rating', detail: 'Let clients rate their visit and add a comment about the experience.' },
-      { title: 'Read feedback by office', detail: 'Select an office and check the visits behind a recurring concern, such as unclear next steps.' },
-      { title: 'Clarify the follow-up', detail: 'Use a Playbook to track a change to the instructions clients take home.' },
-    ],
-    example: {
-      comment: 'I left knowing my options, but I did not know who would call or when.',
-      action: 'Have the account lead write down the next step, the follow-up date and the name of the person responsible.',
-      issue: 'The client left without a named follow-up owner.',
-    },
-  },
-  {
-    slug: 'retail-hospitality',
-    name: 'Retail & hospitality',
-    navName: 'Retail & hospitality',
-    eyebrow: 'For high-volume customer experiences',
-    headline: 'See where customers need a hand.',
-    lede: 'Read private feedback on the welcome, the service, and how easily customers find what they need at each location.',
-    businesses: ['Retail stores', 'Restaurants and cafés', 'Hotels and short stays', 'Entertainment venues'],
-    moments: [
-      { title: 'Arrival', detail: 'Welcome, wait, cleanliness, atmosphere, and first impression.' },
-      { title: 'Service', detail: 'Attentiveness, product knowledge, order accuracy, and recovery.' },
-      { title: 'Value', detail: 'Quality, pricing, convenience, and likelihood to return.' },
-    ],
-    signals: ['Service by time of visit', 'Cleanliness themes', 'Product consistency', 'Perceived value'],
-    workflow: [
-      { title: 'Invite feedback on the visit', detail: 'Put a Tap placard where customers can easily reach it on their way out.' },
-      { title: 'Find the sticking point', detail: 'Read the original comments for the selected location. Several shoppers might describe looking for the same desk.' },
-      { title: 'Track a practical fix', detail: 'Record a task to improve wayfinding in a Playbook, then check what later visitors say.' },
-    ],
-    example: {
-      comment: 'The associate explained the return policy clearly. I walked around twice before I found the returns desk.',
-      action: 'Have the floor lead walk the route from the entrance and add a sign at the first unclear turn.',
-      issue: 'The return policy was clear. The route to the desk needs attention.',
-    },
-  },
-  {
-    slug: 'local-businesses',
-    name: 'Other local businesses',
-    navName: 'Other local businesses',
-    eyebrow: 'Other local businesses',
-    headline: 'Learn what makes a visit work.',
-    lede: 'Give customers a way to rate their visit and tell you what stood out. Use their comments to choose an improvement for that location.',
-    businesses: ['Fitness and education', 'Pet and personal services', 'Local attractions', 'Multi-location portfolios'],
-    moments: [
-      { title: 'Discovery', detail: 'What customers expected before they chose the business.' },
-      { title: 'Experience', detail: 'The service, product, people, and environment they encountered.' },
-      { title: 'Return', detail: 'Whether the outcome, value, and follow-up earned another visit.' },
-    ],
-    signals: ['Unclear arrival instructions', 'Customer expectations', 'Staff recognition', 'Repeat friction points'],
-    workflow: [
-      { title: 'Offer a placard', detail: 'Customers tap or scan to send a private rating and an optional comment.' },
-      { title: 'Choose a location', detail: 'Read that location’s feedback and the comments behind a recurring issue.' },
-      { title: 'Follow up in a Playbook', detail: 'Record the change your team will try and return to review the result.' },
-    ],
-    example: {
-      comment: 'I reached the building on time, but the entrance I tried was locked.',
-      action: 'Include the entrance name and a landmark in the arrival message. Check later comments for the same problem.',
-      issue: 'The arrival instructions did not identify the customer entrance.',
-    },
-  },
-] as const
+export type IndustrySolution = IndustryStory & { name: string; icon?: typeof featuredIndustries[number][3] }
 
-const retail = existingIndustries.find(item => item.slug === 'retail-hospitality')!
-const local = existingIndustries.find(item => item.slug === 'local-businesses')!
-export const serviceExamples = existingIndustries.filter(item =>
-  ['home-services', 'automotive', 'professional-services', 'local-businesses'].includes(item.slug)
-)
-
-export const industrySolutions: readonly IndustrySolution[] = [
-  retail,
-  {
-    ...retail, slug: 'boba-tea-shops', name: 'Boba & tea shops', navName: 'Boba & tea shops',
-    eyebrow: 'For boba & tea shops', headline: 'Make the last step of a drink order easy.',
-    lede: 'Find out what happens between ordering a drink and picking it up. Give the shift lead a specific change to try before the next rush.',
-    businesses: ['Tea houses', 'Boba counters', 'Multi-location shops'],
-    moments: [
-      { title: 'At the counter', detail: 'Was it clear where to order and how to choose toppings?' },
-      { title: 'During the wait', detail: 'Could customers hear their name or see their order number?' },
-      { title: 'At pickup', detail: 'Could they identify their drink and find the right shelf?' },
-    ],
-    workflow: [
-      { title: 'Invite a tap at pickup', detail: 'Set the placard beside the collection area where customers can reach it with one hand.' },
-      { title: 'Read both sides of the visit', detail: 'A customer may love the tea and still struggle to find the finished order.' },
-      { title: 'Test a shelf label', detail: 'Have the shift lead label the pickup point and review the next shift’s comments.' },
-    ],
-    signals: ['Pickup mix-ups', 'Queue clarity', 'Drink consistency'],
-    example: { comment: 'The tea was great, but I couldn’t tell which shelf was for pickup.', issue: 'Finished drinks are hard to identify.', action: 'Label the pickup shelf and check the next six comments.' },
+const featuredStories: Record<typeof featuredIndustries[number][2], Omit<IndustryStory, 'slug'>> = {
+  'boba-tea-shops': {
+    headline: 'Make finished drinks easy to find.',
+    lede: 'At independent boba counters and multi-location tea cafés, a placard beside pickup lets guests tell the shift lead where the handoff gets confusing.',
+    placement: 'Drink pickup counter',
+    comment: 'The tea was great, but I couldn’t tell which shelf was for pickup.',
+    action: 'The shift lead could label the pickup counter and check the next shift’s comments.',
   },
-  existingIndustries.find(item => item.slug === 'healthcare-wellness')!,
-  { ...local, slug: 'local-services', name: 'Local services', navName: 'Local services',
-    eyebrow: 'For local service teams', headline: 'Help customers arrive ready for their appointment.',
-    lede: 'See where directions, estimates, and updates leave customers guessing. Track what the team changes across service calls and office visits.',
-    businesses: serviceExamples.map(item => item.name),
+  'hotels-short-stays': {
+    headline: 'Hear about room issues before checkout.',
+    lede: 'At hotels, inns and serviced lodgings, guests can tap a bedside placard to tell the front desk how their stay is going.',
+    placement: 'Bedside placard',
+    comment: 'The fan beside the bed rattled every time it switched on last night.',
+    action: 'A front-office manager could ask about the fan during the stay and check later comments for repeat reports.',
+  },
+  'apartment-communities': {
+    headline: 'Keep shared spaces working for residents.',
+    lede: 'At an apartment community, a placard outside the package room helps residents tell the on-site property manager when posted instructions are out of date.',
+    placement: 'Package-room door',
+    comment: 'The sign says the room is open until eight, but it was locked at seven.',
+    action: 'The property manager could verify the hours with the desk and replace the sign.',
+  },
+  'restaurants-cafes': {
+    headline: 'Find the wait at the end of lunch.',
+    lede: 'At restaurants and food-led cafés, a placard by the register lets diners tell the floor lead where lunch service slowed down.',
+    placement: 'Lunch checkout',
+    comment: 'Lunch came quickly. We waited a long time to ask for the check.',
+    action: 'The floor lead could test a table check-in as lunch plates are cleared.',
+  },
+  'specialty-retail-stores': {
+    headline: 'Make the returns desk easier to find.',
+    lede: 'In a specialty retail store, a placard at the returns desk helps shoppers point out the turn they missed on their way there.',
+    placement: 'Returns desk',
+    comment: 'I walked past the fitting rooms twice before I saw where to return the jacket.',
+    action: 'The floor lead could walk the route from the entrance and move the sign to the first unclear turn.',
+  },
+  'fitness-studios': {
+    headline: 'Get first-time members to class on time.',
+    lede: 'In gyms and class-based studios, a placard at reception lets new members explain what they needed between check-in and class.',
+    placement: 'Studio reception',
+    comment: 'I checked in on time but missed the warm-up looking for the studio.',
+    action: 'The desk team could add the studio number to check-in instructions.',
+  },
+  'auto-repair-quick-lube': {
+    headline: 'Give drivers a clear pickup handoff.',
+    lede: 'At repair shops and quick-lube locations, a placard near the key counter lets service advisors hear where drivers missed an update.',
+    placement: 'Key pickup counter',
+    comment: 'I could see my car outside, but I didn’t know it was ready to collect.',
+    action: 'The service advisor could test a handoff that tells the driver when and where to collect the keys.',
+  },
+}
+
+export const industrySolutions: IndustrySolution[] = [
+  ...featuredIndustries.map(([name, , slug, icon]) => ({ name, slug, icon, ...featuredStories[slug] })),
+  {
+    slug: 'dental-practices',
+    name: 'Dental practices',
+    headline: 'Help new patients find check-in.',
+    lede: 'Dental front-office teams can place Tap by the exit so patients can describe their arrival on the way out.',
+    placement: 'Reception exit',
+    comment: 'I arrived early and waited at the wrong window.',
+    action: 'The office manager could label the first-visit window at the entrance.',
+  },
+  {
+    slug: 'med-spas',
+    name: 'Med spas',
+    headline: 'Make aftercare instructions easy to take home.',
+    lede: 'Med spa operators can ask at checkout whether clients know where to find the instructions discussed during their visit.',
+    placement: 'Checkout counter',
+    comment: 'I remembered the conversation, but I couldn’t find the take-home sheet.',
+    action: 'The desk lead could include the aftercare sheet in the checkout handoff.',
+  },
+  {
+    slug: 'physical-therapy-clinics',
+    name: 'Physical therapy clinics',
+    headline: 'Make the next appointment clear.',
+    lede: 'At physical therapy checkout, patients can tell clinic managers how easily they found their return-visit details.',
+    placement: 'Scheduling desk',
+    comment: 'I knew to come back on Tuesday but left without the time.',
+    action: 'The scheduling lead could offer a written time before the patient leaves.',
+  },
+  {
+    slug: 'wellness-studios',
+    name: 'Wellness studios',
+    headline: 'Give first visits a clear starting point.',
+    lede: 'Wellness studio owners can ask clients leaving a session how they found the changing area.',
+    placement: 'Studio exit',
+    comment: 'I wasn’t sure which lockers were available before my session.',
+    action: 'The studio lead could mark the guest lockers and review later first-visit comments.',
+  },
+  {
+    slug: 'home-repair-contractors',
+    name: 'Home repair contractors',
+    headline: 'Keep homeowners informed when a visit moves.',
+    lede: 'Home repair contractors can offer Tap at the end of a service call to learn whether homeowners received a revised arrival window.',
+    placement: 'Service-call closeout',
+    comment: 'My arrival window changed twice. I only found out when I called.',
+    action: 'The dispatcher could send the revised window when the technician reports a delay.',
+  },
+  {
+    slug: 'hvac-contractors',
+    name: 'HVAC contractors',
+    headline: 'Make the service handoff easier to follow.',
+    lede: 'HVAC contractors can invite feedback after a tune-up to hear whether homeowners understood the handoff.',
+    placement: 'Technician’s handoff card',
+    comment: 'I wrote down the filter size but missed when to change it.',
+    action: 'The technician could leave the size and replacement interval together.',
+  },
+  {
+    slug: 'plumbing-contractors',
+    name: 'Plumbing contractors',
+    headline: 'Explain what changed before leaving the job.',
+    lede: 'Plumbing teams can offer Tap after a repair so homeowners can flag unclear closeout instructions.',
+    placement: 'Job closeout',
+    comment: 'I saw the new valve but wasn’t sure which handle shuts off the water.',
+    action: 'The crew lead could include a valve walkthrough at closeout.',
+  },
+  {
+    slug: 'electrical-contractors',
+    name: 'Electrical contractors',
+    headline: 'Leave the panel easier to understand.',
+    lede: 'Electrical contractors can ask for feedback when a job ends to learn whether the handoff explained the new labels.',
+    placement: 'Job handoff',
+    comment: 'The new switch works, but I couldn’t match it to the panel label.',
+    action: 'The electrician could walk through the updated circuit names with the homeowner.',
+  },
+  {
+    slug: 'roofing-contractors',
+    name: 'Roofing contractors',
+    headline: 'Clear up questions at the final walkthrough.',
+    lede: 'Roofing crews can offer Tap at sign-off to hear what homeowners still need after the work.',
+    placement: 'Final walkthrough',
+    comment: 'I wasn’t sure when the leftover materials would be picked up.',
+    action: 'The project lead could give a collection date at sign-off.',
+  },
+  {
+    slug: 'restoration-contractors',
+    name: 'Restoration contractors',
+    headline: 'Set expectations for the next site visit.',
+    lede: 'Restoration teams can invite feedback after a site visit to see whether the household knows what happens next.',
+    placement: 'Visit closeout',
+    comment: 'The fans were running, but I didn’t know when someone would check them.',
+    action: 'The coordinator could leave the next inspection window in writing.',
+  },
+  {
+    slug: 'cleaning-services',
+    name: 'Cleaning services',
+    headline: 'Make each service visit easy to check.',
+    lede: 'Cleaning teams can offer a handoff card after a visit to hear which parts of the service need clarification.',
+    placement: 'Visit handoff',
+    comment: 'I couldn’t tell if the spare room was included this time.',
+    action: 'The team lead could confirm the room list before the next visit.',
+  },
+  {
+    slug: 'landscaping-services',
+    name: 'Landscaping services',
+    headline: 'Clarify what happens after yard work.',
+    lede: 'Landscapers can invite a rating after a visit so homeowners can flag questions about cleanup and access.',
+    placement: 'Crew handoff',
+    comment: 'The hedge looks good. I wasn’t sure who would collect the clippings.',
+    action: 'The crew lead could include debris collection in the end-of-visit check.',
+  },
+  {
+    slug: 'dealer-service-centers',
+    name: 'Dealer service centers',
+    headline: 'Make overnight drop-off clear.',
+    lede: 'Dealer service teams can ask drivers at pickup whether the after-hours drop-off instructions helped.',
+    placement: 'Cashier counter',
+    comment: 'I found the key box, but I couldn’t tell where to park.',
+    action: 'The service manager could mark overnight spaces and post directions on the key box.',
+  },
+  {
+    slug: 'collision-centers',
+    name: 'Collision centers',
+    headline: 'Help drivers follow repair updates.',
+    lede: 'Collision repair teams can invite feedback when a driver collects a vehicle to learn which updates were unclear.',
+    placement: 'Repair pickup',
+    comment: 'I didn’t know if the shop was waiting for a part or an approval.',
+    action: 'The estimator could name the outstanding step in each update.',
+  },
+  {
+    slug: 'tire-centers',
+    name: 'Tire centers',
+    headline: 'Show walk-in drivers where to start.',
+    lede: 'Tire shops can ask at checkout how easily drivers found the right queue on arrival.',
+    placement: 'Tire counter',
+    comment: 'I waited in the appointment line before I saw the walk-in sign.',
+    action: 'The desk lead could mark both lanes at the entrance.',
+  },
+  {
+    slug: 'detailing-shops',
+    name: 'Detailing shops',
+    headline: 'Explain the finished work at pickup.',
+    lede: 'Auto detailers can offer a placard at key return to hear whether drivers understood the service they received.',
+    placement: 'Key return',
+    comment: 'The seats looked great. I didn’t know how long they needed to dry.',
+    action: 'The detailer could add drying guidance to the pickup handoff.',
+  },
+  {
+    slug: 'accounting-tax-firms',
+    name: 'Accounting and tax firms',
+    headline: 'Give clients a dated next step.',
+    lede: 'Accounting and tax teams can ask after an office meeting whether clients know which documents to bring back and when.',
+    placement: 'Office reception',
+    comment: 'I knew which forms to send but not who would follow up.',
+    action: 'The account lead could write down the contact and follow-up date.',
+  },
+  {
+    slug: 'real-estate-teams',
+    name: 'Real estate teams',
+    headline: 'Clarify the next step after a viewing.',
+    lede: 'Real estate teams can offer Tap at the end of a viewing to hear what buyers still need from the agent.',
+    placement: 'Viewing exit',
+    comment: 'I liked the place but didn’t know whom to ask about another visit.',
+    action: 'The agent could name a booking contact before visitors leave.',
+  },
+  {
+    slug: 'legal-offices',
+    name: 'Legal offices',
+    headline: 'Make the intake handoff clear.',
+    lede: 'Legal reception teams can invite feedback after intake to learn whether clients know how the office will follow up.',
+    placement: 'Reception desk',
+    comment: 'I wasn’t sure whether to call reception or wait for an email.',
+    action: 'The intake coordinator could confirm the contact channel at checkout.',
+  },
+  {
+    slug: 'consulting-firms',
+    name: 'Consulting firms',
+    headline: 'Make meeting follow-up easier to track.',
+    lede: 'Consulting teams can ask clients leaving a workshop whether ownership of the next step was clear.',
+    placement: 'Workshop exit',
+    comment: 'We agreed on a summary but didn’t name who would send it.',
+    action: 'The engagement lead could close meetings with an owner and delivery date.',
+  },
+  {
+    slug: 'financial-advisors',
+    name: 'Financial advisors',
+    headline: 'Help clients prepare for their return visit.',
+    lede: 'Financial planning offices can offer Tap after a meeting to hear whether clients understood the appointment logistics.',
+    placement: 'Office exit',
+    comment: 'I booked the follow-up but didn’t know which documents to bring.',
+    action: 'The office manager could attach a document checklist to the appointment note.',
+  },
+  {
+    slug: 'entertainment-venues',
+    name: 'Entertainment venues',
+    headline: 'Make entry easier before showtime.',
+    lede: 'Venue managers can place Tap near the exit so visitors can describe the path from ticket check to their seat.',
+    placement: 'Venue exit',
+    comment: 'My ticket had a section number, but the first corridor had no signs.',
+    action: 'The house manager could mark the section at the corridor entrance.',
+  },
+  {
+    slug: 'education-centers',
+    name: 'Education centers',
+    headline: 'Help families find the right classroom.',
+    lede: 'Education center operators can invite feedback at pickup to learn where families needed directions.',
+    placement: 'Student pickup',
+    comment: 'I looked on both floors for the evening class.',
+    action: 'The coordinator could put the floor and room on the arrival notice.',
+  },
+  {
+    slug: 'pet-services',
+    name: 'Pet services',
+    headline: 'Clear up the collection routine.',
+    lede: 'Pet care operators can ask owners at pickup whether collection instructions matched the visit.',
+    placement: 'Pickup desk',
+    comment: 'I waited at the grooming door before I saw the pickup bell.',
+    action: 'The desk lead could mark the bell on the collection notice.',
+  },
+  {
+    slug: 'personal-care-studios',
+    name: 'Personal care studios',
+    headline: 'Make the first appointment easier to find.',
+    lede: 'Salon and personal care operators can ask clients at checkout how they found their appointment station.',
+    placement: 'Salon checkout',
+    comment: 'I checked in but didn’t know whether to sit down or go straight through.',
+    action: 'The receptionist could explain where to wait at check-in.',
+  },
+  {
+    slug: 'local-attractions',
+    name: 'Local attractions',
+    headline: 'Help visitors find the next stop.',
+    lede: 'Attraction operators can invite feedback near the exit to hear where families needed a clearer route.',
+    placement: 'Visitor exit',
+    comment: 'The map showed the picnic area, but I missed the turn.',
+    action: 'The visitor services lead could signpost the turn from the main path.',
+  },
+  {
+    slug: 'multi-location-operators',
+    name: 'Multi-location operators',
+    headline: 'Find which location needs clearer directions.',
+    lede: 'Operators managing several locations can place Tap at each entrance to see which site visitors had trouble finding.',
+    placement: 'Location reception',
+    comment: 'I reached the building on time, but the entrance I tried was locked.',
+    action: 'The location lead could add an entrance name and landmark to arrival instructions.',
   },
 ]
 
 export function getIndustrySolution(slug: string) {
-  return industrySolutions.find(solution => solution.slug === slug)
+  return industrySolutions.find(industry => industry.slug === slug)
 }

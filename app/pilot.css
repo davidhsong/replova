@@ -1,6 +1,6 @@
 .pilot {
-  --ink: #192332;
-  max-width: 1080px;
+  --ink: var(--replova-ink);
+  max-width: 1200px;
   width: 100%;
   margin: auto;
   padding: clamp(24px, 5vw, 64px);
@@ -21,15 +21,13 @@
 }
 .pilot h1 {
   margin: 8px 0 14px;
-  font-size: clamp(32px, 4vw, 52px);
-  font-weight: 600;
-  letter-spacing: -0.055em;
+  font: var(--replova-title);
+  letter-spacing: var(--replova-display-tracking);
 }
 .pilot h2 {
   margin: 0 0 12px;
-  font-size: 23px;
-  letter-spacing: -0.035em;
-  font-weight: 600;
+  font: var(--replova-panel-title);
+  letter-spacing: -.035em;
 }
 .pilot h3 {
   margin: 6px 0;
@@ -38,13 +36,15 @@
 }
 .pilot small {
   display: block;
-  color: #535962;
-  font-size: 13px;
+  font: var(--replova-caption);
+  color: var(--replova-caption-color);
 }
 .pilot p {
   margin: 8px 0 16px;
   max-width: 70ch;
   overflow-wrap: anywhere;
+  font: var(--replova-prose);
+  color: var(--replova-prose-color);
 }
 .pilot section,
 .pilot > form,
@@ -97,8 +97,9 @@
   color: white;
   font-weight: 600;
   border: 0;
-  padding: 10px 18px;
-  border-radius: 6px;
+  padding: 1px 10px 0;
+  border-radius: 10px;
+  font: var(--replova-action);
   text-decoration: none;
   cursor: pointer;
 }

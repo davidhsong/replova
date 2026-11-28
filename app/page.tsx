@@ -3,12 +3,13 @@ import Link from 'next/link'
 import { ArrowIcon, MarketingFooter, MarketingHeader, NavItemIcon } from '@/components/MarketingChrome'
 import { HomeFaq } from '@/components/marketing/HomeFaq'
 import { FeedbackDashboard } from '@/components/marketing/FeedbackDashboard'
+import { PageHero } from '@/components/marketing/MarketingPage'
 import { ResearchProof } from '@/components/marketing/ResearchProof'
 import { VisitSample, issue, task, visits } from '@/components/marketing/VisitSample'
 import { Eyebrow } from '@/components/marketing/Eyebrow'
 import { ProductShowcase } from '@/components/marketing/ProductShowcase'
 import { PromiseWorkflowVisual } from '@/components/marketing/PromiseWorkflowVisual'
-import './tap-home.css'
+import { industryLinks } from '@/lib/marketingNavigation'
 import { createPageMetadata, SITE_TITLE, SITE_URL, BRAND_ORIGIN } from '@/lib/seo'
 
 const description = 'Collect private ratings and optional comments with a Replova Tap placard. Review feedback for each location and track improvements in a Playbook.'
@@ -48,11 +49,7 @@ const structuredData = {
   ],
 }
 
-const industries = [
-  { name: 'Retail & hospitality', note: 'Find the places where shoppers and guests need a hand.', href: '/industries/retail-hospitality', icon: 'retail' },
-  { name: 'Health & wellness', note: 'Help first-time visitors find reception and understand their next steps.', href: '/industries/healthcare-wellness', icon: 'healthcare' },
-  { name: 'Local services', note: 'Make arrival instructions, estimates, and follow-up clearer.', href: '/industries/local-services', icon: 'local' },
-] as const
+const industries = industryLinks.slice(0, 3)
 
 function SessionAccessIcon() {
   return (
@@ -130,16 +127,14 @@ export default function Home() {
       />
       <MarketingHeader tapHome />
       <main id="main-content">
-        <section className="lp-hero-centered">
-
-          <div className="hero-category">Private feedback for local businesses</div>
-          <h1><span>Turn feedback</span>{' '}<span>into action.</span></h1>
-          <p>Customers tap or scan to share how their visit went. See what keeps coming up and give someone a clear next step.</p>
-          <div className="hero-actions hero-actions-centered">
-            <Link href="/demo" className="btn btn-primary btn-lg">Request a demo</Link>
-          </div>
-          <FeedbackDashboard />
-        </section>
+        <PageHero
+          label="Private feedback for local businesses"
+          title={<><span>Turn feedback</span>{' '}<span>into action.</span></>}
+          lead="Customers tap or scan to share how their visit went. See what keeps coming up and give someone a clear next step."
+          media={<FeedbackDashboard />}
+        >
+          <Link href="/demo" className="btn btn-primary btn-lg">Request a demo</Link>
+        </PageHero>
 
         <ResearchProof />
         <VisitStory />
@@ -177,16 +172,17 @@ export default function Home() {
             <h2>What customers notice at your location.</h2>
           </div>
           <div className="industry-grid">
-            {industries.map(industry => (
-              <Link href={industry.href} key={industry.name} className="industry-card">
+            {industries.map(([name, description, href, icon]) => (
+              <Link href={href} key={name} className="industry-card">
                 <div className="industry-card-heading">
-                  <span><NavItemIcon name={industry.icon} /><h3>{industry.name}</h3></span>
+                  <span><NavItemIcon name={icon} /><h3>{name}</h3></span>
                   <ArrowIcon diagonal />
                 </div>
-                <p>{industry.note}</p>
+                <p>{description}</p>
               </Link>
             ))}
           </div>
+          <Link className="industry-directory-link" href="/industries">All industries →</Link>
         </section>
 
         <section className="security-section">

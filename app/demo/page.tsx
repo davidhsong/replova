@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { connection } from 'next/server'
 import DemoScheduler from './DemoScheduler'
+import { getIndustrySolution } from '@/lib/industrySolutions'
 import { DEMO_TIME_ZONE } from '@/lib/demoBooking'
 import { createPageMetadata } from '@/lib/seo'
 
@@ -10,8 +11,9 @@ export const metadata: Metadata = createPageMetadata({
   path: '/demo',
 })
 
-export default async function DemoPage() {
+export default async function DemoPage({ searchParams }: { searchParams: Promise<{ industry?: string }> }) {
   await connection()
+  const industry = getIndustrySolution((await searchParams).industry ?? '')?.slug
   const now = new Date()
   const dateParts = Object.fromEntries(
     new Intl.DateTimeFormat('en-US', {
@@ -26,6 +28,7 @@ export default async function DemoPage() {
 
   return (
     <DemoScheduler
+      industry={industry}
       initialYear={dateParts.year}
       initialMonth={dateParts.month - 1}
       initialDay={dateParts.day}

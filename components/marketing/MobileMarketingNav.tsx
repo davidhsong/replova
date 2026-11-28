@@ -1,7 +1,10 @@
 'use client'
 
-import { platformLinks, industryLinks } from '@/lib/marketingNavigation'
-import { FeatureIcon } from './VisitSample'
+import { productLinks, industryLinks } from '@/lib/marketingNavigation'
+import { NavItemIcon, type NavIconName } from './NavItemIcon'
+import { NavDestination } from './NavDestination'
+import { IndustryDemoLink } from './IndustryBooking'
+import { trackIndustry } from './industryAnalytics'
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 
@@ -9,7 +12,7 @@ type MobileNavItem = {
   label: string
   detail: string
   href: string
-  icon: 'tap' | 'review' | 'reply' | 'analytics' | 'playbook' | 'health' | 'home' | 'car' | 'briefcase' | 'shop' | 'pin' | 'guide' | 'research'
+  icon: NavIconName
 }
 
 type MobileNavGroup = {
@@ -19,15 +22,12 @@ type MobileNavGroup = {
 
 const menuGroups: readonly MobileNavGroup[] = [
   {
-    label: 'Platform',
-    items: platformLinks.map(([label, detail, href, icon]) => ({ label, detail, href, icon })),
+    label: 'Products',
+    items: productLinks.map(([label, detail, href, icon]) => ({ label, detail, href, icon })),
   },
   {
     label: 'Industries',
-    items: [
-      { label: 'All industries', detail: 'Explore industry examples.', href: '/industries', icon: 'guide' },
-      ...industryLinks.map(([label, detail, href, icon]) => ({ label, detail, href, icon: ({ retail: 'shop', healthcare: 'health', local: 'pin' } as const)[icon] })),
-    ],
+    items: industryLinks.map(([label, detail, href, icon]) => ({ label, detail, href, icon })),
   },
   {
     label: 'Resources',
@@ -39,26 +39,6 @@ const menuGroups: readonly MobileNavGroup[] = [
   },
 ] as const
 
-function MobileNavGlyph({ name }: { name: MobileNavItem['icon'] }) {
-  if (name === 'tap') return <FeatureIcon id="tap" />
-  const paths: Record<typeof name, React.ReactNode> = {
-    review: <><path d="M5 4h14v12H9l-4 4V4Z" /><path d="M8 8h8M8 11h5" /></>,
-    reply: <><path d="m9 8-4 4 4 4" /><path d="M6 12h7a5 5 0 0 1 5 5" /></>,
-    analytics: <><path d="M4 19V9M10 19V5M16 19v-7M22 19V3" /><path d="M2 19h20" /></>,
-    playbook: <><path d="M5 4h12a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2V4Z" /><path d="M8 8h7M8 12h7" /></>,
-    health: <><path d="M12 20s-7-4-7-10a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 6-7 10-7 10Z" /><path d="M9 12h6M12 9v6" /></>,
-    home: <><path d="m3 11 9-7 9 7" /><path d="M5 10v10h14V10M10 20v-6h4v6" /></>,
-    car: <><path d="m5 16-1-2 2-6h12l2 6-1 2" /><path d="M5 16h14v4h-2v-2H7v2H5v-4Z" /></>,
-    briefcase: <><path d="M4 7h16v13H4V7Zm5 0V4h6v3" /><path d="M4 12h16" /></>,
-    shop: <><path d="M5 9h14l-1 11H6L5 9Z" /><path d="M8 9a4 4 0 0 1 8 0" /></>,
-    pin: <><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></>,
-    guide: <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H11v16H6.5A2.5 2.5 0 0 0 4 21V5.5Z" /><path d="M20 5.5A2.5 2.5 0 0 0 17.5 3H13v16h4.5A2.5 2.5 0 0 1 20 21V5.5Z" /></>,
-    research: <><circle cx="10" cy="10" r="6" /><path d="m15 15 5 5M7 10h6M10 7v6" /></>,
-  }
-
-  return <svg className="mobile-marketing-submenu-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{paths[name]}</svg>
-}
-
 function MenuChevron() {
   return (
     <svg className="mobile-marketing-menu-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -67,7 +47,7 @@ function MenuChevron() {
   )
 }
 
-export function MobileMarketingNav({ tapHome = false }: { tapHome?: boolean }) {
+export function MobileMarketingNav({ tapHome = false, industry }: { tapHome?: boolean; industry?: string }) {
   const [open, setOpen] = useState(false)
   const [expandedGroup, setExpandedGroup] = useState<string | null>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -107,9 +87,18 @@ export function MobileMarketingNav({ tapHome = false }: { tapHome?: boolean }) {
       }
     }
 
+    function handleOutside(event: PointerEvent) {
+      if (!panelRef.current?.contains(event.target as Node) && !triggerRef.current?.contains(event.target as Node)) {
+        setOpen(false)
+        setExpandedGroup(null)
+      }
+    }
+
+    document.addEventListener('pointerdown', handleOutside)
     window.addEventListener('keydown', handleKeyDown)
     return () => {
       cancelAnimationFrame(focusFrame)
+      document.removeEventListener('pointerdown', handleOutside)
       window.removeEventListener('keydown', handleKeyDown)
       document.body.style.overflow = previousOverflow
     }
@@ -152,7 +141,7 @@ export function MobileMarketingNav({ tapHome = false }: { tapHome?: boolean }) {
         <span /><span /><span />
       </button>
 
-      <div className="mobile-marketing-menu-layer" data-open={open} aria-hidden={!open}>
+      <div className="mobile-marketing-menu-layer" data-open={open} aria-hidden={!open} inert={!open} onClick={event => { if (event.target === event.currentTarget) closeMenu(true) }}>
         <aside ref={panelRef} id="mobile-marketing-menu" className="mobile-marketing-menu-panel" aria-label="Mobile navigation" tabIndex={-1}>
           <nav className="mobile-marketing-menu-groups" aria-label="Mobile main navigation">
             {menuGroups.map((group, index) => {
@@ -165,7 +154,10 @@ export function MobileMarketingNav({ tapHome = false }: { tapHome?: boolean }) {
                     aria-expanded={expanded}
                     aria-controls={submenuId}
                     tabIndex={open ? 0 : -1}
-                    onClick={() => setExpandedGroup(current => current === group.label ? null : group.label)}
+                    onClick={() => {
+                      if (!expanded && group.label === 'Industries') trackIndustry('industry_menu_open')
+                      setExpandedGroup(expanded ? null : group.label)
+                    }}
                   >
                     <span>{group.label}</span>
                     <MenuChevron />
@@ -173,10 +165,13 @@ export function MobileMarketingNav({ tapHome = false }: { tapHome?: boolean }) {
                   <div className="mobile-marketing-submenu" id={submenuId} data-open={expanded} aria-hidden={!expanded}>
                     <div>
                       {group.items.map(item => (
-                        <Link data-specialty={item.href.endsWith("/boba-tea-shops")} href={tapHome && item.href.startsWith('/#') ? item.href.slice(1) : item.href} key={item.label} tabIndex={open && expanded ? 0 : -1} onClick={() => closeMenu()}>
-                          <MobileNavGlyph name={item.icon} />
+                        <NavDestination href={tapHome && item.href.startsWith('/#') ? item.href.slice(1) : item.href} key={item.label} tabIndex={open && expanded ? 0 : -1} onClick={() => {
+                          if (group.label === 'Industries' && item.href.startsWith('/industries/')) trackIndustry('industry_select', item.href.split('/')[2])
+                          closeMenu()
+                        }}>
+                          <NavItemIcon name={item.icon} className="mobile-marketing-submenu-icon" />
                           <span><strong>{item.label}</strong><small>{item.detail}</small></span>
-                        </Link>
+                        </NavDestination>
                       ))}
                     </div>
                   </div>
@@ -186,7 +181,7 @@ export function MobileMarketingNav({ tapHome = false }: { tapHome?: boolean }) {
             <Link className="mobile-marketing-menu-signin" href="/signin" tabIndex={open ? 0 : -1} onClick={() => closeMenu()}>Sign in</Link>
           </nav>
           <div className="mobile-marketing-menu-actions">
-            <Link href="/demo" tabIndex={open ? 0 : -1} onClick={() => closeMenu()}>Request a demo</Link>
+            <IndustryDemoLink industry={industry} tabIndex={open ? 0 : -1} onClick={() => closeMenu()}>Request a demo</IndustryDemoLink>
           </div>
         </aside>
       </div>

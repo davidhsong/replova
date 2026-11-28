@@ -5,6 +5,7 @@ import { DEMO_LEAD_MS } from '@/lib/demoBooking'
 import type { FormEvent, ReactNode } from 'react'
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { ReplovaLogo } from '@/components/brand/ReplovaLogo'
+import { trackIndustry } from '@/components/marketing/industryAnalytics'
 import styles from './DemoScheduler.module.css'
 
 type CalendarView = 'month' | 'week-grid' | 'week-columns'
@@ -12,6 +13,7 @@ type ClockMode = '12h' | '24h'
 type BookingStatus = 'idle' | 'submitting' | 'success' | 'error'
 
 type SchedulerProps = {
+  industry?: string
   initialYear: number
   initialMonth: number
   initialDay: number
@@ -386,7 +388,7 @@ function WeeklyColumns({ selectedDate, selectedTime, clock, onTimeSelect }: { se
   )
 }
 
-export default function DemoScheduler({ initialYear, initialMonth, initialDay }: SchedulerProps) {
+export default function DemoScheduler({ industry, initialYear, initialMonth, initialDay }: SchedulerProps) {
   const baseline = useMemo(() => new Date(initialYear, initialMonth, initialDay), [initialYear, initialMonth, initialDay])
   const [calendarView, setCalendarView] = useState<CalendarView>('month')
   const [clock, setClock] = useState<ClockMode>('12h')
@@ -533,6 +535,7 @@ export default function DemoScheduler({ initialYear, initialMonth, initialDay }:
       }
       const confirmedSlot = result.slotLabel || bookingSlotLabel
       setSlots(current => current.filter(slot => slot.start !== bookingSlot.start))
+      trackIndustry('demo_booking_complete', industry)
       setBookingStatus('success')
       setNotice(`${confirmedSlot} scheduled successfully. A calendar invite was sent to ${bookingForm.email.trim()}.`)
     } catch (error) {

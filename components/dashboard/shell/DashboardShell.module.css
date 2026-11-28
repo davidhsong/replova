@@ -3,7 +3,7 @@
   --dash-sidebar-collapsed-width: 64px;
   --dash-assistant-width: 320px;
   --dash-header-height: 50px;
-  --dash-canvas: #eef0f2;
+  --dash-canvas: var(--replova-canvas);
   --dash-sidebar: #f3f4f6;
   --dash-surface: #ffffff;
   --dash-surface-subtle: #f7f8f9;
@@ -62,7 +62,7 @@
   overflow: visible;
   border: 0;
   border-radius: 0;
-  background: var(--dash-surface);
+  background: var(--dash-canvas);
   box-shadow: none;
   padding-bottom: 0;
 }

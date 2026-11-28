@@ -7,7 +7,7 @@
   --paper: #fff;
   --soft: #f7f7f5;
   min-height: calc(100dvh - 50px);
-  background: var(--paper);
+  background: var(--replova-canvas);
   color: var(--ink);
 }
 .topbar {

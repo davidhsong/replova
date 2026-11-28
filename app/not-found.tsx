@@ -21,10 +21,10 @@ export default function NotFound() {
       <main id="main-content" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
         <div className="fade-up" style={{ textAlign: 'center', maxWidth: 400 }}>
           <p className="t-mono c-t2" style={{ fontSize: 13, marginBottom: 8 }}>Error 404</p>
-          <h1 className="t-serif" style={{ fontSize: 44, lineHeight: 1.05, letterSpacing: '-0.02em', marginBottom: 14 }}>
+          <h1 className="t-serif" style={{ marginBottom: 14 }}>
             We couldn&apos;t find<br />that page.
           </h1>
-          <p className="t-sm c-t2" style={{ marginBottom: 28, lineHeight: 1.6 }}>
+          <p className="t-sm c-t2" style={{ marginBottom: 28 }}>
             The page you&apos;re looking for doesn&apos;t exist or has moved.
           </p>
           <Link href="/" className="btn btn-primary btn-press" style={{ textDecoration: 'none', display: 'inline-flex' }}>

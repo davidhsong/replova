@@ -34,7 +34,9 @@ export async function checkDemoBooking(origin) {
   const browser = await chromium.launch()
   try {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, timezoneId: 'America/Los_Angeles', reducedMotion: 'reduce' })
-    await page.goto(origin + '/demo')
+    await page.goto(origin + '/industries/hotels-short-stays')
+    await page.getByRole('main').getByRole('link', { name: 'Request a demo' }).click()
+    await page.waitForURL('**/demo?industry=hotels-short-stays')
     const api = origin + '/api/demo/book'
     const slots = (await (await fetch(api)).json()).slots
     const slot = slots[0]

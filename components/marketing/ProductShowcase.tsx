@@ -37,7 +37,7 @@ export function ProductShowcase() {
     <section id="intelligence" className={styles.section} aria-labelledby="product-showcase-title">
       <div className={styles.inner}>
         <header className={styles.heading}>
-          <Eyebrow>Explore the platform</Eyebrow>
+          <Eyebrow>Explore Replova Tap</Eyebrow>
           <h2 id="product-showcase-title">Put customer feedback to work.</h2>
         </header>
 

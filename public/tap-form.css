@@ -12,7 +12,7 @@ body {
   min-height: 100svh;
   display: grid;
   place-items: center;
-  background: linear-gradient(90deg, #000, #192332);
+  background: var(--replova-canvas);
   padding: clamp(12px, 4vw, 24px);
   font:
     500 16px/1.6 Montserrat,
@@ -23,7 +23,7 @@ main {
   min-width: 0;
   overflow-wrap: anywhere;
   width: min(100%, 31rem);
-  background: white;
+  background: var(--replova-canvas);
   padding: clamp(24px, 6vw, 48px);
   border-radius: 14px;
 }
@@ -32,14 +32,15 @@ main > img {
   margin-bottom: 32px;
 }
 h1 {
-  font-size: clamp(28px, 6vw, 40px);
-  line-height: 1.12;
-  letter-spacing: -0.045em;
+  font: var(--replova-title);
+  color: var(--replova-ink);
+  letter-spacing: var(--replova-display-tracking);
   margin: 0.3em 0;
 }
 p {
   margin: 0.8em 0;
-  color: #474950;
+  color: var(--replova-lead-color);
+  font: var(--replova-lead);
 }
 fieldset {
   min-inline-size: 0;
@@ -53,7 +54,8 @@ label {
 }
 small {
   display: block;
-  color: #50535a;
+  font: var(--replova-caption);
+  color: var(--replova-caption-color);
 }
 .ratings {
   display: grid;
@@ -98,8 +100,11 @@ button {
 }
 button {
   cursor: pointer;
-  font-weight: 650;
-  border-color: #192332;
+  font: var(--replova-action);
+  min-height: 44px;
+  border-radius: 10px;
+  background: var(--replova-ink);
+  border-color: var(--replova-ink);
 }
 a {
   display: inline-block;

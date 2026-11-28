@@ -1,0 +1,27 @@
+/* Shared by the React layouts and the script-free Tap document. */
+:root {
+  --replova-canvas: #fbfaf6;
+  --replova-ink: #141414;
+  --replova-display-face: Arial, Helvetica, sans-serif;
+  --replova-body-face: Montserrat, system-ui, -apple-system, sans-serif;
+  --market-title: 56px;
+  --market-heading: 48px;
+  --replova-display-line: 1.05;
+  --replova-display-tracking: -.05em;
+  --replova-title: 400 var(--market-title)/var(--replova-display-line) var(--replova-display-face);
+  --replova-heading: 400 var(--market-heading)/var(--replova-display-line) var(--replova-display-face);
+  --replova-lead: 400 18px/1.4 var(--replova-display-face);
+  --replova-lead-color: #56524a;
+  --replova-prose: 400 13px/1.42 var(--replova-body-face);
+  --replova-prose-color: #2f2d29;
+  --replova-action: 600 14px/1.5 var(--replova-display-face);
+  --replova-panel-title: 550 22px/1.18 var(--replova-body-face);
+  --replova-caption: 400 12px/1.5 var(--replova-body-face);
+  --replova-caption-color: #57534c;
+}
+@media (max-width: 1199px) {
+  :root { --market-title: 48px; --market-heading: 40px; }
+}
+@media (max-width: 809px) {
+  :root { --market-title: 46px; --market-heading: 38px; }
+}

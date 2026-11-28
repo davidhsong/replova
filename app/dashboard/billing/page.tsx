@@ -196,7 +196,7 @@ export default async function BillingPage() {
           <div>
             <div className="t-eyebrow" style={{ marginBottom: 8 }}>Current plan</div>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 12, marginBottom: 4 }}>
-              <h2 className="t-serif" style={{ fontSize: 36, lineHeight: 1, letterSpacing: '-0.02em' }}>
+              <h2>
                 {meta.label}
               </h2>
               {accessActive ? (
@@ -279,7 +279,7 @@ export default async function BillingPage() {
 
         {/* Plan ladder */}
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 18, gap: 12 }}>
-          <h3 style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.02em' }}>Change plan</h3>
+          <h3>Change plan</h3>
           <span className="t-xs c-t3">Stripe will prorate any change</span>
         </div>
 

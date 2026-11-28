@@ -17,7 +17,7 @@ export default function CareersPage() {
       <MarketingHeader />
       <main id="main-content" className="marketing-page-main">
         <section className="subpage-hero">
-          <div className="t-eyebrow c-accent">Careers at Replova</div>
+          <div className="hero-category">Careers at Replova</div>
           <h1>Learn by building something real.</h1>
           <p>We offer {careerRoles.length} learning-first internships for curious students who want a practical view of how a software startup gets built. No prior experience is required - just reliability, kindness, and a willingness to learn.</p>
           <div className="subpage-hero-actions"><Link href="#open-roles" className="btn btn-primary btn-lg">See open roles <ArrowIcon /></Link></div>

@@ -203,11 +203,9 @@ test('homepage replacement leaves its established non-pricing sections in place'
   assert.equal(page.match(/className="security-icon /g)?.length, 4)
   assert.match(page, /function GoogleIcon\(\)/)
   assert.match(page, /function OpenAIIcon\(\)/)
-  assert.match(page, /<NavItemIcon name=\{industry\.icon\} \/>/)
-  assert.match(marketingChrome, /export function NavItemIcon/)
-  for (const icon of ['healthcare', 'retail', 'local']) {
-    assert.match(page, new RegExp(`icon: '${icon}'`))
-  }
+  assert.match(page, /<NavItemIcon name=\{icon\} \/>/)
+  assert.match(marketingChrome, /<NavItemIcon name=\{icon\} \/>/)
+  assert.match(page, /industryLinks\.slice\(0, 3\)/)
   assert.match(page, /<MarketingFooter tapHome \/>/)
   assert.doesNotMatch(page, /const plans =/)
   assert.doesNotMatch(page, /const faqs =/)
